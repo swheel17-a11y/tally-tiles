@@ -51,8 +51,8 @@ button:disabled{opacity:.35;cursor:default}
 .iconbtn{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--board);border:1px solid var(--board-line)}
 .iconbtn svg{width:20px;height:20px;stroke:var(--mist);fill:none;stroke-width:1.8}
 
-.modes{display:grid;grid-template-columns:repeat(3,1fr);background:var(--board);border:1px solid var(--board-line);border-radius:14px;padding:4px;gap:4px}
-.modes button{padding:9px 4px;border-radius:10px;font-weight:600;font-size:14px;color:var(--mist)}
+.modes{display:grid;grid-template-columns:repeat(4,1fr);background:var(--board);border:1px solid var(--board-line);border-radius:14px;padding:4px;gap:4px}
+.modes button{padding:9px 2px;border-radius:10px;font-weight:600;font-size:13px;color:var(--mist);min-width:0;overflow:hidden;text-overflow:ellipsis}
 .modes button[aria-selected="true"]{background:var(--tile);color:var(--tile-ink)}
 
 /* board */
@@ -143,6 +143,34 @@ button:disabled{opacity:.35;cursor:default}
 .kept button b{color:var(--brass);font-weight:500;margin-left:6px}
 .kept button.up{text-transform:uppercase}
 
+
+/* merge board */
+.mhead{justify-content:space-around;padding-block:10px}
+.mstat{text-align:center}
+.mnum{font-family:var(--f-mono);font-size:26px;color:var(--brass);font-variant-numeric:tabular-nums;line-height:1.1}
+.mnum.dim{color:var(--text);font-size:20px}
+.mboard{--gap:8px;position:relative;width:100%;max-width:440px;aspect-ratio:1;margin:0 auto;background:var(--board);border:1px solid var(--board-line);border-radius:16px;padding:var(--gap);display:grid;grid-template-columns:repeat(4,1fr);gap:var(--gap);touch-action:none;user-select:none;-webkit-user-select:none}
+.mcell{background:var(--ground);border-radius:10px;opacity:.7}
+.mlayer{position:absolute;inset:var(--gap);pointer-events:none}
+.mt{position:absolute;left:0;top:0;width:calc((100% - 3*var(--gap))/4);height:calc((100% - 3*var(--gap))/4);border-radius:10px;display:grid;place-items:center;font-family:var(--f-display);font-weight:800;font-size:clamp(22px,8vw,38px);transform:translate(calc(var(--c)*(100% + var(--gap))),calc(var(--r)*(100% + var(--gap))));transition:transform .12s ease-out;font-variant-numeric:tabular-nums;z-index:2}
+.mt.d3{font-size:clamp(19px,6.6vw,32px)}
+.mt.d4{font-size:clamp(15px,5.2vw,26px)}
+.mt.ghost{z-index:1}
+.mt.mnew{animation:mnew .2s .1s backwards}
+.mt.mpop{z-index:3;animation:mpop .2s .1s backwards}
+@keyframes mnew{from{opacity:0;scale:.3}}
+@keyframes mpop{0%{scale:.5;opacity:0}60%{scale:1.15;opacity:1}100%{scale:1}}
+.v2{background:#eef1f8;color:#16203f}.v4{background:#dbe3f6;color:#16203f}
+.v8{background:#ffe3a6;color:#2a1d04}.v16{background:#f2b64a;color:#2a1d04}
+.v32{background:#f59a4a;color:#2a1204}.v64{background:#ef6f4c;color:#fff}
+.v128{background:#7fd1a8;color:#0b2a1b}.v256{background:#45b884;color:#fff}
+.v512{background:#6f9bff;color:#fff}.v1024{background:#4767d9;color:#fff}
+.v2048{background:#b48cff;color:#fff;box-shadow:0 0 18px rgba(180,140,255,.6)}.vbig{background:#ff6fa8;color:#fff}
+.mover{position:absolute;inset:0;border-radius:16px;background:rgba(18,26,51,.78);display:grid;place-items:center;text-align:center;z-index:5}
+.mover h2{margin:0;font-family:var(--f-display);font-weight:900;font-size:26px}
+.mover p{margin:6px 0 0;color:var(--mist)}
+.mtoast{position:absolute;left:50%;top:12px;translate:-50% 0;background:var(--brass);color:var(--brass-ink);font-weight:700;padding:8px 14px;border-radius:10px;z-index:6;white-space:nowrap;font-size:14px}
+
 /* settings sheet */
 .sheet-bg{position:fixed;inset:0;background:rgba(5,8,20,.6);z-index:20;display:flex;align-items:flex-end;justify-content:center}
 .sheet{width:100%;max-width:520px;background:var(--board);border-radius:22px 22px 0 0;border:1px solid var(--board-line);padding:18px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:16px;max-height:88%;overflow-y:auto;animation:rise .25s}
@@ -171,6 +199,7 @@ td.h{padding-top:14px;font-size:11px;letter-spacing:.12em;text-transform:upperca
     <button role="tab" id="tab-numbers" aria-selected="true" data-mode="numbers">Numbers</button>
     <button role="tab" id="tab-letters" aria-selected="false" data-mode="letters">Letters</button>
     <button role="tab" id="tab-conundrum" aria-selected="false" data-mode="conundrum">Conundrum</button>
+    <button role="tab" id="tab-merge" aria-selected="false" data-mode="merge">Merge</button>
   </div>
   <div class="stage" id="stage"></div>
   <div class="controls" id="controls"></div>
@@ -206,7 +235,7 @@ const addPts=p=>{S.dayPts+=p;save();};
 /* ---------- clocks: one per tab, paused while you're on another tab ---------- */
 const R=26,C=2*Math.PI*R,LIMIT=30;
 const mkClock=()=>({elapsed:0,since:null,running:false,timed:false,onEnd:null});
-const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock()};
+const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock()};
 const el=c=>c.elapsed+(c.since?(performance.now()-c.since)/1000:0);
 let looping=false;
 function clockHTML(){return `<div class="clock" id="clock"><svg viewBox="0 0 64 64"><circle class="track" cx="32" cy="32" r="${R}" fill="none" stroke-width="6"/><circle class="arc" id="arc" cx="32" cy="32" r="${R}" fill="none" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg><div class="t" id="clockT"></div></div>`}
@@ -547,9 +576,102 @@ function renderCon(){
   stage.querySelectorAll('[data-cw]').forEach(b=>b.onclick=()=>{const k=+b.dataset.cw;if(K.hint&&k===0)return;clearMsg();K.word.splice(k,1);render()});
 }
 
+/* =========================================================
+   MERGE (2048-style): swipe to slide, matching tiles combine
+   ========================================================= */
+let uid=0;
+const M={tiles:[],score:0,hist:[],over:false,toastShown:false,confirmNew:false};
+const MERGE_KEY='tally-tiles-merge-v1';
+function mSave(){try{localStorage.setItem(MERGE_KEY,JSON.stringify({g:M.tiles.map(t=>[t.r,t.c,t.v]),score:M.score,hist:M.hist.slice(-30),toast:M.toastShown}))}catch(e){}}
+function mLoad(){try{const d=JSON.parse(localStorage.getItem(MERGE_KEY)||'null');if(d&&d.g&&d.g.length){M.tiles=d.g.map(([r,c,v])=>({id:++uid,r,c,v}));M.score=d.score||0;M.hist=d.hist||[];M.toastShown=!!d.toast;M.over=!canMove();return true}}catch(e){}return false}
+function emptyCells(){const s=new Set(M.tiles.map(t=>t.r*4+t.c));const out=[];for(let i=0;i<16;i++)if(!s.has(i))out.push(i);return out}
+function spawn(){const e=emptyCells();if(!e.length)return;const i=e[rnd(e.length)];M.tiles.push({id:++uid,r:Math.floor(i/4),c:i%4,v:Math.random()<0.9?2:4,isNew:true})}
+function newMerge(){M.tiles=[];M.score=0;M.hist=[];M.over=false;M.toastShown=false;M.confirmNew=false;spawn();spawn();mSave();renderMerge(true)}
+function canMove(){
+  if(M.tiles.length<16)return true;
+  const g={};M.tiles.forEach(t=>g[t.r*4+t.c]=t.v);
+  for(let r=0;r<4;r++)for(let c=0;c<4;c++){const v=g[r*4+c];if(c<3&&g[r*4+c+1]===v)return true;if(r<3&&g[(r+1)*4+c]===v)return true}
+  return false;
+}
+let ghosts=[];
+function slide(dir){
+  if(S.mode!=='merge'||M.over)return;
+  const grid=[[],[],[],[]];M.tiles.forEach(t=>grid[t.r][t.c]=t);
+  const next=[],gh=[];let moved=false,gained=0;
+  for(let k=0;k<4;k++){
+    const cells=[0,1,2,3].map(i=>dir==='L'?[k,i]:dir==='R'?[k,3-i]:dir==='U'?[i,k]:[3-i,k]);
+    const line=cells.map(([r,c])=>grid[r][c]).filter(Boolean);
+    let out=0;
+    for(let i=0;i<line.length;i++){
+      const[tr,tc]=cells[out],a=line[i],b=line[i+1];
+      if(b&&b.v===a.v){next.push({id:++uid,v:a.v*2,r:tr,c:tc,merged:true});gh.push({...a,r:tr,c:tc},{...b,r:tr,c:tc});gained+=a.v*2;moved=true;i++}
+      else{if(a.r!==tr||a.c!==tc)moved=true;next.push({id:a.id,v:a.v,r:tr,c:tc})}
+      out++;
+    }
+  }
+  if(!moved){const b=$('#mBoard');b&&shakeEl(b);return}
+  M.hist.push({g:M.tiles.map(t=>[t.r,t.c,t.v]),score:M.score});if(M.hist.length>30)M.hist.shift();
+  M.tiles=next;M.score+=gained;ghosts=gh;spawn();
+  if(M.score>(S.mergeBest||0))S.mergeBest=M.score;
+  const top=Math.max(...M.tiles.map(t=>t.v));if(top>(S.mergeTop||0))S.mergeTop=top;
+  save();
+  M.over=!canMove();M.confirmNew=false;
+  mSave();renderMerge(false);
+  if(top>=2048&&!M.toastShown){M.toastShown=true;mSave();mToast('2048! Keep going as far as you like.')}
+}
+function undoMerge(){const h=M.hist.pop();if(!h)return;M.tiles=h.g.map(([r,c,v])=>({id:++uid,r,c,v}));M.score=h.score;M.over=false;M.confirmNew=false;mSave();renderMerge(true)}
+function mToast(msg){const t=$('#mToast');if(!t)return;t.textContent=msg;t.hidden=false;clearTimeout(mToast.t);mToast.t=setTimeout(()=>{t.hidden=true},2600)}
+function tileStyle(t){return `--r:${t.r};--c:${t.c}`}
+function tileClass(v){return 'mt v'+(v>2048?'big':v)+(String(v).length>=4?' d4':String(v).length===3?' d3':'')}
+function renderMerge(full){
+  let board=$('#mBoard');
+  if(full||!board){
+    stage.innerHTML=`<div class="headline mhead">
+        <div class="mstat"><div class="eyebrow">Score</div><div class="mnum" id="mScore">${M.score}</div></div>
+        <div class="mstat"><div class="eyebrow">Best</div><div class="mnum dim" id="mBest">${S.mergeBest||0}</div></div>
+        <div class="mstat"><div class="eyebrow">Top tile</div><div class="mnum dim" id="mTop">${S.mergeTop||0}</div></div></div>
+      <div class="mboard" id="mBoard" aria-label="Merge board. Swipe or use arrow keys.">
+        ${'<div class="mcell"></div>'.repeat(16)}<div class="mlayer" id="mLayer"></div>
+        <div class="mover" id="mOver" hidden></div><div class="mtoast" id="mToast" hidden></div></div>
+      <div class="hint">Swipe to slide every tile. Matching numbers merge into their sum. No timer, no rush.</div>`;
+    board=$('#mBoard');bindSwipe(board);
+  }
+  const layer=$('#mLayer');
+  const els=new Map([...layer.children].map(e=>[+e.dataset.id,e]));
+  const keep=new Set();
+  const place=(t,extra)=>{
+    let e=els.get(t.id);
+    if(!e){e=document.createElement('div');e.dataset.id=t.id;layer.appendChild(e);if(t.merged)e.classList.add('mpop');if(t.isNew)e.classList.add('mnew')}
+    e.className=tileClass(t.v)+(t.merged?' mpop':'')+(t.isNew?' mnew':'')+(extra||'');
+    e.style.cssText=tileStyle(t);e.textContent=t.v;keep.add(t.id);
+  };
+  ghosts.forEach(g=>place(g,' ghost'));
+  M.tiles.forEach(t=>place(t));
+  els.forEach((e,id)=>{if(!keep.has(id))e.remove()});
+  if(ghosts.length){const ids=ghosts.map(g=>g.id);ghosts=[];setTimeout(()=>ids.forEach(id=>{const e=layer.querySelector(`[data-id="${id}"]`);e&&e.remove()}),130)}
+  M.tiles.forEach(t=>{delete t.isNew;delete t.merged});
+  $('#mScore').textContent=M.score;$('#mBest').textContent=S.mergeBest||0;$('#mTop').textContent=S.mergeTop||0;
+  const ov=$('#mOver');
+  if(M.over){ov.hidden=false;ov.innerHTML=`<div><h2>Board's full</h2><p>Score ${M.score}. Undo a move or start fresh.</p></div>`}else ov.hidden=true;
+  controls.innerHTML=`<div class="row"><button class="btn tall" id="mUndo" ${M.hist.length?'':'disabled'}>Undo</button>
+    <button class="btn tall ${M.over?'primary':''} ${M.confirmNew?'danger':''}" id="mNew">${M.confirmNew?'Tap again to restart':'New game'}</button></div>`;
+  $('#mUndo').onclick=undoMerge;
+  $('#mNew').onclick=()=>{if(M.over||M.confirmNew||M.score===0)return newMerge();M.confirmNew=true;renderMerge(false)};
+}
+function bindSwipe(el){
+  let sx=null,sy=null;
+  el.addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY;try{el.setPointerCapture(e.pointerId)}catch(_){}} );
+  el.addEventListener('pointerup',e=>{if(sx===null)return;const dx=e.clientX-sx,dy=e.clientY-sy;sx=null;
+    if(Math.max(Math.abs(dx),Math.abs(dy))<24)return;
+    slide(Math.abs(dx)>Math.abs(dy)?(dx>0?'R':'L'):(dy>0?'D':'U'))});
+  el.addEventListener('pointercancel',()=>{sx=null});
+}
+document.addEventListener('keydown',e=>{if(S.mode!=='merge'||!$('#sheet').hidden)return;const d={ArrowLeft:'L',ArrowRight:'R',ArrowUp:'U',ArrowDown:'D'}[e.key];if(d){e.preventDefault();slide(d)}});
+if(!mLoad()){spawn();spawn();mSave()}
+
 /* ---------- tabs: each keeps its own round ---------- */
 function render(){
-  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else renderCon();
+  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else renderCon();
   paintClock();
 }
 function setMode(m){
@@ -579,12 +701,14 @@ function openSheet(){
       <tr><td>Rounds</td><td>${l.rounds}</td></tr><tr><td>Average points</td><td>${avg(l.points,l.rounds)}</td></tr><tr><td>Longest word</td><td>${l.best?l.best.toUpperCase():'—'}</td></tr><tr><td>Nine-letter words</td><td>${l.nines}</td></tr>
       <tr><td class="h" colspan="2">Conundrum</td></tr>
       <tr><td>Solved</td><td>${c.solved} of ${c.played}</td></tr><tr><td>Best streak</td><td>${c.bestStreak}</td></tr>
+      <tr><td class="h" colspan="2">Merge</td></tr>
+      <tr><td>Best score</td><td>${S.mergeBest||0}</td></tr><tr><td>Highest tile</td><td>${S.mergeTop||'—'}</td></tr>
     </table>
     <div class="row"><button class="btn ${confirmReset?'danger':''}" id="sReset">${confirmReset?'Tap again to erase stats':'Reset stats'}</button><button class="btn primary" id="sClose">Done</button></div>
   </div>`;
   $('#sRelax').onclick=()=>{S.timed=false;save();openSheet();paintClock()};
   $('#sTimed').onclick=()=>{S.timed=true;save();openSheet();paintClock()};
-  $('#sReset').onclick=()=>{if(!confirmReset){confirmReset=true;return openSheet()}const keep={timed:S.timed,mode:S.mode};S=Object.assign(blankStats(),keep,{day:today});confirmReset=false;save();openSheet()};
+  $('#sReset').onclick=()=>{if(!confirmReset){confirmReset=true;return openSheet()}const keep={timed:S.timed,mode:S.mode};S=Object.assign(blankStats(),keep,{day:today,conDeck:S.conDeck});confirmReset=false;save();openSheet()};
   $('#sClose').onclick=closeSheet;
   sh.onclick=e=>{if(e.target===sh)closeSheet()};
 }
@@ -592,7 +716,7 @@ function closeSheet(){confirmReset=false;$('#sheet').hidden=true;}
 $('#openSettings').onclick=openSheet;
 
 /* ---------- boot ---------- */
-const m0=['numbers','letters','conundrum'].includes(S.mode)?S.mode:'numbers';S.mode='';setMode(m0);
+const m0=['numbers','letters','conundrum','merge'].includes(S.mode)?S.mode:'numbers';S.mode='';setMode(m0);
 })();
 </script>
 
