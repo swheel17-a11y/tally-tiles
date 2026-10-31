@@ -51,8 +51,9 @@ button:disabled{opacity:.35;cursor:default}
 .iconbtn{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--board);border:1px solid var(--board-line)}
 .iconbtn svg{width:20px;height:20px;stroke:var(--mist);fill:none;stroke-width:1.8}
 
-.modes{display:flex;background:var(--board);border:1px solid var(--board-line);border-radius:14px;padding:4px;gap:4px}
-.modes button{flex:1 1 auto;padding:9px 5px;border-radius:10px;font-weight:600;font-size:12px;color:var(--mist);min-width:0;overflow:hidden;text-overflow:ellipsis}
+.modes{display:flex;overflow-x:auto;scrollbar-width:none;background:var(--board);border:1px solid var(--board-line);border-radius:14px;padding:4px;gap:4px}
+.modes::-webkit-scrollbar{display:none}
+.modes button{flex:1 0 auto;padding:9px 6px;border-radius:10px;font-weight:600;font-size:12px;color:var(--mist);min-width:0;overflow:hidden;text-overflow:ellipsis}
 .modes button[aria-selected="true"]{background:var(--tile);color:var(--tile-ink)}
 
 /* board */
@@ -197,6 +198,24 @@ button:disabled{opacity:.35;cursor:default}
 .solrow{gap:6px}
 .solrow .btn{font-size:15px;padding:0 4px;min-width:0}
 
+
+/* sand */
+.sandwrap{position:relative;flex:1;min-height:260px;overflow:hidden}
+.sandwrap canvas{display:block;width:100%;touch-action:manipulation}
+.sbelt{display:flex;align-items:center;gap:5px}
+.sbelt i{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--board-line);display:block}
+.sbelt i.on{background:var(--brass);border-color:var(--brass)}
+.sbelt i.full{background:var(--warn);border-color:var(--warn)}
+.sandq{display:grid;gap:8px}
+.sqcol{display:flex;flex-direction:column;align-items:center;gap:5px}
+.sq{width:100%;max-width:84px;border-radius:9px 9px 14px 14px;display:grid;place-items:center;font-family:var(--f-display);font-weight:800}
+.sq.front{height:46px;background:var(--bc);color:#16203f;font-size:17px;box-shadow:0 3px 0 rgba(0,0,0,.35);text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.sq.front:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
+.sq.next{height:22px;width:82%;background:var(--bc);opacity:.9;box-shadow:inset 0 0 0 2px rgba(18,26,51,.35)}
+.sq.hidden{height:24px;background:var(--board);border:1px dashed var(--board-line);color:var(--mist);font-size:13px}
+.sq.empty{height:24px}
+.sqmore{font-size:11px;color:var(--mist);font-family:var(--f-mono)}
+
 /* share */
 .linkbox{display:flex;gap:8px}
 .linkbox input{flex:1;min-width:0;background:var(--ground);border:1px solid var(--board-line);border-radius:10px;color:var(--text);font-family:var(--f-mono);font-size:13px;padding:0 10px;height:46px}
@@ -234,6 +253,7 @@ td.h{padding-top:14px;font-size:11px;letter-spacing:.12em;text-transform:upperca
     <button role="tab" id="tab-conundrum" aria-selected="false" data-mode="conundrum">Conundrum</button>
     <button role="tab" id="tab-merge" aria-selected="false" data-mode="merge">Merge</button>
     <button role="tab" id="tab-solitaire" aria-selected="false" data-mode="solitaire">Solitaire</button>
+    <button role="tab" id="tab-sand" aria-selected="false" data-mode="sand">Sand</button>
   </div>
   <div class="stage" id="stage"></div>
   <div class="controls" id="controls"></div>
@@ -269,7 +289,7 @@ const addPts=p=>{S.dayPts+=p;save();};
 /* ---------- clocks: one per tab, paused while you're on another tab ---------- */
 const R=26,C=2*Math.PI*R,LIMIT=30;
 const mkClock=()=>({elapsed:0,since:null,running:false,timed:false,onEnd:null});
-const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock()};
+const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock(),sand:mkClock()};
 const el=c=>c.elapsed+(c.since?(performance.now()-c.since)/1000:0);
 let looping=false;
 function clockHTML(){return `<div class="clock" id="clock"><svg viewBox="0 0 64 64"><circle class="track" cx="32" cy="32" r="${R}" fill="none" stroke-width="6"/><circle class="arc" id="arc" cx="32" cy="32" r="${R}" fill="none" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg><div class="t" id="clockT"></div></div>`}
@@ -911,9 +931,266 @@ function renderSol(full){
 window.addEventListener('resize',()=>{if(S.mode==='solitaire')layoutSol()});
 if(!solLoad())solNew();
 
+/* =========================================================
+   SAND: falling-sand picture, buckets ride a belt and scoop matching colour
+   ========================================================= */
+const SW=60,SH=72;
+const SCOL=[['red','#e8483f'],['orange','#f58a32'],['yellow','#f6c945'],['green','#5cc463'],['teal','#2fb5a8'],['blue','#3f86e8'],['purple','#9a63e0'],['pink','#f07ab8'],['white','#eef1f8'],['brown','#a8693a']];
+const hexRGB=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const SAND_KEY='tally-tiles-sand-v1';
+function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const Z={level:1,grid:new Uint8Array(SW*SH),shade:new Uint8Array(SW*SH),pal:[],queue:[],belt:[],pending:[],slots:5,remain:0,state:'play',lastCollect:0,t:0,parts:[],dirty:true,confirmRestart:false,name:''};
+
+/* ---------- pictures ---------- */
+function makePicture(level){
+  const R=mulberry(level*7919+13);
+  const k=Math.min(3+Math.floor((level-1)/2),6);
+  const pick=n=>{const ids=[...SCOL.keys()];for(let i=ids.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[ids[i],ids[j]]=[ids[j],ids[i]]}return ids.slice(0,n)};
+  const tpl=[];
+  if(k===3)tpl.push('heart','dunes','chevron');
+  if(k===4)tpl.push('sunset','heart','mountains','dunes');
+  if(k===5)tpl.push('sunset','mountains','flower','dunes','chevron');
+  if(k===6)tpl.push('sunset','dunes','chevron');
+  const name=tpl[Math.floor(R()*tpl.length)];
+  const g=new Uint8Array(SW*SH);
+  const ph=R()*6.28,ph2=R()*6.28;
+  const f={
+    dunes:(x,y)=>{let r=1;for(let i=1;i<k;i++){const b=i*SH/k+3.2*Math.sin(x*(0.09+i*0.03)+ph*i)+2*Math.sin(x*0.21+ph2);if(y>=b)r++}return r},
+    chevron:(x,y)=>{const v=y+Math.abs(x-SW/2)*0.7+ph*3;return Math.floor(v/ (SH/k*0.9))%k+1},
+    heart:(x,y)=>{if(k===4&&y>=SH-11+1.5*Math.sin(x*0.25+ph))return 4;
+      const X=(x-SW/2+0.5)/17,Y=-(y-30)/17;const h=Math.pow(X*X+Y*Y-1,3)-X*X*Y*Y*Y;
+      if(h<=0){const X2=X*1.7+0.45,Y2=Y*1.7-0.6;return Math.pow(X2*X2+Y2*Y2-1,3)-X2*X2*Y2*Y2*Y2<=0?3:2}return 1},
+    sunset:(x,y)=>{
+      if(k>=6&&y>=SH-8+1.2*Math.sin(x*0.3+ph))return 6;
+      const sea=44+1.6*Math.sin(x*0.35+ph);
+      if(y>=sea){if(k>=5&&((y-sea)%7)<1.6&&Math.sin(x*0.5+y)>-0.2)return 5;return 4}
+      const dx=x-SW/2-6*Math.sin(ph),dy=y-40;if(dx*dx+dy*dy<=12*12)return 3;
+      return y<22+2*Math.sin(x*0.2+ph2)?1:2},
+    mountains:(x,y)=>{
+      if(k>=5&&y>=SH-10+1.5*Math.sin(x*0.3+ph))return 5;
+      const p1=12+R0*20,p2=34+R1*16;
+      const m1=20+Math.abs(x-p1)*1.25,m2=30+Math.abs(x-p2)*1.05;
+      if(y>=m2){return y<m2+7?4:3}
+      if(y>=m1)return y<m1+6?4:2;
+      return 1},
+    flower:(x,y)=>{
+      if(y>=SH-12+1.5*Math.sin(x*0.3+ph))return 2;
+      const cx=SW/2,cy=26;
+      if(Math.abs(x-cx)<=1.6&&y>cy)return 3;
+      const lx=x-(cx+6),ly=y-46;if(lx*lx/36+ly*ly/6<=1)return 3;
+      const dx=x-cx,dy=y-cy,d=Math.hypot(dx,dy);
+      if(d<=5)return 5;
+      const a=Math.atan2(dy,dx);if(d<=13+3.5*Math.cos(a*6+ph))return 4;
+      return 1}
+  };
+  const R0=R(),R1=R();
+  const fn=f[name];
+  for(let y=0;y<SH;y++)for(let x=0;x<SW;x++)g[y*SW+x]=fn(x,y);
+  // the colours actually used (some shapes can vanish at small sizes)
+  const used=[...new Set(g)].sort((a,b)=>a-b),remap={};used.forEach((v,i)=>remap[v]=i+1);
+  for(let i=0;i<g.length;i++)g[i]=remap[g[i]];
+  const pal=pick(used.length);
+  // buckets: share each colour across buckets so totals match exactly
+  const counts=new Array(pal.length+1).fill(0);g.forEach(v=>counts[v]++);
+  const target=Math.min(9+2*level,26),cap=g.length/target;
+  const buckets=[];
+  for(let c=1;c<=pal.length;c++){const n=Math.max(1,Math.round(counts[c]/cap));const base=Math.floor(counts[c]/n);let extra=counts[c]-base*n;
+    for(let i=0;i<n;i++)buckets.push({c,n:base+(extra-->0?1:0)})}
+  for(let i=buckets.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[buckets[i],buckets[j]]=[buckets[j],buckets[i]]}
+  const cols=level<=2?3:4,queue=[...Array(cols)].map(()=>[]);
+  buckets.forEach((b,i)=>queue[i%cols].push(b));
+  return{g,pal,queue,name,slots:level<6?5:4};
+}
+function sandStart(level){
+  const p=makePicture(level);
+  Object.assign(Z,{level,grid:p.g,pal:p.pal,queue:p.queue,belt:[],pending:[],slots:p.slots,state:'play',parts:[],confirmRestart:false,name:p.name,lastCollect:Z.t,dirty:true});
+  Z.shade=new Uint8Array(SW*SH);for(let i=0;i<Z.shade.length;i++)Z.shade[i]=Math.floor(Math.random()*34);
+  Z.remain=Z.grid.reduce((a,v)=>a+(v?1:0),0);
+  S.sandLevel=level;if(level>(S.sandBest||0))S.sandBest=level;save();sandSave();
+}
+function sandSave(){try{let gs='';for(let i=0;i<Z.grid.length;i++)gs+=String.fromCharCode(48+Z.grid[i]);
+  localStorage.setItem(SAND_KEY,JSON.stringify({level:Z.level,g:gs,pal:Z.pal,queue:Z.queue,belt:Z.belt.map(b=>({c:b.c,n:b.n,s:b.s})),pending:Z.pending,slots:Z.slots,state:Z.state==='jam'?'jam':'play',name:Z.name}))}catch(e){}}
+function sandLoad(){try{const d=JSON.parse(localStorage.getItem(SAND_KEY)||'null');if(!d||!d.g)return false;
+  Object.assign(Z,{level:d.level,pal:d.pal,queue:d.queue,belt:d.belt||[],pending:d.pending||[],slots:d.slots||5,state:d.state||'play',name:d.name||'',parts:[]});
+  Z.grid=new Uint8Array(SW*SH);for(let i=0;i<Z.grid.length;i++)Z.grid[i]=d.g.charCodeAt(i)-48;
+  Z.shade=new Uint8Array(SW*SH);for(let i=0;i<Z.shade.length;i++)Z.shade[i]=Math.floor(Math.random()*34);
+  Z.remain=Z.grid.reduce((a,v)=>a+(v?1:0),0);if(!Z.remain)Z.state='won';return true}catch(e){}return false}
+
+/* ---------- physics ---------- */
+let sframe=0;
+function sandStep(){
+  const g=Z.grid,sh=Z.shade,flip=(sframe++&1)===1;
+  for(let y=SH-2;y>=0;y--){
+    const row=y*SW;
+    for(let i=0;i<SW;i++){const x=flip?i:SW-1-i,p=row+x,c=g[p];if(!c)continue;
+      const b=p+SW;
+      if(!g[b]){g[b]=c;sh[b]=sh[p];g[p]=0;continue}
+      const d=Math.random()<0.5?-1:1;
+      if(x+d>=0&&x+d<SW&&!g[b+d]){g[b+d]=c;sh[b+d]=sh[p];g[p]=0;continue}
+      if(x-d>=0&&x-d<SW&&!g[b-d]){g[b-d]=c;sh[b-d]=sh[p];g[p]=0}
+    }
+  }
+}
+
+/* ---------- geometry ---------- */
+let SG=null;
+function sandGeom(){
+  const cv=$('#sandCv');if(!cv)return null;
+  const wrap=$('#sandWrap'),W=wrap.clientWidth,Havail=wrap.clientHeight;
+  const cellW=W/SW;
+  // belt needs about 1.75 bucket heights; bucket height ~ 6.5 cells
+  const cell=Math.max(3,Math.min(cellW,Havail/(SH+6.5*1.75+5)));
+  const sw=SW*cell,ox=(W-sw)/2,bw=cell*9,bh=cell*6.5,turn=bh*0.9;
+  const topY=SH*cell+cell*1.2,botY=topY+bh+cell*1.5,run=sw-bw;
+  const H=Math.ceil(botY+bh*0.6+cell*1.2);
+  const L=2*run+2*turn;
+  return{W,H,cell,sw,ox,bw,bh,topY,botY,run,turn,L,speed:sw/3.4};
+}
+function beltPos(s){
+  const G=SG;s=((s%G.L)+G.L)%G.L;
+  if(s<G.run)return{x:G.ox+s,y:G.topY,k:1,top:true};
+  if(s<G.run+G.turn){const t=(s-G.run)/G.turn;return{x:G.ox+G.run+G.bw*0.2*Math.sin(t*Math.PI),y:G.topY+(G.botY-G.topY)*t,k:1-0.4*t,top:false}}
+  if(s<2*G.run+G.turn){const u=s-G.run-G.turn;return{x:G.ox+G.run-u,y:G.botY,k:0.6,top:false}}
+  const t=(s-2*G.run-G.turn)/G.turn;return{x:G.ox-G.bw*0.2*Math.sin(t*Math.PI),y:G.botY+(G.topY-G.botY)*t,k:0.6+0.4*t,top:false};
+}
+const entryClear=()=>Z.belt.every(b=>{const d=((b.s%SG.L)+SG.L)%SG.L;return d>SG.bw*1.25&&SG.L-d>SG.bw*1.25});
+const onBelt=()=>Z.belt.length+Z.pending.length;
+
+/* ---------- play ---------- */
+function sendBucket(col){
+  if(Z.state!=='play')return;
+  const q=Z.queue[col];if(!q||!q.length)return;
+  if(onBelt()>=Z.slots){buzz(40);sandToast('The belt is full. Wait for a bucket to fill up.');const el=document.querySelector(`[data-sq="${col}"]`);shakeEl(el);return}
+  const b=q.shift();Z.pending.push(b);Z.confirmRestart=false;
+  renderSandQueue();sandSave();
+}
+function sandTick(dt){
+  if(Z.state!=='play')return;
+  Z.t+=dt;
+  if(Z.pending.length&&entryClear()){const b=Z.pending.shift();Z.belt.push({c:b.c,n:b.n,s:0,got:0});renderSandQueue()}
+  sandStep();sandStep();
+  const G=SG,g=Z.grid,base=(SH-1)*SW;
+  for(const b of Z.belt){
+    b.s+=G.speed*dt;
+    if(b.s>=G.L)b.s-=G.L;
+    const p=beltPos(b.s);
+    if(!p.top||b.n<=0)continue;
+    const c0=Math.max(0,Math.floor((p.x-G.ox)/G.cell+0.01)),c1=Math.min(SW-1,Math.ceil((p.x-G.ox+G.bw)/G.cell-0.01)-1);
+    for(let c=c0;c<=c1&&b.n>0;c++){
+      if(g[base+c]===b.c){g[base+c]=0;b.n--;Z.remain--;Z.lastCollect=Z.t;
+        if(Z.parts.length<260)Z.parts.push({x:G.ox+(c+0.5)*G.cell,y:(SH-0.5)*G.cell,tx:p.x+G.bw/2,ty:p.y+G.bh*0.35,t:0,c:b.c})}
+    }
+  }
+  const before=Z.belt.length;
+  Z.belt=Z.belt.filter(b=>{if(b.n<=0){Z.parts.push({pop:true,x:beltPos(b.s).x+G.bw/2,y:beltPos(b.s).y+G.bh/2,t:0,c:b.c});return false}return true});
+  if(Z.belt.length!==before)renderSandBar();
+  if(Z.remain<=0){Z.state='won';sandSave();renderSandOverlay();return}
+  const loop=G.L/G.speed;
+  if(onBelt()>=Z.slots&&!Z.pending.length&&Z.t-Z.lastCollect>loop*1.1){Z.state='jam';buzz(120);sandSave();renderSandOverlay()}
+}
+
+/* ---------- drawing ---------- */
+let sandRGB=[],sandImg=null,sandOff=null;
+function sandDraw(){
+  const cv=$('#sandCv');if(!cv||!SG)return;
+  const G=SG,dpr=Math.min(2,window.devicePixelRatio||1);
+  if(cv.width!==Math.round(G.W*dpr)||cv.height!==Math.round(G.H*dpr)){cv.width=Math.round(G.W*dpr);cv.height=Math.round(G.H*dpr);cv.style.height=G.H+'px'}
+  const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,G.W,G.H);
+  if(!sandOff){sandOff=document.createElement('canvas');sandOff.width=SW;sandOff.height=SH;sandImg=sandOff.getContext('2d').createImageData(SW,SH)}
+  sandRGB=Z.pal.map(i=>hexRGB(SCOL[i][1]));
+  const d=sandImg.data,g=Z.grid,sh=Z.shade;
+  for(let i=0;i<g.length;i++){const o=i*4,c=g[i];
+    if(!c){d[o+3]=0;continue}
+    const rgb=sandRGB[c-1],k=1-sh[i]/170;d[o]=rgb[0]*k;d[o+1]=rgb[1]*k;d[o+2]=rgb[2]*k;d[o+3]=255}
+  sandOff.getContext('2d').putImageData(sandImg,0,0);
+  // frame
+  ctx.fillStyle='rgba(10,14,30,.55)';ctx.fillRect(G.ox-2,0,G.sw+4,SH*G.cell+2);
+  ctx.imageSmoothingEnabled=false;ctx.drawImage(sandOff,G.ox,0,G.sw,SH*G.cell);
+  // belt track
+  const r=(G.botY+G.bh*0.6-G.topY)/2+4;
+  ctx.strokeStyle='#2c3866';ctx.lineWidth=3;
+  ctx.beginPath();ctx.roundRect(G.ox-G.bw*0.25,G.topY+G.bh-2,G.sw+G.bw*0.5,G.botY-G.topY-G.bh*0.4+6,12);ctx.stroke();
+  ctx.fillStyle='#2c3866';ctx.fillRect(G.ox,G.topY+G.bh-1,G.sw,3);
+  // buckets: back lane first
+  const list=Z.belt.map(b=>({b,p:beltPos(b.s)})).sort((a,b)=>a.p.k-b.p.k);
+  for(const {b,p} of list)drawBucket(ctx,p.x+(G.bw*(1-p.k))/2,p.y+(G.bh*(1-p.k)),G.bw*p.k,G.bh*p.k,b.c,b.n,p.top?1:0.85);
+  // particles
+  for(const q of Z.parts){
+    if(q.pop){ctx.globalAlpha=Math.max(0,1-q.t*2.5);ctx.strokeStyle=SCOL[Z.pal[q.c-1]][1];ctx.lineWidth=3;ctx.beginPath();ctx.arc(q.x,q.y,10+q.t*60,0,7);ctx.stroke();ctx.globalAlpha=1;continue}
+    const t=Math.min(1,q.t*5),x=q.x+(q.tx-q.x)*t,y=q.y+(q.ty-q.y)*t*t;
+    ctx.fillStyle=SCOL[Z.pal[q.c-1]][1];ctx.fillRect(x-G.cell*0.45,y-G.cell*0.45,G.cell*0.9,G.cell*0.9)}
+}
+function drawBucket(ctx,x,y,w,h,c,n,alpha){
+  const col=SCOL[Z.pal[c-1]][1];
+  ctx.globalAlpha=alpha;
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+w,y);ctx.lineTo(x+w*0.86,y+h);ctx.lineTo(x+w*0.14,y+h);ctx.closePath();
+  ctx.fillStyle=col;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='rgba(10,14,30,.55)';ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.35)';ctx.fillRect(x+w*0.04,y+2,w*0.92,Math.max(2,h*0.12));
+  if(h>18){const lum=hexRGB(col).reduce((a,v,i)=>a+v*[0.3,0.59,0.11][i],0);
+    ctx.fillStyle=lum>150?'#16203f':'#fff';ctx.font=`800 ${Math.round(h*0.42)}px Archivo, "Arial Black", system-ui, sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(n,x+w/2,y+h*0.58)}
+  ctx.globalAlpha=1;
+}
+
+/* ---------- loop ---------- */
+let sandRunning=false,sandLast=0,sandSaveT=0;
+function sandLoop(ts){
+  if(S.mode!=='sand'||document.hidden){sandRunning=false;sandSave();return}
+  const dt=Math.min(0.05,(ts-(sandLast||ts))/1000);sandLast=ts;
+  let acc=dt;while(acc>0){const h=Math.min(acc,1/60);sandTick(h);acc-=h}
+  Z.parts.forEach(q=>q.t+=dt);Z.parts=Z.parts.filter(q=>q.t<(q.pop?0.4:0.2));
+  sandDraw();
+  sandSaveT+=dt;if(sandSaveT>2){sandSaveT=0;sandSave()}
+  requestAnimationFrame(sandLoop);
+}
+function sandKick(){if(sandRunning)return;sandRunning=true;sandLast=0;requestAnimationFrame(sandLoop)}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.mode==='sand')sandKick()});
+
+/* ---------- UI ---------- */
+function sandToast(msg){const t=$('#sandToast');if(!t)return;t.textContent=msg;t.hidden=false;clearTimeout(sandToast.t);sandToast.t=setTimeout(()=>{t.hidden=true},2400)}
+function renderSandBar(){
+  const b=$('#sandBelt');if(!b)return;const n=onBelt();
+  b.innerHTML=`<span>Belt</span>${[...Array(Z.slots)].map((_,i)=>`<i class="${i<n?(n>=Z.slots?'full':'on'):''}"></i>`).join('')}`;
+}
+function renderSandQueue(){
+  const q=$('#sandQueue');if(!q)return;
+  q.style.gridTemplateColumns=`repeat(${Z.queue.length},1fr)`;
+  q.innerHTML=Z.queue.map((col,i)=>{
+    const cells=[0,1,2].map(k=>{const b=col[k];if(!b)return `<div class="sq empty"></div>`;
+      const [nm,hex]=SCOL[Z.pal[b.c-1]];
+      if(k===0)return `<button class="sq front" data-sq="${i}" style="--bc:${hex}" aria-label="Send ${nm} bucket, ${b.n} grains">${b.n}</button>`;
+      if(k===1)return `<div class="sq next" style="--bc:${hex}" aria-label="Next: ${nm}"></div>`;
+      return `<div class="sq hidden" aria-label="Hidden bucket">?</div>`}).join('');
+    return `<div class="sqcol">${cells}${col.length>3?`<div class="sqmore">+${col.length-3}</div>`:''}</div>`}).join('');
+  q.querySelectorAll('[data-sq]').forEach(b=>b.onclick=()=>sendBucket(+b.dataset.sq));
+  renderSandBar();
+}
+function renderSandOverlay(){
+  const o=$('#sandOver');if(!o)return;
+  if(Z.state==='won'){o.hidden=false;o.innerHTML=`<div><h2>Cleared!</h2><p>Level ${Z.level} done.</p><button class="btn primary" id="sandNext" style="margin-top:12px;padding:0 22px">Level ${Z.level+1}</button></div>`;
+    $('#sandNext').onclick=()=>{sandStart(Z.level+1);renderSand(true)};}
+  else if(Z.state==='jam'){o.hidden=false;o.innerHTML=`<div><h2>Belt jammed</h2><p>Every spot is taken and nothing can scoop.</p><button class="btn primary" id="sandRetry" style="margin-top:12px;padding:0 22px">Try level ${Z.level} again</button></div>`;
+    $('#sandRetry').onclick=()=>{sandStart(Z.level);renderSand(true)};}
+  else o.hidden=true;
+}
+function renderSand(full){
+  if(full||!$('#sandCv')){
+    stage.innerHTML=`<div class="solbar"><span>Level <b>${Z.level}</b></span><span class="sbelt" id="sandBelt"></span></div>
+      <div class="sandwrap" id="sandWrap"><canvas id="sandCv" aria-label="Sand picture and bucket belt"></canvas>
+        <div class="mover" id="sandOver" hidden></div><div class="mtoast" id="sandToast" hidden></div></div>
+      <div class="sandq" id="sandQueue"></div>`;
+  }
+  renderSandQueue();renderSandOverlay();
+  SG=sandGeom();
+  controls.innerHTML=`<div class="row"><button class="btn ${Z.confirmRestart?'danger':''}" id="sandRestart">${Z.confirmRestart?'Tap again to restart':'Restart level'}</button></div>`;
+  $('#sandRestart').onclick=()=>{if(Z.state!=='play'||Z.confirmRestart){sandStart(Z.level);return renderSand(true)}Z.confirmRestart=true;renderSand(false)};
+  sandDraw();sandKick();
+}
+window.addEventListener('resize',()=>{if(S.mode==='sand'){SG=sandGeom();sandDraw()}});
+if(!sandLoad())sandStart(S.sandLevel||1);
+
 /* ---------- tabs: each keeps its own round ---------- */
 function render(){
-  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else renderCon();
+  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else if(S.mode==='sand')return renderSand(true);else renderCon();
   paintClock();
 }
 function setMode(m){
@@ -947,12 +1224,14 @@ function openSheet(){
       <tr><td>Best score</td><td>${S.mergeBest||0}</td></tr><tr><td>Highest tile</td><td>${S.mergeTop||'—'}</td></tr>
       <tr><td class="h" colspan="2">Solitaire</td></tr>
       <tr><td>Won</td><td>${S.sol.won} of ${S.sol.played}</td></tr><tr><td>Fewest moves to win</td><td>${S.sol.best||'—'}</td></tr>
+      <tr><td class="h" colspan="2">Sand</td></tr>
+      <tr><td>Current level</td><td>${S.sandLevel||1}</td></tr><tr><td>Highest level</td><td>${S.sandBest||1}</td></tr>
     </table>
     <div class="row"><button class="btn ${confirmReset?'danger':''}" id="sReset">${confirmReset?'Tap again to erase stats':'Reset stats'}</button><button class="btn primary" id="sClose">Done</button></div>
   </div>`;
   $('#sRelax').onclick=()=>{S.timed=false;save();openSheet();paintClock()};
   $('#sTimed').onclick=()=>{S.timed=true;save();openSheet();paintClock()};
-  $('#sReset').onclick=()=>{if(!confirmReset){confirmReset=true;return openSheet()}const keep={timed:S.timed,mode:S.mode};S=Object.assign(blankStats(),keep,{day:today,conDeck:S.conDeck});confirmReset=false;save();openSheet()};
+  $('#sReset').onclick=()=>{if(!confirmReset){confirmReset=true;return openSheet()}const keep={timed:S.timed,mode:S.mode,sandLevel:S.sandLevel,sandBest:S.sandLevel};S=Object.assign(blankStats(),keep,{day:today,conDeck:S.conDeck});confirmReset=false;save();openSheet()};
   $('#sClose').onclick=closeSheet;
   sh.onclick=e=>{if(e.target===sh)closeSheet()};
 }
@@ -1040,7 +1319,7 @@ function drawQR(cv,text){
 }
 
 /* ---------- boot ---------- */
-const m0=['numbers','letters','conundrum','merge','solitaire'].includes(S.mode)?S.mode:'numbers';S.mode='';setMode(m0);
+const m0=['numbers','letters','conundrum','merge','solitaire','sand'].includes(S.mode)?S.mode:'numbers';S.mode='';setMode(m0);
 })();
 </script>
 
