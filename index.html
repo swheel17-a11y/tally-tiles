@@ -51,8 +51,8 @@ button:disabled{opacity:.35;cursor:default}
 .iconbtn{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--board);border:1px solid var(--board-line)}
 .iconbtn svg{width:20px;height:20px;stroke:var(--mist);fill:none;stroke-width:1.8}
 
-.modes{display:grid;grid-template-columns:repeat(4,1fr);background:var(--board);border:1px solid var(--board-line);border-radius:14px;padding:4px;gap:4px}
-.modes button{padding:9px 2px;border-radius:10px;font-weight:600;font-size:13px;color:var(--mist);min-width:0;overflow:hidden;text-overflow:ellipsis}
+.modes{display:flex;background:var(--board);border:1px solid var(--board-line);border-radius:14px;padding:4px;gap:4px}
+.modes button{flex:1 1 auto;padding:9px 5px;border-radius:10px;font-weight:600;font-size:12px;color:var(--mist);min-width:0;overflow:hidden;text-overflow:ellipsis}
 .modes button[aria-selected="true"]{background:var(--tile);color:var(--tile-ink)}
 
 /* board */
@@ -171,6 +171,28 @@ button:disabled{opacity:.35;cursor:default}
 .mover p{margin:6px 0 0;color:var(--mist)}
 .mtoast{position:absolute;left:50%;top:12px;translate:-50% 0;background:var(--brass);color:var(--brass-ink);font-weight:700;padding:8px 14px;border-radius:10px;z-index:6;white-space:nowrap;font-size:14px}
 
+
+/* solitaire */
+.solbar{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px;color:var(--mist)}
+.solbar b{color:var(--text);font-family:var(--f-mono);font-weight:500}
+.chip{padding:7px 11px;border-radius:9px;background:var(--board);border:1px solid var(--board-line);font-weight:600;font-size:13px;color:var(--text)}
+.solboard{position:relative;flex:1;min-height:320px;touch-action:none;user-select:none;-webkit-user-select:none}
+.sollayer{position:absolute;inset:0}
+.slot,.sc{position:absolute;left:0;top:0;width:var(--cw,40px);height:var(--ch,56px);border-radius:calc(var(--cw,40px)*.12)}
+.slot{border:1.5px dashed var(--board-line);display:grid;place-items:center;color:var(--board-line);font-family:var(--f-display);font-weight:800;font-size:calc(var(--cw,40px)*.42)}
+.sc{background:var(--tile);color:var(--tile-ink);box-shadow:0 1px 0 rgba(0,0,0,.35),0 0 0 1px rgba(10,14,30,.3);transition:translate .16s ease-out;font-family:var(--f-display);font-size:calc(var(--cw,40px)*.34);cursor:pointer}
+.sc.red{color:#c8352e}
+.sc .cr{position:absolute;left:7%;top:4%;font-weight:800;line-height:1;letter-spacing:-.05em;display:flex;align-items:baseline;gap:1px;font-variant-numeric:tabular-nums}
+.sc .cr small{font-size:.82em}
+.sc .cs{position:absolute;right:9%;bottom:6%;font-size:1.65em;line-height:1}
+.sc.down{background:repeating-linear-gradient(45deg,var(--brass) 0 4px,#dc9f38 4px 8px);box-shadow:inset 0 0 0 2px rgba(255,255,255,.35),0 1px 0 rgba(0,0,0,.35)}
+.sc.down>*{visibility:hidden}
+.sc.drag{transition:none;box-shadow:0 10px 22px rgba(0,0,0,.5)}
+.sc.hint,.slot.hint{outline:3px solid var(--good);outline-offset:1px}
+.sc.nope{animation:shake .3s}
+.solboard .mover{border-radius:16px}
+.solboard .mover .btn{height:48px}
+
 /* share */
 .linkbox{display:flex;gap:8px}
 .linkbox input{flex:1;min-width:0;background:var(--ground);border:1px solid var(--board-line);border-radius:10px;color:var(--text);font-family:var(--f-mono);font-size:13px;padding:0 10px;height:46px}
@@ -207,6 +229,7 @@ td.h{padding-top:14px;font-size:11px;letter-spacing:.12em;text-transform:upperca
     <button role="tab" id="tab-letters" aria-selected="false" data-mode="letters">Letters</button>
     <button role="tab" id="tab-conundrum" aria-selected="false" data-mode="conundrum">Conundrum</button>
     <button role="tab" id="tab-merge" aria-selected="false" data-mode="merge">Merge</button>
+    <button role="tab" id="tab-solitaire" aria-selected="false" data-mode="solitaire">Solitaire</button>
   </div>
   <div class="stage" id="stage"></div>
   <div class="controls" id="controls"></div>
@@ -230,7 +253,7 @@ function shakeEl(el){if(!el)return;el.classList.remove('shake');void el.offsetWi
 /* ---------- storage ---------- */
 const KEY='tally-tiles-v1';
 const blankStats=()=>({timed:false,mode:'numbers',
-  num:{rounds:0,exact:0,points:0},let:{rounds:0,points:0,best:'',nines:0},con:{played:0,solved:0,streak:0,bestStreak:0},
+  num:{rounds:0,exact:0,points:0},let:{rounds:0,points:0,best:'',nines:0},con:{played:0,solved:0,streak:0,bestStreak:0},sol:{played:0,won:0,best:0},
   day:'',dayPts:0});
 let S=blankStats();
 try{const raw=localStorage.getItem(KEY); if(raw) S=Object.assign(blankStats(),JSON.parse(raw));}catch(e){}
@@ -242,7 +265,7 @@ const addPts=p=>{S.dayPts+=p;save();};
 /* ---------- clocks: one per tab, paused while you're on another tab ---------- */
 const R=26,C=2*Math.PI*R,LIMIT=30;
 const mkClock=()=>({elapsed:0,since:null,running:false,timed:false,onEnd:null});
-const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock()};
+const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock()};
 const el=c=>c.elapsed+(c.since?(performance.now()-c.since)/1000:0);
 let looping=false;
 function clockHTML(){return `<div class="clock" id="clock"><svg viewBox="0 0 64 64"><circle class="track" cx="32" cy="32" r="${R}" fill="none" stroke-width="6"/><circle class="arc" id="arc" cx="32" cy="32" r="${R}" fill="none" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg><div class="t" id="clockT"></div></div>`}
@@ -676,9 +699,201 @@ function bindSwipe(el){
 document.addEventListener('keydown',e=>{if(S.mode!=='merge'||!$('#sheet').hidden)return;const d={ArrowLeft:'L',ArrowRight:'R',ArrowUp:'U',ArrowDown:'D'}[e.key];if(d){e.preventDefault();slide(d)}});
 if(!mLoad()){spawn();spawn();mSave()}
 
+/* =========================================================
+   SOLITAIRE (Klondike): tap to auto-move, or drag
+   ========================================================= */
+const SUITS=['♠','♥','♦','♣'],SUIT_NAMES=['spades','hearts','diamonds','clubs'];
+const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'],RANK_NAMES=['Ace','2','3','4','5','6','7','8','9','10','Jack','Queen','King'];
+const suitOf=id=>Math.floor(id/13),rankOf=id=>id%13+1,isRed=id=>{const s=suitOf(id);return s===1||s===2};
+const SOL_KEY='tally-tiles-sol-v1';
+const P={stock:[],waste:[],found:[[],[],[],[]],tab:[[],[],[],[],[],[],[]],up:{},moves:0,draw3:false,nextDraw3:false,hist:[],won:false,counted:false,confirmNew:false,finishing:false};
+const cardEl=[],pos=[];
+const core=()=>({stock:P.stock,waste:P.waste,found:P.found,tab:P.tab,up:P.up,moves:P.moves,won:P.won});
+function solSave(){try{localStorage.setItem(SOL_KEY,JSON.stringify({...core(),draw3:P.draw3,nextDraw3:P.nextDraw3,counted:P.counted,hist:P.hist.slice(-50)}))}catch(e){}}
+function solLoad(){try{const d=JSON.parse(localStorage.getItem(SOL_KEY)||'null');if(d&&d.tab){Object.assign(P,d);return true}}catch(e){}return false}
+function solNew(){
+  const d=shuffle([...Array(52).keys()]);
+  P.tab=[[],[],[],[],[],[],[]];P.up={};
+  for(let i=0;i<7;i++)for(let j=i;j<7;j++)P.tab[j].push(d.pop());
+  P.tab.forEach(c=>P.up[c[c.length-1]]=true);
+  Object.assign(P,{stock:d,waste:[],found:[[],[],[],[]],moves:0,hist:[],won:false,counted:false,confirmNew:false,draw3:P.nextDraw3});
+  solSave();
+}
+const canFound=(id,f)=>{const p=P.found[f];return p.length?suitOf(p[p.length-1])===suitOf(id)&&rankOf(id)===rankOf(p[p.length-1])+1:rankOf(id)===1};
+const canTab=(id,c)=>{const p=P.tab[c];if(!p.length)return rankOf(id)===13;const t=p[p.length-1];return P.up[t]&&isRed(t)!==isRed(id)&&rankOf(t)===rankOf(id)+1};
+function locate(id){
+  if(P.stock.includes(id))return{k:'stock'};
+  if(P.waste.includes(id))return P.waste[P.waste.length-1]===id?{k:'waste'}:{k:'under'};
+  for(let f=0;f<4;f++){const p=P.found[f];if(p.includes(id))return p[p.length-1]===id?{k:'found',i:f}:{k:'under'}}
+  for(let i=0;i<7;i++){const idx=P.tab[i].indexOf(id);if(idx>=0)return P.up[id]?{k:'tab',i,idx}:{k:'down'}}
+  return{k:'under'};
+}
+const movable=l=>l.k==='tab'||l.k==='waste'||l.k==='found';
+function srcCards(src){return src.k==='tab'?P.tab[src.i].slice(src.idx):src.k==='waste'?[P.waste[P.waste.length-1]]:[P.found[src.i][P.found[src.i].length-1]]}
+function bestDest(src){
+  const cards=srcCards(src),id=cards[0],single=cards.length===1;
+  if(single&&src.k!=='found')for(let f=0;f<4;f++)if(canFound(id,f))return{k:'found',i:f};
+  const start=src.k==='tab'?src.i+1:0;let empty=null;
+  for(let n=0;n<7;n++){const c=(start+n)%7;if(src.k==='tab'&&c===src.i)continue;
+    if(!P.tab[c].length){if(rankOf(id)===13&&!(src.k==='tab'&&src.idx===0)&&empty===null)empty=c;continue}
+    if(canTab(id,c))return{k:'tab',i:c}}
+  return empty===null?null:{k:'tab',i:empty};
+}
+function pushHist(){P.hist.push(JSON.stringify(core()));if(P.hist.length>200)P.hist.shift()}
+function solMove(src,dst){
+  pushHist();
+  let cards;
+  if(src.k==='tab')cards=P.tab[src.i].splice(src.idx);
+  else if(src.k==='waste')cards=[P.waste.pop()];
+  else cards=[P.found[src.i].pop()];
+  cards.forEach(c=>P.up[c]=true);
+  (dst.k==='tab'?P.tab[dst.i]:P.found[dst.i]).push(...cards);
+  if(src.k==='tab'){const c=P.tab[src.i];if(c.length)P.up[c[c.length-1]]=true}
+  afterSol();
+}
+function solDraw(){
+  if(!P.stock.length){if(!P.waste.length)return;pushHist();P.stock=P.waste.reverse();P.waste=[];return afterSol()}
+  pushHist();const n=P.draw3?3:1;
+  for(let i=0;i<n&&P.stock.length;i++){const c=P.stock.pop();P.up[c]=true;P.waste.push(c)}
+  afterSol();
+}
+function afterSol(){
+  P.moves++;P.confirmNew=false;
+  if(!P.counted){P.counted=true;S.sol.played++;save()}
+  if(!P.won&&P.found.every(f=>f.length===13)){P.won=true;S.sol.won++;if(!S.sol.best||P.moves<S.sol.best)S.sol.best=P.moves;save()}
+  solSave();renderSol(false);
+}
+function solUndo(){const h=P.hist.pop();if(!h)return;Object.assign(P,JSON.parse(h));P.confirmNew=false;solSave();renderSol(false)}
+const canFinish=()=>!P.won&&!P.stock.length&&!P.waste.length&&P.tab.every(c=>c.every(id=>P.up[id]));
+function solFinish(){
+  if(P.finishing)return;P.finishing=true;
+  const step=()=>{
+    if(P.won||S.mode!=='solitaire'){P.finishing=false;return S.mode==='solitaire'&&renderSol(false)}
+    let pick=null;
+    for(let i=0;i<7;i++){const c=P.tab[i];if(!c.length)continue;const id=c[c.length-1];
+      for(let f=0;f<4;f++)if(canFound(id,f)&&(!pick||rankOf(id)<rankOf(pick.id)))pick={id,i,f,idx:c.length-1}}
+    if(!pick){P.finishing=false;return renderSol(false)}
+    solMove({k:'tab',i:pick.i,idx:pick.idx},{k:'found',i:pick.f});setTimeout(step,90);
+  };step();
+}
+function findHint(){
+  const tops=[];if(P.waste.length)tops.push({k:'waste'});P.tab.forEach((c,i)=>{if(c.length)tops.push({k:'tab',i,idx:c.length-1})});
+  for(const s of tops){const id=srcCards(s)[0];for(let f=0;f<4;f++)if(canFound(id,f))return{src:s,id}}
+  for(let i=0;i<7;i++){const c=P.tab[i],first=c.findIndex(id=>P.up[id]);if(first<0)continue;
+    if(first===0&&rankOf(c[0])===13)continue;
+    const src={k:'tab',i,idx:first},d=bestDest(src);if(d&&d.k==='tab')return{src,id:c[first]}}
+  if(P.waste.length&&bestDest({k:'waste'}))return{src:{k:'waste'},id:P.waste[P.waste.length-1]};
+  if(P.stock.length||P.waste.length)return{stock:true};
+  return null;
+}
+function solToast(msg){const t=$('#solToast');if(!t)return;t.textContent=msg;t.hidden=false;clearTimeout(solToast.t);solToast.t=setTimeout(()=>{t.hidden=true},2600)}
+function flashEl(e,cls){if(!e)return;e.classList.remove(cls);void e.offsetWidth;e.classList.add(cls);setTimeout(()=>e.classList.remove(cls),1300)}
+function solHint(){
+  const h=findHint();
+  if(!h)return solToast('No moves left. Undo or deal again.');
+  if(h.stock)return flashEl(P.stock.length?cardEl[P.stock[P.stock.length-1]]:$('[data-slot="stock"]'),'hint');
+  flashEl(cardEl[h.id],'hint');
+}
+function solGeom(){
+  const b=$('#solBoard'),W=b.clientWidth,H=b.clientHeight,g=Math.max(3,Math.round(W*0.014));
+  const cw=(W-6*g)/7,ch=cw*1.42;
+  return{W,H,g,cw,ch,topH:ch+g*3,x:i=>i*(cw+g)};
+}
+let G=null;
+function layoutSol(){
+  const b=$('#solBoard');if(!b)return;G=solGeom();
+  b.style.setProperty('--cw',G.cw+'px');b.style.setProperty('--ch',G.ch+'px');
+  const slot=(n,x,y)=>{const s=b.querySelector(`[data-slot="${n}"]`);s.style.translate=`${x}px ${y}px`};
+  slot('stock',G.x(0),0);for(let f=0;f<4;f++)slot('f'+f,G.x(3+f),0);for(let i=0;i<7;i++)slot('t'+i,G.x(i),G.topH);
+  const set=(id,x,y,z,down)=>{const e=cardEl[id];pos[id]={x,y,z};e.style.translate=`${x}px ${y}px`;e.style.zIndex=z;e.classList.toggle('down',!!down)};
+  P.stock.forEach((id,k)=>set(id,G.x(0),0,10+k,true));
+  const wn=P.waste.length,vis=Math.min(3,wn);
+  P.waste.forEach((id,k)=>{const t=wn-1-k;const off=P.draw3&&t<3?(vis-1-t)*G.cw*0.32:0;set(id,G.x(1)+off,0,10+k,false)});
+  P.found.forEach((p,f)=>p.forEach((id,k)=>set(id,G.x(3+f),0,10+k,false)));
+  const avail=Math.max(0,G.H-G.topH-G.ch);
+  P.tab.forEach((col,i)=>{
+    let nd=0,nu=0;col.forEach((id,k)=>{if(k<col.length-1){if(P.up[id])nu++;else nd++}});
+    let dO=G.ch*0.11,uO=G.ch*0.3;const tot=nd*dO+nu*uO;
+    if(tot>avail&&tot>0){const f=avail/tot;dO*=f;uO*=f}
+    let y=G.topH;col.forEach((id,k)=>{set(id,G.x(i),y,10+k,!P.up[id]);y+=P.up[id]?uO:dO});
+  });
+}
+let sdrag=null;
+function bindSolBoard(b){
+  b.addEventListener('pointerdown',e=>{
+    if(e.target.closest('button')||P.won||P.finishing)return;
+    const el=e.target.closest('.sc'),sl=e.target.closest('.slot');
+    sdrag={id:el?+el.dataset.id:null,slot:sl?sl.dataset.slot:null,x0:e.clientX,y0:e.clientY,started:false,ids:[]};
+    try{b.setPointerCapture(e.pointerId)}catch(_){}
+  });
+  b.addEventListener('pointermove',e=>{
+    if(!sdrag||sdrag.id===null)return;
+    const dx=e.clientX-sdrag.x0,dy=e.clientY-sdrag.y0;
+    if(!sdrag.started){
+      if(Math.hypot(dx,dy)<8)return;
+      const loc=locate(sdrag.id);if(!movable(loc)){sdrag.id=null;return}
+      sdrag.started=true;sdrag.loc=loc;sdrag.ids=srcCards(loc);
+      sdrag.ids.forEach((id,k)=>{cardEl[id].classList.add('drag');cardEl[id].style.zIndex=300+k});
+    }
+    sdrag.ids.forEach(id=>{const p=pos[id];cardEl[id].style.translate=`${p.x+dx}px ${p.y+dy}px`});
+  });
+  const end=e=>{
+    const d=sdrag;sdrag=null;if(!d)return;
+    if(d.started){
+      d.ids.forEach(id=>cardEl[id].classList.remove('drag'));
+      const r=b.getBoundingClientRect(),bx=e.clientX-r.left,by=e.clientY-r.top;
+      const col=Math.max(0,Math.min(6,Math.floor(bx/(G.cw+G.g))));
+      let dst=null;
+      if(by<G.topH){if(col>=3&&d.ids.length===1&&canFound(d.ids[0],col-3))dst={k:'found',i:col-3}}
+      else if(!(d.loc.k==='tab'&&d.loc.i===col)&&canTab(d.ids[0],col))dst={k:'tab',i:col};
+      if(dst)return solMove(d.loc,dst);
+      return layoutSol();
+    }
+    if(e.type==='pointercancel')return;
+    // tap
+    if(d.slot==='stock'||(d.id!==null&&locate(d.id).k==='stock'))return solDraw();
+    if(d.id===null)return;
+    const loc=locate(d.id);
+    if(!movable(loc)){flashEl(cardEl[d.id],'nope');return}
+    const dst=bestDest(loc);
+    if(dst)solMove(loc,dst);else{buzz(30);flashEl(cardEl[d.id],'nope')}
+  };
+  b.addEventListener('pointerup',end);b.addEventListener('pointercancel',end);
+}
+function renderSol(full){
+  if(full||!$('#solBoard')){
+    stage.innerHTML=`<div class="solbar"><span>Moves <b id="solMoves">0</b></span><span>Won <b id="solWon">0</b></span><button class="chip" id="solDrawMode"></button></div>
+      <div class="solboard" id="solBoard">
+        <div class="slot" data-slot="stock">↻</div>${[0,1,2,3].map(f=>`<div class="slot" data-slot="f${f}">A</div>`).join('')}${[0,1,2,3,4,5,6].map(i=>`<div class="slot" data-slot="t${i}">K</div>`).join('')}
+        <div class="sollayer" id="solLayer"></div>
+        <div class="mover" id="solWin" hidden></div><div class="mtoast" id="solToast" hidden></div></div>`;
+    const layer=$('#solLayer');
+    for(let id=0;id<52;id++){const e=document.createElement('div');e.className='sc'+(isRed(id)?' red':'');e.dataset.id=id;
+      const s=SUITS[suitOf(id)]+'︎';e.setAttribute('aria-label',`${RANK_NAMES[id%13]} of ${SUIT_NAMES[suitOf(id)]}`);
+      e.innerHTML=`<span class="cr">${RANKS[id%13]}<small>${s}</small></span><span class="cs">${s}</span>`;layer.appendChild(e);cardEl[id]=e}
+    bindSolBoard($('#solBoard'));
+  }
+  $('#solMoves').textContent=P.moves;$('#solWon').textContent=`${S.sol.won} of ${S.sol.played}`;
+  const dm=$('#solDrawMode');dm.textContent=`Draw ${P.nextDraw3?3:1}${P.nextDraw3!==P.draw3?' · next deal':''}`;
+  dm.onclick=()=>{P.nextDraw3=!P.nextDraw3;if(P.moves===0){P.draw3=P.nextDraw3}solSave();renderSol(false)};
+  const win=$('#solWin');
+  if(P.won){win.hidden=false;win.innerHTML=`<div><h2>Solved!</h2><p>${P.moves} moves. Nice work.</p><button class="btn primary" id="solAgain" style="margin-top:12px;padding:0 22px">Deal again</button></div>`;$('#solAgain').onclick=()=>{solNew();renderSol(false)}}
+  else win.hidden=true;
+  layoutSol();
+  const fin=canFinish();
+  controls.innerHTML=`<div class="row"><button class="btn tall" id="solUndo" ${P.hist.length&&!P.finishing?'':'disabled'}>Undo</button>
+    ${fin?`<button class="btn tall primary" id="solFin">Finish</button>`:`<button class="btn tall" id="solHintBtn" ${P.won?'disabled':''}>Hint</button>`}
+    <button class="btn tall ${P.confirmNew?'danger':''}" id="solNewBtn">${P.confirmNew?'Tap again':'New deal'}</button></div>`;
+  $('#solUndo').onclick=solUndo;
+  if(fin)$('#solFin').onclick=solFinish;else $('#solHintBtn').onclick=solHint;
+  $('#solNewBtn').onclick=()=>{if(P.moves===0||P.won||P.confirmNew){solNew();return renderSol(false)}P.confirmNew=true;renderSol(false)};
+}
+window.addEventListener('resize',()=>{if(S.mode==='solitaire')layoutSol()});
+if(!solLoad())solNew();
+
 /* ---------- tabs: each keeps its own round ---------- */
 function render(){
-  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else renderCon();
+  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else renderCon();
   paintClock();
 }
 function setMode(m){
@@ -710,6 +925,8 @@ function openSheet(){
       <tr><td>Solved</td><td>${c.solved} of ${c.played}</td></tr><tr><td>Best streak</td><td>${c.bestStreak}</td></tr>
       <tr><td class="h" colspan="2">Merge</td></tr>
       <tr><td>Best score</td><td>${S.mergeBest||0}</td></tr><tr><td>Highest tile</td><td>${S.mergeTop||'—'}</td></tr>
+      <tr><td class="h" colspan="2">Solitaire</td></tr>
+      <tr><td>Won</td><td>${S.sol.won} of ${S.sol.played}</td></tr><tr><td>Fewest moves to win</td><td>${S.sol.best||'—'}</td></tr>
     </table>
     <div class="row"><button class="btn ${confirmReset?'danger':''}" id="sReset">${confirmReset?'Tap again to erase stats':'Reset stats'}</button><button class="btn primary" id="sClose">Done</button></div>
   </div>`;
@@ -803,7 +1020,7 @@ function drawQR(cv,text){
 }
 
 /* ---------- boot ---------- */
-const m0=['numbers','letters','conundrum','merge'].includes(S.mode)?S.mode:'numbers';S.mode='';setMode(m0);
+const m0=['numbers','letters','conundrum','merge','solitaire'].includes(S.mode)?S.mode:'numbers';S.mode='';setMode(m0);
 })();
 </script>
 
