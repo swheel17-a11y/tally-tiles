@@ -1136,8 +1136,9 @@ let sandRunning=false,sandLast=0,sandSaveT=0;
 function sandLoop(ts){
   if(S.mode!=='sand'||document.hidden){sandRunning=false;sandSave();return}
   const dt=Math.min(0.05,(ts-(sandLast||ts))/1000);sandLast=ts;
-  let acc=dt;while(acc>0){const h=Math.min(acc,1/60);sandTick(h);acc-=h}
-  Z.parts.forEach(q=>q.t+=dt);Z.parts=Z.parts.filter(q=>q.t<(q.pop?0.4:0.2));
+  const spd=S.sandSpeed||1;
+  let acc=dt*spd;while(acc>0){const h=Math.min(acc,1/60);sandTick(h);acc-=h}
+  Z.parts.forEach(q=>q.t+=dt*Math.min(spd,2));Z.parts=Z.parts.filter(q=>q.t<(q.pop?0.4:0.2));
   sandDraw();
   sandSaveT+=dt;if(sandSaveT>2){sandSaveT=0;sandSave()}
   requestAnimationFrame(sandLoop);
@@ -1181,7 +1182,10 @@ function renderSand(full){
   }
   renderSandQueue();renderSandOverlay();
   SG=sandGeom();
-  controls.innerHTML=`<div class="row"><button class="btn ${Z.confirmRestart?'danger':''}" id="sandRestart">${Z.confirmRestart?'Tap again to restart':'Restart level'}</button></div>`;
+  const spd=S.sandSpeed||1;
+  controls.innerHTML=`<div class="row"><button class="btn ${Z.confirmRestart?'danger':''}" id="sandRestart">${Z.confirmRestart?'Tap again to restart':'Restart level'}</button>
+    <button class="btn ${spd>1?'primary':''}" id="sandFF" aria-label="Game speed ${spd} times" style="flex:.7">▶▶ ${spd}×</button></div>`;
+  $('#sandFF').onclick=()=>{S.sandSpeed=spd>=3?1:spd+1;save();renderSand(false)};
   $('#sandRestart').onclick=()=>{if(Z.state!=='play'||Z.confirmRestart){sandStart(Z.level);return renderSand(true)}Z.confirmRestart=true;renderSand(false)};
   sandDraw();sandKick();
 }
