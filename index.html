@@ -177,7 +177,9 @@ button:disabled{opacity:.35;cursor:default}
 .solbar b{color:var(--text);font-family:var(--f-mono);font-weight:500}
 .chip{padding:7px 11px;border-radius:9px;background:var(--board);border:1px solid var(--board-line);font-weight:600;font-size:13px;color:var(--text)}
 .solboard{position:relative;flex:1;min-height:320px;touch-action:none;user-select:none;-webkit-user-select:none}
-.sollayer{position:absolute;inset:0}
+.sollayer{position:absolute;inset:0;pointer-events:none}
+.sollayer .sc{pointer-events:auto}
+.slot.recycle{border-color:var(--brass);color:var(--brass);border-style:solid;cursor:pointer}
 .slot,.sc{position:absolute;left:0;top:0;width:var(--cw,40px);height:var(--ch,56px);border-radius:calc(var(--cw,40px)*.12)}
 .slot{border:1.5px dashed var(--board-line);display:grid;place-items:center;color:var(--board-line);font-family:var(--f-display);font-weight:800;font-size:calc(var(--cw,40px)*.42)}
 .sc{background:var(--tile);color:var(--tile-ink);box-shadow:0 1px 0 rgba(0,0,0,.35),0 0 0 1px rgba(10,14,30,.3);transition:translate .16s ease-out;font-family:var(--f-display);font-size:calc(var(--cw,40px)*.34);cursor:pointer}
@@ -823,6 +825,7 @@ function bindSolBoard(b){
   b.addEventListener('pointerdown',e=>{
     if(e.target.closest('button')||P.won||P.finishing)return;
     const el=e.target.closest('.sc'),sl=e.target.closest('.slot');
+    {const r0=b.getBoundingClientRect(),tx=e.clientX-r0.left,ty=e.clientY-r0.top;if(G&&tx<=G.cw&&ty<=G.ch){sdrag={id:null,slot:'stock',x0:e.clientX,y0:e.clientY,started:false,ids:[]};return}}
     sdrag={id:el?+el.dataset.id:null,slot:sl?sl.dataset.slot:null,x0:e.clientX,y0:e.clientY,started:false,ids:[]};
     try{b.setPointerCapture(e.pointerId)}catch(_){}
   });
@@ -851,7 +854,9 @@ function bindSolBoard(b){
     }
     if(e.type==='pointercancel')return;
     // tap
-    if(d.slot==='stock'||(d.id!==null&&locate(d.id).k==='stock'))return solDraw();
+    const r0=b.getBoundingClientRect(),tx=e.clientX-r0.left,ty=e.clientY-r0.top;
+    const onDeck=G&&tx>=0&&tx<=G.cw&&ty>=0&&ty<=G.ch;
+    if(d.slot==='stock'||onDeck||(d.id!==null&&locate(d.id).k==='stock'))return solDraw();
     if(d.id===null)return;
     const loc=locate(d.id);
     if(!movable(loc)){flashEl(cardEl[d.id],'nope');return}
@@ -879,6 +884,7 @@ function renderSol(full){
   const win=$('#solWin');
   if(P.won){win.hidden=false;win.innerHTML=`<div><h2>Solved!</h2><p>${P.moves} moves. Nice work.</p><button class="btn primary" id="solAgain" style="margin-top:12px;padding:0 22px">Deal again</button></div>`;$('#solAgain').onclick=()=>{solNew();renderSol(false)}}
   else win.hidden=true;
+  const st=$('[data-slot="stock"]');st.classList.toggle('recycle',!P.stock.length&&P.waste.length>0);st.textContent=P.stock.length||P.waste.length?'↻':'';
   layoutSol();
   const fin=canFinish();
   controls.innerHTML=`<div class="row"><button class="btn tall" id="solUndo" ${P.hist.length&&!P.finishing?'':'disabled'}>Undo</button>
