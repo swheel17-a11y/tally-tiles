@@ -194,6 +194,8 @@ button:disabled{opacity:.35;cursor:default}
 .sc.nope{animation:shake .3s}
 .solboard .mover{border-radius:16px}
 .solboard .mover .btn{height:48px}
+.solrow{gap:6px}
+.solrow .btn{font-size:15px;padding:0 4px;min-width:0}
 
 /* share */
 .linkbox{display:flex;gap:8px}
@@ -765,6 +767,17 @@ function afterSol(){
   if(!P.won&&P.found.every(f=>f.length===13)){P.won=true;S.sol.won++;if(!S.sol.best||P.moves<S.sol.best)S.sol.best=P.moves;save()}
   solSave();renderSol(false);
 }
+function hiddenCount(){let n=P.stock.length+P.waste.length;P.tab.forEach(c=>c.forEach(id=>{if(!P.up[id])n++}));return n}
+function solShuffle(){
+  if(P.won||P.finishing||hiddenCount()<2)return;
+  pushHist();
+  const spots=[],pool=P.stock.concat(P.waste);
+  P.tab.forEach((c,i)=>c.forEach((id,k)=>{if(!P.up[id]){spots.push([i,k]);pool.push(id)}}));
+  shuffle(pool);pool.forEach(id=>delete P.up[id]);
+  spots.forEach(([i,k])=>{P.tab[i][k]=pool.pop()});
+  P.stock=pool;P.waste=[];
+  afterSol();
+}
 function solUndo(){const h=P.hist.pop();if(!h)return;Object.assign(P,JSON.parse(h));P.confirmNew=false;solSave();renderSol(false)}
 const canFinish=()=>!P.won&&!P.stock.length&&!P.waste.length&&P.tab.every(c=>c.every(id=>P.up[id]));
 function solFinish(){
@@ -887,10 +900,11 @@ function renderSol(full){
   const st=$('[data-slot="stock"]');st.classList.toggle('recycle',!P.stock.length&&P.waste.length>0);st.textContent=P.stock.length||P.waste.length?'↻':'';
   layoutSol();
   const fin=canFinish();
-  controls.innerHTML=`<div class="row"><button class="btn tall" id="solUndo" ${P.hist.length&&!P.finishing?'':'disabled'}>Undo</button>
+  controls.innerHTML=`<div class="row solrow"><button class="btn tall" id="solUndo" ${P.hist.length&&!P.finishing?'':'disabled'}>Undo</button>
     ${fin?`<button class="btn tall primary" id="solFin">Finish</button>`:`<button class="btn tall" id="solHintBtn" ${P.won?'disabled':''}>Hint</button>`}
+    <button class="btn tall" id="solShuf" ${P.won||P.finishing||hiddenCount()<2?'disabled':''}>Shuffle</button>
     <button class="btn tall ${P.confirmNew?'danger':''}" id="solNewBtn">${P.confirmNew?'Tap again':'New deal'}</button></div>`;
-  $('#solUndo').onclick=solUndo;
+  $('#solUndo').onclick=solUndo;$('#solShuf').onclick=solShuffle;
   if(fin)$('#solFin').onclick=solFinish;else $('#solHintBtn').onclick=solHint;
   $('#solNewBtn').onclick=()=>{if(P.moves===0||P.won||P.confirmNew){solNew();return renderSol(false)}P.confirmNew=true;renderSol(false)};
 }
