@@ -216,6 +216,36 @@ button:disabled{opacity:.35;cursor:default}
 .sq.empty{height:24px}
 .sqmore{font-size:11px;color:var(--mist);font-family:var(--f-mono)}
 
+
+/* yard */
+.ycard{background:var(--board);border:1px solid var(--board-line);border-radius:18px;padding:12px 14px}
+.ycash{font-family:var(--f-mono);font-size:40px;line-height:1.1;color:var(--brass);font-variant-numeric:tabular-nums;text-shadow:0 0 18px rgba(242,182,74,.3)}
+.yrate{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-family:var(--f-mono);font-size:14px;color:var(--text)}
+.ychip{font-family:var(--f-body);font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:rgba(95,211,154,.15);color:var(--good)}
+.yaway{position:static;translate:none;white-space:normal;text-align:center}
+.ybuy{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--board);border:1px solid var(--board-line);border-radius:12px;padding:4px}
+.ybuy button{padding:8px;border-radius:9px;font-weight:700;color:var(--mist);font-size:14px}
+.ybuy button[aria-pressed="true"]{background:var(--tile);color:var(--tile-ink)}
+.ylist{display:flex;flex-direction:column;gap:6px}
+.yrow{display:flex;align-items:center;gap:10px;background:var(--board);border:1px solid var(--board-line);border-radius:14px;padding:8px 8px 8px 12px}
+.yrow.locked{opacity:.5}
+.yinfo{flex:1;min-width:0}
+.yname{font-weight:700;font-size:15px;display:flex;gap:8px;align-items:baseline}
+.yname b{font-family:var(--f-mono);font-weight:500;color:var(--brass);font-size:14px}
+.ydesc{font-size:12.5px;color:var(--mist);line-height:1.35}
+.ybtn{flex:none;min-width:92px;height:48px;border-radius:11px;background:var(--brass);color:var(--brass-ink);font-family:var(--f-mono);font-size:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15}
+.ybtn small{font-family:var(--f-body);font-size:11px;font-weight:600;opacity:.75}
+.ybtn:disabled{background:var(--ground);color:var(--mist);opacity:1}
+.ysec{display:flex;flex-direction:column;gap:8px}
+.yupg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.yu{text-align:left;background:var(--board);border:1px solid var(--brass);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+.yu b{font-size:13px}.yu span{font-size:12px;color:var(--mist)}.yu i{font-style:normal;font-family:var(--f-mono);color:var(--brass);font-size:13px}
+.yu:disabled{border-color:var(--board-line);opacity:.55}
+.ycut{position:relative;overflow:visible;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;height:72px}
+.ycut small{font-family:var(--f-mono);font-size:13px;font-weight:500;opacity:.8}
+.yfloat{position:absolute;top:0;font-family:var(--f-mono);font-weight:500;color:var(--brass);pointer-events:none;animation:yfloat .7s ease-out forwards;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+@keyframes yfloat{from{transform:translate(-50%,0);opacity:1}to{transform:translate(-50%,-56px);opacity:0}}
+
 /* share */
 .linkbox{display:flex;gap:8px}
 .linkbox input{flex:1;min-width:0;background:var(--ground);border:1px solid var(--board-line);border-radius:10px;color:var(--text);font-family:var(--f-mono);font-size:13px;padding:0 10px;height:46px}
@@ -254,6 +284,7 @@ td.h{padding-top:14px;font-size:11px;letter-spacing:.12em;text-transform:upperca
     <button role="tab" id="tab-merge" aria-selected="false" data-mode="merge">Merge</button>
     <button role="tab" id="tab-solitaire" aria-selected="false" data-mode="solitaire">Solitaire</button>
     <button role="tab" id="tab-sand" aria-selected="false" data-mode="sand">Sand</button>
+    <button role="tab" id="tab-yard" aria-selected="false" data-mode="yard">Yard</button>
   </div>
   <div class="stage" id="stage"></div>
   <div class="controls" id="controls"></div>
@@ -289,7 +320,7 @@ const addPts=p=>{S.dayPts+=p;save();};
 /* ---------- clocks: one per tab, paused while you're on another tab ---------- */
 const R=26,C=2*Math.PI*R,LIMIT=30;
 const mkClock=()=>({elapsed:0,since:null,running:false,timed:false,onEnd:null});
-const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock(),sand:mkClock()};
+const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock(),sand:mkClock(),yard:mkClock()};
 const el=c=>c.elapsed+(c.since?(performance.now()-c.since)/1000:0);
 let looping=false;
 function clockHTML(){return `<div class="clock" id="clock"><svg viewBox="0 0 64 64"><circle class="track" cx="32" cy="32" r="${R}" fill="none" stroke-width="6"/><circle class="arc" id="arc" cx="32" cy="32" r="${R}" fill="none" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg><div class="t" id="clockT"></div></div>`}
@@ -1273,15 +1304,152 @@ function renderSand(full){
 window.addEventListener('resize',()=>{if(S.mode==='sand'&&Z.ready){SG=sandGeom();sandDraw()}});
 if(sandLoad())setTimeout(()=>requestBuild(Z.level+1).then(()=>sandSave()),1500);
 
+/* =========================================================
+   YARD: lumber yard tycoon (incremental)
+   ========================================================= */
+const YARD_KEY='tally-tiles-yard-v1';
+const PROD=[
+  {id:'lab',name:'Day laborer',desc:'A handsaw and a strong back',cost:15,rate:0.4},
+  {id:'saw',name:'Chainsaw crew',desc:'Bucks logs on the landing',cost:110,rate:3},
+  {id:'mill',name:'Portable sawmill',desc:'Turns logs into rough boards',cost:1200,rate:20},
+  {id:'plan',name:'Planer mill',desc:'S4S, ready for the rack',cost:13e3,rate:110},
+  {id:'kiln',name:'Dry kiln',desc:'KD lumber sells for more',cost:14e4,rate:650},
+  {id:'treat',name:'Treating plant',desc:'Ground-contact rated',cost:1.6e6,rate:3800},
+  {id:'truss',name:'Truss shop',desc:'Roof and floor trusses to order',cost:1.9e7,rate:23e3},
+  {id:'fleet',name:'Delivery fleet',desc:'Boom trucks on every jobsite',cost:2.3e8,rate:14e4},
+  {id:'land',name:'Timberland tract',desc:'Your own trees, forever',cost:2.8e9,rate:85e4},
+  {id:'dc',name:'Distribution center',desc:'Rail cars in, flatbeds out',cost:3.6e10,rate:5.5e6},
+  {id:'fut',name:'Lumber futures desk',desc:'Buy low, frame high',cost:4.8e11,rate:3.6e7},
+  {id:'chain',name:'National lumber chain',desc:'A yard in every town',cost:6.5e12,rate:2.5e8}
+];
+const TIERS=[[10,20,'Better PPE'],[25,200,'Sharper teeth'],[50,5e3,'Second shift'],[100,5e5,'Lean workflow'],[150,5e7,'Automation'],[200,5e9,'Industry leader']];
+const UPGRADES=[];
+PROD.forEach((p,i)=>TIERS.forEach(([need,m,name],t)=>UPGRADES.push({id:`${p.id}${t}`,name,target:i,need,cost:p.cost*m,kind:'prod',text:`${p.name} ×2`})));
+[
+  {id:'tap1',name:'Sharp handsaw',cost:100,kind:'tapx',v:2,text:'Cutting ×2'},
+  {id:'tap2',name:'Speed square',cost:2500,kind:'tapp',v:0.01,text:'Each cut +1% of $/sec'},
+  {id:'tap3',name:'Worm-drive saw',cost:6e4,kind:'tapp',v:0.02,text:'Each cut +2% of $/sec'},
+  {id:'tap4',name:'Track saw',cost:8e6,kind:'tapp',v:0.04,text:'Each cut +4% of $/sec'},
+  {id:'tap5',name:'Panel saw',cost:2e9,kind:'tapp',v:0.08,text:'Each cut +8% of $/sec'},
+  {id:'g1',name:'Hire an estimator',cost:5e4,kind:'glob',v:0.10,text:'Win more bids: all sales +10%'},
+  {id:'g2',name:'Takeoff software',cost:5e6,kind:'glob',v:0.15,text:'Faster bids: all sales +15%'},
+  {id:'g3',name:'Contractor accounts',cost:5e8,kind:'glob',v:0.25,text:'Repeat builders: all sales +25%'},
+  {id:'g4',name:'Rail spur',cost:5e10,kind:'glob',v:0.50,text:'Cheaper freight: all sales +50%'},
+  {id:'g5',name:'Mill-direct pricing',cost:5e12,kind:'glob',v:1.00,text:'Cut out the middleman: all sales +100%'}
+].forEach(u=>UPGRADES.push(u));
+const UPG_BY_ID=Object.fromEntries(UPGRADES.map(u=>[u.id,u]));
+const blankYard=()=>({cash:0,owned:PROD.map(()=>0),upg:[],run:0,total:0,rep:0,sold:0,cuts:0,last:Date.now(),buy:1,seen:0});
+let Y=blankYard(),yardAway=null,yardConfirm=false;
+try{const d=JSON.parse(localStorage.getItem(YARD_KEY)||'null');if(d)Y=Object.assign(blankYard(),d,{owned:PROD.map((_,i)=>(d.owned||[])[i]||0)})}catch(e){}
+const yardSave=()=>{try{localStorage.setItem(YARD_KEY,JSON.stringify(Y))}catch(e){}};
+
+/* ---------- numbers ---------- */
+const SUFX=['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc'];
+function money(v){
+  if(!isFinite(v))return '∞';
+  if(v<1000)return '$'+(v<10&&v%1?v.toFixed(2):v<100&&v%1?v.toFixed(1):Math.floor(v).toLocaleString());
+  const e=Math.floor(Math.log10(v)/3);
+  if(e<SUFX.length){const n=v/Math.pow(1000,e);return '$'+(n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+SUFX[e]}
+  return '$'+v.toExponential(2).replace('+','');
+}
+const has=id=>Y.upg.includes(id);
+const repMult=()=>1+0.05*Y.rep;
+const globMult=()=>UPGRADES.filter(u=>u.kind==='glob'&&has(u.id)).reduce((m,u)=>m*(1+u.v),1);
+function prodRate(i){let r=PROD[i].rate;UPGRADES.forEach(u=>{if(u.kind==='prod'&&u.target===i&&has(u.id))r*=2});return r*repMult()*globMult()}
+const totalRate=()=>PROD.reduce((a,_,i)=>a+Y.owned[i]*prodRate(i),0);
+function tapValue(){let t=1;UPGRADES.forEach(u=>{if(!has(u.id))return;if(u.kind==='tapx')t*=u.v});
+  const pct=UPGRADES.filter(u=>u.kind==='tapp'&&has(u.id)).reduce((a,u)=>a+u.v,0);return t*repMult()+pct*totalRate()}
+const unitCost=i=>PROD[i].cost*Math.pow(1.15,Y.owned[i]);
+const bulkCost=(i,k)=>unitCost(i)*(Math.pow(1.15,k)-1)/0.15;
+function buyCount(i){if(Y.buy!=='max')return Y.buy;const c=unitCost(i);return Math.max(1,Math.floor(Math.log(Y.cash*0.15/c+1)/Math.log(1.15)))}
+const repGain=()=>Math.floor(Math.sqrt(Y.run/1e9));
+
+/* ---------- actions ---------- */
+function earn(v){Y.cash+=v;Y.run+=v;Y.total+=v}
+function buyProd(i){const k=buyCount(i),c=bulkCost(i,k);if(Y.cash<c){buzz(30);return}Y.cash-=c;Y.owned[i]+=k;yardConfirm=false;yardSave();yardUpdate(true)}
+function buyUpg(id){const u=UPG_BY_ID[id];if(!u||has(id)||Y.cash<u.cost){buzz(30);return}Y.cash-=u.cost;Y.upg.push(id);yardSave();yardUpdate(true)}
+function cutBoard(e){const v=tapValue();earn(v);Y.cuts++;buzz(8);
+  const b=$('#yardCut');if(b){const f=document.createElement('span');f.className='yfloat';f.textContent='+'+money(v);
+    const r=b.getBoundingClientRect(),x=(e&&e.clientX?e.clientX-r.left:r.width/2)+(Math.random()*30-15);f.style.left=x+'px';b.appendChild(f);setTimeout(()=>f.remove(),700)}
+  yardUpdate(false)}
+function sellYard(){const g=repGain();if(g<1)return;
+  if(!yardConfirm){yardConfirm=true;return yardUpdate(true)}
+  Y.rep+=g;Y.sold++;Object.assign(Y,{cash:0,owned:PROD.map(()=>0),upg:[],run:0});yardConfirm=false;yardSave();renderYard(true)}
+
+/* ---------- time: runs on every tab, and catches up after the app was closed ---------- */
+function yardTick(){
+  const now=Date.now(),dt=Math.min(8*3600,Math.max(0,(now-Y.last)/1000));Y.last=now;
+  if(dt>0){const r=totalRate();earn(r*dt);if(dt>60&&r>0)yardAway={secs:dt,amt:r*dt}}
+  if(S.mode==='yard'&&$('#yardCash'))yardUpdate(false);
+}
+setInterval(yardTick,250);setInterval(yardSave,5000);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)yardSave();else yardTick()});
+const dur=s=>s>=3600?`${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}m`:`${Math.floor(s/60)}m`;
+
+/* ---------- UI ---------- */
+function renderYard(full){
+  yardTick();
+  stage.innerHTML=`<div class="ycard"><div class="eyebrow">Cash</div><div class="ycash" id="yardCash"></div>
+      <div class="yrate"><span id="yardRate"></span><span id="yardRep" class="ychip"></span></div></div>
+    <div class="mtoast yaway" id="yardAway" hidden></div>
+    <div class="ybuy" role="group" aria-label="Buy amount">${[1,10,'max'].map(v=>`<button data-yb="${v}" aria-pressed="${Y.buy===v}">${v==='max'?'Max':'×'+v}</button>`).join('')}</div>
+    <div class="ylist" id="yardList">${PROD.map((p,i)=>`<div class="yrow" id="yr${i}">
+        <div class="yinfo"><div class="yname"><span id="yn${i}"></span><b id="yo${i}"></b></div><div class="ydesc" id="yd${i}"></div></div>
+        <button class="ybtn" id="yb${i}" data-yp="${i}"><span id="yc${i}"></span><small id="yk${i}"></small></button></div>`).join('')}</div>
+    <div class="ysec"><div class="eyebrow">Upgrades</div><div class="yupg" id="yardUpg"></div></div>
+    <div class="ysec"><div class="eyebrow">Sell the yard</div>
+      <div class="ydesc" id="yardSellTxt"></div>
+      <button class="btn" id="yardSell"></button></div>`;
+  stage.querySelectorAll('[data-yb]').forEach(b=>b.onclick=()=>{const v=b.dataset.yb;Y.buy=v==='max'?'max':+v;yardSave();stage.querySelectorAll('[data-yb]').forEach(x=>x.setAttribute('aria-pressed',x===b));yardUpdate(true)});
+  stage.querySelectorAll('[data-yp]').forEach(b=>b.onclick=()=>buyProd(+b.dataset.yp));
+  $('#yardSell').onclick=sellYard;
+  controls.innerHTML=`<button class="btn primary tall ycut" id="yardCut"><span>Cut a board</span><small id="yardTap"></small></button>`;
+  $('#yardCut').onclick=cutBoard;
+  yardUpdate(true);
+  if(yardAway){const a=$('#yardAway');a.textContent=`While you were away (${dur(yardAway.secs)}), the yard made ${money(yardAway.amt)}.`;a.hidden=false;yardAway=null;setTimeout(()=>{a.hidden=true},4500)}
+}
+let yardUpgKey='';
+function yardUpdate(structure){
+  if(!$('#yardCash'))return;
+  const rate=totalRate();
+  $('#yardCash').textContent=money(Y.cash);
+  $('#yardRate').textContent=`${money(rate)}/sec`;
+  const rp=$('#yardRep');rp.hidden=!Y.rep;rp.textContent=`Reputation ${Y.rep} · +${Math.round(Y.rep*5)}%`;
+  $('#yardTap').textContent=`+${money(tapValue())} per cut`;
+  let reveal=0;
+  PROD.forEach((p,i)=>{
+    const shown=i===0||Y.owned[i]>0||Y.owned[i-1]>0||Y.run>=p.cost*0.4;
+    if(shown)reveal=i;
+    const row=$('#yr'+i);row.hidden=!(shown||i===reveal+1);
+    const locked=!shown;row.classList.toggle('locked',locked);
+    $('#yn'+i).textContent=locked?'???':p.name;
+    $('#yo'+i).textContent=Y.owned[i]?Y.owned[i]:'';
+    $('#yd'+i).textContent=locked?`Earn ${money(p.cost*0.4)} to find out`:Y.owned[i]?`${money(prodRate(i))}/sec each · ${money(prodRate(i)*Y.owned[i])}/sec total`:`${p.desc} · ${money(prodRate(i))}/sec`;
+    const k=buyCount(i),c=bulkCost(i,k),btn=$('#yb'+i);
+    btn.disabled=locked||Y.cash<c;$('#yc'+i).textContent=money(c);$('#yk'+i).textContent=k>1?`buy ${k}`:'buy';
+  });
+  // upgrades: everything you qualify for, cheapest first
+  const avail=UPGRADES.filter(u=>!has(u.id)&&(u.kind!=='prod'||Y.owned[u.target]>=u.need)&&Y.run>=u.cost*0.3).sort((a,b)=>a.cost-b.cost).slice(0,8);
+  const key=avail.map(u=>u.id).join(',');
+  if(structure||key!==yardUpgKey){yardUpgKey=key;
+    $('#yardUpg').innerHTML=avail.length?avail.map(u=>`<button class="yu" data-yu="${u.id}"><b>${u.kind==='prod'?PROD[u.target].name+': ':''}${u.name}</b><span>${u.text}</span><i>${money(u.cost)}</i></button>`).join(''):`<div class="ydesc">More upgrades unlock as the yard grows.</div>`;
+    $('#yardUpg').querySelectorAll('[data-yu]').forEach(b=>b.onclick=()=>buyUpg(b.dataset.yu))}
+  $('#yardUpg').querySelectorAll('[data-yu]').forEach(b=>{b.disabled=Y.cash<UPG_BY_ID[b.dataset.yu].cost});
+  const g=repGain();
+  $('#yardSellTxt').textContent=g>=1?`Start over with nothing but your name. You'd gain ${g} reputation (+${g*5}% to everything, forever).`:`Make ${money(1e9)} this run to earn your first reputation. Each point is +5% to everything, forever.`;
+  const sb=$('#yardSell');sb.disabled=g<1;sb.textContent=yardConfirm?`Tap again to sell for ${g} reputation`:`Sell the yard`;sb.classList.toggle('danger',yardConfirm);
+}
+
 /* ---------- tabs: each keeps its own round ---------- */
 function render(){
-  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else if(S.mode==='sand')return renderSand(true);else renderCon();
+  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else if(S.mode==='sand')return renderSand(true);else if(S.mode==='yard')return renderYard(true);else renderCon();
   paintClock();
 }
 function setMode(m){
   if(S.mode&&S.mode!==m)pauseClock(S.mode);
   S.mode=m;save();
   document.querySelectorAll('.modes button').forEach(b=>b.setAttribute('aria-selected',b.dataset.mode===m));
+  try{const t=document.querySelector(`.modes [data-mode="${m}"]`);const bar=t.parentElement;bar.scrollTo({left:Math.max(0,t.offsetLeft-bar.clientWidth/2+t.offsetWidth/2),behavior:'smooth'})}catch(e){}
   if(m==='numbers'&&!N.pool.length&&N.phase==='play')return dealNumbers(1);
   if(m==='conundrum'&&!K.answer)return newConundrum();
   render();resumeClock(m);
@@ -1311,6 +1479,8 @@ function openSheet(){
       <tr><td>Won</td><td>${S.sol.won} of ${S.sol.played}</td></tr><tr><td>Fewest moves to win</td><td>${S.sol.best||'—'}</td></tr>
       <tr><td class="h" colspan="2">Sand</td></tr>
       <tr><td>Current level</td><td>${S.sandLevel||1}</td></tr><tr><td>Highest level</td><td>${S.sandBest||1}</td></tr>
+      <tr><td class="h" colspan="2">Yard</td></tr>
+      <tr><td>Earned all time</td><td>${money(Y.total)}</td></tr><tr><td>Reputation</td><td>${Y.rep}</td></tr><tr><td>Times sold</td><td>${Y.sold}</td></tr><tr><td>Boards cut by hand</td><td>${Y.cuts.toLocaleString()}</td></tr>
     </table>
     <div class="row"><button class="btn ${confirmReset?'danger':''}" id="sReset">${confirmReset?'Tap again to erase stats':'Reset stats'}</button><button class="btn primary" id="sClose">Done</button></div>
   </div>`;
@@ -1404,7 +1574,7 @@ function drawQR(cv,text){
 }
 
 /* ---------- boot ---------- */
-const m0=['numbers','letters','conundrum','merge','solitaire','sand'].includes(S.mode)?S.mode:'numbers';S.mode='';setMode(m0);
+const m0=['numbers','letters','conundrum','merge','solitaire','sand','yard'].includes(S.mode)?S.mode:'numbers';S.mode='';setMode(m0);
 })();
 </script>
 
