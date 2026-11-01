@@ -201,7 +201,7 @@ button:disabled{opacity:.35;cursor:default}
 
 /* sand */
 .sandwrap{position:relative;flex:1;min-height:260px;overflow:hidden}
-.sandwrap canvas{display:block;width:100%;touch-action:manipulation}
+.sandwrap canvas{position:absolute;left:0;top:0;display:block;width:100%;touch-action:manipulation}
 .sbelt{display:flex;align-items:center;gap:5px}
 .sbelt i{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--board-line);display:block}
 .sbelt i.on{background:var(--brass);border-color:var(--brass)}
@@ -942,8 +942,8 @@ function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1
 const Z={ready:false,level:1,grid:new Uint8Array(SW*SH),shade:new Uint8Array(SW*SH),pal:[],queue:[],belt:[],pending:[],slots:5,remain:0,state:'play',lastCollect:0,t:0,parts:[],dirty:true,confirmRestart:false,name:''};
 
 /* ---------- pictures ---------- */
-function makePicture(level){
-  const R=mulberry(level*7919+13);
+function makePicture(level,variant=0){
+  const R=mulberry(level*7919+13+variant*104729);
   const k=Math.min(3+Math.floor((level-1)/2),6);
   const pick=n=>{const ids=[...SCOL.keys()];for(let i=ids.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[ids[i],ids[j]]=[ids[j],ids[i]]}return ids.slice(0,n)};
   const tpl=[];
@@ -1001,40 +1001,36 @@ function makePicture(level){
 /* ---------- physics ---------- */
 let sframe=0;
 function sandStep(g=Z.grid,sh=Z.shade,rand=Math.random){
+  // g.empty[y] counts open cells per row; a row can only move if the row under it has room
+  let E=g.empty;
+  if(!E){E=g.empty=new Int32Array(SH);for(let i=0;i<g.length;i++)if(!g[i])E[(i/SW)|0]++}
   const flip=(sframe++&1)===1;
   for(let y=SH-2;y>=0;y--){
+    if(E[y+1]===0||E[y]===SW)continue;
     const row=y*SW;
     for(let i=0;i<SW;i++){const x=flip?i:SW-1-i,p=row+x,c=g[p];if(!c)continue;
-      const b=p+SW;
-      if(!g[b]){g[b]=c;sh[b]=sh[p];g[p]=0;continue}
-      const d=rand()<0.5?-1:1;
-      if(x+d>=0&&x+d<SW&&!g[b+d]){g[b+d]=c;sh[b+d]=sh[p];g[p]=0;continue}
-      if(x-d>=0&&x-d<SW&&!g[b-d]){g[b-d]=c;sh[b-d]=sh[p];g[p]=0}
+      const b=p+SW;let q=-1;
+      if(!g[b])q=b;
+      else{const d=rand()<0.5?-1:1;
+        if(x+d>=0&&x+d<SW&&!g[b+d])q=b+d;else if(x-d>=0&&x-d<SW&&!g[b-d])q=b-d}
+      if(q>=0){g[q]=c;sh[q]=sh[p];g[p]=0;E[y]++;E[y+1]--;if(E[y+1]===0)break}
     }
   }
 }
 
-
 /* ---------- belt rules (shared by the game and the hidden test plays) ---------- */
-const LANE=6,BWG=13.5,BHG=9,PER=2*(SW+2*LANE)+2*(SH+2*LANE),SPD=57,SIDEDEPTH=4,EXT=LANE+BHG/2+0.8;
-function pathAt(s){s=((s%PER)+PER)%PER;const w=SW+2*LANE,h=SH+2*LANE;
-  if(s<w)return{x:-LANE+s,y:SH+LANE,side:'b'};s-=w;
-  if(s<h)return{x:SW+LANE,y:SH+LANE-s,side:'r'};s-=h;
-  if(s<w)return{x:SW+LANE-s,y:-LANE,side:'t'};s-=w;
-  return{x:-LANE,y:-LANE+s,side:'l'}}
-// scoop matching grains next to the bucket; take(i) is told about each grain taken
-function scoop(g,b,p,take){let got=0;const half=BWG/2;
-  if(p.side==='b'||p.side==='t'){const c0=Math.max(0,Math.ceil(p.x-half)),c1=Math.min(SW-1,Math.floor(p.x+half-0.001));
-    for(let c=c0;c<=c1&&b.n>0;c++){
-      if(p.side==='b'){const i=(SH-1)*SW+c;if(g[i]===b.c){g[i]=0;b.n--;got++;take&&take(i)}}
-      else for(let y=0;y<SH;y++){const i=y*SW+c;if(g[i]){if(g[i]===b.c){g[i]=0;b.n--;got++;take&&take(i)}break}}}}
-  else{const r0=Math.max(0,Math.ceil(p.y-half)),r1=Math.min(SH-1,Math.floor(p.y+half-0.001));
-    for(let y=r0;y<=r1&&b.n>0;y++)for(let k=0;k<SIDEDEPTH;k++){const x=p.side==='r'?SW-1-k:k,i=y*SW+x;if(g[i]){if(g[i]===b.c){g[i]=0;b.n--;got++;take&&take(i)}break}}}
+// the belt runs under the picture: buckets scoop the bottom row on the top run, then ride the return lane back
+const BWG=13.5,BHG=9,TURN=10,RUN=SW-BWG+3,PER=2*RUN+2*TURN,SPD=57,TOPY=SH+BHG/2+0.6,RETY=TOPY+BHG*1.15;
+function pathAt(s){s=((s%PER)+PER)%PER;
+  if(s<RUN)return{x:BWG/2-1.5+s,y:TOPY,side:'b',k:1};s-=RUN;
+  if(s<TURN){const t=s/TURN;return{x:SW-BWG/2+1.5+BWG*0.22*Math.sin(t*Math.PI),y:TOPY+(RETY-TOPY)*t,side:'turn',k:1-0.35*t}}s-=TURN;
+  if(s<RUN)return{x:SW-BWG/2+1.5-s,y:RETY,side:'ret',k:0.65};s-=RUN;
+  const t=s/TURN;return{x:BWG/2-1.5-BWG*0.22*Math.sin(t*Math.PI),y:RETY+(TOPY-RETY)*t,side:'turn',k:0.65+0.35*t}}
+function scoop(g,b,p,take){if(p.side!=='b')return 0;let got=0;const half=BWG/2,base=(SH-1)*SW;
+  const c0=Math.max(0,Math.ceil(p.x-half-0.001)),c1=Math.min(SW-1,Math.floor(p.x+half-0.001));
+  for(let c=c0;c<=c1&&b.n>0;c++){const i=base+c;if(g[i]===b.c){g[i]=0;b.n--;got++;if(g.empty)g.empty[SH-1]++;take&&take(i)}}
   return got}
-function exposure(g){const e={};const add=v=>{if(v)e[v]=(e[v]||0)+1};
-  for(let c=0;c<SW;c++){add(g[(SH-1)*SW+c]);for(let y=0;y<SH;y++){const v=g[y*SW+c];if(v){add(v);break}}}
-  for(let y=0;y<SH;y++)for(const side of [0,1])for(let k=0;k<SIDEDEPTH;k++){const x=side?SW-1-k:k,v=g[y*SW+x];if(v){add(v);break}}
-  return e}
+function exposure(g){const e={},base=(SH-1)*SW;for(let c=0;c<SW;c++){const v=g[base+c];if(v)e[v]=(e[v]||0)+1}return e}
 const entryFree=belt=>belt.every(b=>{const d=((b.s%PER)+PER)%PER;return d>BWG*1.3&&PER-d>BWG*1.3});
 // hidden play-through. options() lists what can be sent; pick() chooses one or -1
 function simPlay(g0,options,slots,R,pick){
@@ -1044,7 +1040,7 @@ function simPlay(g0,options,slots,R,pick){
     if(t%6===0&&belt.length<slots&&entryFree(belt)){
       const opts=options();
       if(opts.length){const ex=exposure(g),need={};belt.forEach(b=>need[b.c]=(need[b.c]||0)+b.n);
-        const i=pick(opts,ex,need,R);if(i>=0){const bk=opts[i].take();order.push(bk);belt.push({c:bk.c,n:bk.n,s:0})}}}
+        const i=pick(opts,ex,need,R,belt.length);if(i>=0){const bk=opts[i].take();order.push(bk);belt.push({c:bk.c,n:bk.n,s:0})}}}
     sandStep(g,sh,R);sandStep(g,sh,R);
     for(const b of belt){b.s=(b.s+SPD*dt)%PER;if(b.n>0){const got=scoop(g,b,pathAt(b.s));if(got){remain-=got;last=t}}}
     for(let i=belt.length-1;i>=0;i--)if(belt[i].n<=0)belt.splice(i,1);
@@ -1058,31 +1054,40 @@ function toColumns(order,cols){const q=[...Array(cols)].map(()=>[]);order.forEac
 function frontOnlyWins(g,queue,slots,R){
   const q=queue.map(c=>c.map(b=>({...b})));
   return simPlay(g,()=>q.map(col=>col.length?{c:col[0].c,n:col[0].n,take:()=>col.shift()}:null).filter(Boolean),slots,R,greedyPick(0)).ok}
-// build a level whose bucket queue has been beaten by a front-buckets-only test play
+// a player who simply takes buckets in the intended order, waiting until each colour is showing
+function replayWins(g,order,slots,R){let i=0;const o=order.map(b=>({...b}));
+  return simPlay(g,()=>i<o.length?[{c:o[i].c,n:o[i].n,take:()=>o[i++]}]:[],slots,R,(opts,ex,need,R,onb)=>{const e=(ex[opts[0].c]||0);return e>=Math.min(6,opts[0].n)||onb===0?0:-1}).ok}
+// build a level that has been beaten twice, with different sand movement each time, using only front buckets
 function buildLevel(level){
-  const p=makePicture(level),R=mulberry(level*31+7);
-  let safe=null;
-  for(let k=0;k<8&&!safe;k++){const pool=p.buckets.map(x=>({...x}));
-    const r=simPlay(p.g,()=>pool.map((b,i)=>({c:b.c,n:b.n,take:()=>pool.splice(i,1)[0]})),p.slots,R,greedyPick(k?0.8:0));if(r.ok)safe=r.order}
-  if(!safe)safe=p.buckets.slice();
-  // harder levels shuffle the safe order more; keep the first version a test play can beat
-  const mix=Math.min(0.1+level*0.03,0.6);let queue=null,verified=false;
-  for(let k=0;k<6&&!verified;k++){
-    const o=safe.slice(),m=mix*(1-k/6);
-    for(let i=0;i<o.length-1;i++)if(R()<m){const j=Math.min(o.length-1,i+1+Math.floor(R()*3));[o[i],o[j]]=[o[j],o[i]]}
-    queue=toColumns(o,p.cols);verified=frontOnlyWins(p.g,queue,p.slots,R)&&frontOnlyWins(p.g,queue,p.slots,mulberry(level*577+k*13+11));
+  let last=null;
+  for(let variant=0;variant<8;variant++){
+    const p=makePicture(level,variant),R=mulberry(level*31+7+variant*1009);
+    let safe=null;
+    for(let k=0;k<8&&!safe;k++){const pool=p.buckets.map(x=>({...x}));
+      const r=simPlay(p.g,()=>pool.map((b,i)=>({c:b.c,n:b.n,take:()=>pool.splice(i,1)[0]})),p.slots,R,greedyPick(k?0.8:0));if(r.ok)safe=r.order}
+    if(!safe){last=p;continue}
+    // harder levels shuffle the safe order; keep a shuffle only if a front-only test play beats it twice
+    const mix=Math.min(0.1+level*0.03,0.6);
+    for(let k=0;k<3;k++){
+      const o=safe.slice(),m=mix*(1-k/3);
+      for(let i=0;i<o.length-1;i++)if(R()<m){const j=Math.min(o.length-1,i+1+Math.floor(R()*3));[o[i],o[j]]=[o[j],o[i]]}
+      const queue=toColumns(o,p.cols);
+      if(frontOnlyWins(p.g,queue,p.slots,R)&&frontOnlyWins(p.g,queue,p.slots,mulberry(level*577+k*13+11)))return{g:p.g,pal:p.pal,queue,name:p.name,slots:p.slots,verified:'mixed'};
+    }
+    // otherwise the unshuffled order, if following it wins twice
+    if(replayWins(p.g,safe,p.slots,mulberry(level*577+99))&&replayWins(p.g,safe,p.slots,mulberry(level*911+5)))
+      return{g:p.g,pal:p.pal,queue:toColumns(safe,p.cols),name:p.name,slots:p.slots,verified:'order',order:safe};
+    last=p;
   }
-  if(!verified){queue=toColumns(safe,p.cols);verified=frontOnlyWins(p.g,queue,p.slots,R)&&frontOnlyWins(p.g,queue,p.slots,mulberry(level*577+99))}
-  return{g:p.g,pal:p.pal,queue,name:p.name,slots:p.slots,verified};
+  return{g:last.g,pal:last.pal,queue:toColumns(last.buckets,last.cols),name:last.name,slots:last.slots,verified:false};
 }
 
-/* ---------- game state ---------- */
 /* levels are built in a background worker so the screen never freezes; the next level is prepared while you play */
 const built={},building={},resolvers={};let sandWorker=null;
 try{
-  const src=`const SW=${SW},SH=${SH},PK=${PK},SCOL=${JSON.stringify(SCOL)},LANE=${LANE},BWG=${BWG},BHG=${BHG},PER=${PER},SPD=${SPD},SIDEDEPTH=${SIDEDEPTH};let sframe=0;
+  const src=`const SW=${SW},SH=${SH},PK=${PK},SCOL=${JSON.stringify(SCOL)},BWG=${BWG},BHG=${BHG},TURN=${TURN},RUN=${RUN},PER=${PER},SPD=${SPD},TOPY=${TOPY},RETY=${RETY};let sframe=0;
 const mulberry=${mulberry.toString()};const entryFree=${entryFree.toString()};const greedyPick=${greedyPick.toString()};
-${[makePicture,sandStep,pathAt,scoop,exposure,simPlay,toColumns,frontOnlyWins,buildLevel].map(f=>f.toString()).join('\n')}
+${[makePicture,sandStep,pathAt,scoop,exposure,simPlay,toColumns,frontOnlyWins,replayWins,buildLevel].map(f=>f.toString()).join('\n')}
 onmessage=e=>{const p=buildLevel(e.data);postMessage({level:e.data,g:Array.from(p.g),pal:p.pal,queue:p.queue,name:p.name,slots:p.slots})};`;
   sandWorker=new Worker(URL.createObjectURL(new Blob([src],{type:'text/javascript'})));
   sandWorker.onmessage=e=>{const r=resolvers[e.data.level];delete resolvers[e.data.level];r&&r(e.data)};
@@ -1147,9 +1152,9 @@ function sandTick(dt){
 let SG=null,sandImg=null,sandOff=null;
 function sandGeom(){
   const wrap=$('#sandWrap');if(!wrap)return null;
-  const W=wrap.clientWidth,H=wrap.clientHeight,gw=SW+2*EXT,gh=SH+2*EXT;
+  const W=wrap.clientWidth,H=wrap.clientHeight,gw=SW+3,gh=RETY+BHG*0.65/2+1.5;
   const cell=Math.max(2.5,Math.min(W/gw,H/gh));
-  return{W,H:Math.ceil(gh*cell),cell,ox:(W-gw*cell)/2+EXT*cell,oy:EXT*cell};
+  return{W,H:Math.ceil(gh*cell),cell,ox:(W-SW*cell)/2,oy:0};
 }
 const gx2px=x=>SG.ox+x*SG.cell,gy2px=y=>SG.oy+y*SG.cell;
 function sandDraw(){
@@ -1158,15 +1163,13 @@ function sandDraw(){
   if(cv.width!==Math.round(G.W*dpr)||cv.height!==Math.round(G.H*dpr)){cv.width=Math.round(G.W*dpr);cv.height=Math.round(G.H*dpr);cv.style.height=G.H+'px'}
   const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,G.W,G.H);
   if(!Z.ready)return;
-  // track
-  const c=G.cell;
-  ctx.strokeStyle='#2c3866';ctx.lineWidth=BHG*c*1.05;ctx.lineJoin='round';
-  ctx.strokeRect(gx2px(-LANE),gy2px(-LANE),(SW+2*LANE)*c,(SH+2*LANE)*c);
-  ctx.strokeStyle='rgba(18,26,51,.7)';ctx.lineWidth=1.5;ctx.setLineDash([c*1.5,c*2.5]);
-  ctx.strokeRect(gx2px(-LANE),gy2px(-LANE),(SW+2*LANE)*c,(SH+2*LANE)*c);ctx.setLineDash([]);
-  // entry marker
-  ctx.fillStyle='rgba(242,182,74,.8)';const ex=gx2px(-LANE),ey=gy2px(SH+LANE);
-  ctx.beginPath();ctx.moveTo(ex-c*1.2,ey+BHG*c*0.62);ctx.lineTo(ex+c*1.2,ey+BHG*c*0.62);ctx.lineTo(ex,ey+BHG*c*0.62-c*1.6);ctx.fill();
+  // track: top run under the picture, return lane below
+  const c=G.cell,x0=gx2px(-1.5),x1=gx2px(SW+1.5),yt=gy2px(TOPY),yr=gy2px(RETY);
+  ctx.strokeStyle='#2c3866';ctx.lineWidth=BHG*c*0.5;ctx.lineCap='round';ctx.lineJoin='round';
+  ctx.beginPath();ctx.roundRect(x0,yt+BHG*c*0.25,x1-x0,yr-yt-BHG*c*0.1,BHG*c*0.6);ctx.stroke();
+  ctx.fillStyle='#2c3866';ctx.fillRect(x0,yt+BHG*c*0.5-2,x1-x0,4);
+  ctx.fillStyle='rgba(242,182,74,.85)';const ex=gx2px(BWG/2-1.5)-BWG*c*0.5-c*1.4,ey=yt;
+  ctx.beginPath();ctx.moveTo(ex-c*1.3,ey-c*1.4);ctx.lineTo(ex+c*0.9,ey);ctx.lineTo(ex-c*1.3,ey+c*1.4);ctx.fill();
   // sand
   const TX=2;
   if(!sandOff){sandOff=document.createElement('canvas');sandOff.width=SW*TX;sandOff.height=SH*TX;sandImg=sandOff.getContext('2d').createImageData(SW*TX,SH*TX)}
@@ -1185,25 +1188,23 @@ function sandDraw(){
   ctx.fillStyle='rgba(10,14,30,.55)';ctx.fillRect(gx2px(0),gy2px(0),SW*c,SH*c);
   ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(sandOff,gx2px(0),gy2px(0),SW*c,SH*c);
   // buckets
-  for(const b of Z.belt)drawBucket(ctx,b);
+  Z.belt.slice().sort((a,b)=>pathAt(a.s).k-pathAt(b.s).k).forEach(b=>drawBucket(ctx,b));
   // particles
   for(const q of Z.parts){
     if(q.pop){ctx.globalAlpha=Math.max(0,1-q.t*2.5);ctx.strokeStyle=SCOL[Z.pal[q.c-1]][1];ctx.lineWidth=3;ctx.beginPath();ctx.arc(gx2px(q.gx),gy2px(q.gy),c*2+q.t*60,0,7);ctx.stroke();ctx.globalAlpha=1;continue}
     const p=pathAt(q.b.s),t=Math.min(1,q.t*5),x=q.gx+(p.x-q.gx)*t,y=q.gy+(p.y-q.gy)*t;
     ctx.fillStyle=SCOL[Z.pal[q.c-1]][1];ctx.fillRect(gx2px(x)-c*0.45,gy2px(y)-c*0.45,c*0.9,c*0.9)}
 }
-const SIDE_ANG={b:0,r:-Math.PI/2,t:Math.PI,l:Math.PI/2};
 function drawBucket(ctx,b){
-  const p=pathAt(b.s),c=SG.cell,w=BWG*c,h=BHG*c,col=SCOL[Z.pal[b.c-1]][1];
+  const p=pathAt(b.s),c=SG.cell,k=p.k,w=BWG*c*k,h=BHG*c*k,col=SCOL[Z.pal[b.c-1]][1];
   const X=gx2px(p.x),Y=gy2px(p.y);
-  ctx.save();ctx.translate(X,Y);ctx.rotate(SIDE_ANG[p.side]);
-  ctx.beginPath();ctx.moveTo(-w/2,-h/2);ctx.lineTo(w/2,-h/2);ctx.lineTo(w*0.36,h/2);ctx.lineTo(-w*0.36,h/2);ctx.closePath();
+  ctx.globalAlpha=p.side==='b'?1:0.85;
+  ctx.beginPath();ctx.moveTo(X-w/2,Y-h/2);ctx.lineTo(X+w/2,Y-h/2);ctx.lineTo(X+w*0.36,Y+h/2);ctx.lineTo(X-w*0.36,Y+h/2);ctx.closePath();
   ctx.fillStyle=col;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='rgba(10,14,30,.6)';ctx.stroke();
-  ctx.fillStyle='rgba(255,255,255,.35)';ctx.fillRect(-w*0.46,-h/2+1,w*0.92,Math.max(2,h*0.13));
-  ctx.restore();
+  ctx.fillStyle='rgba(255,255,255,.35)';ctx.fillRect(X-w*0.46,Y-h/2+1,w*0.92,Math.max(2,h*0.13));
   const lum=hexRGB(col).reduce((a,v,i)=>a+v*[0.3,0.59,0.11][i],0);
-  ctx.fillStyle=lum>150?'#16203f':'#fff';ctx.font=`800 ${Math.max(10,Math.round(h*0.42))}px Archivo, "Arial Black", system-ui, sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText(b.n,X,Y+1);
+  ctx.fillStyle=lum>150?'#16203f':'#fff';ctx.font=`800 ${Math.max(9,Math.round(h*0.42))}px Archivo, "Arial Black", system-ui, sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(b.n,X,Y+1);ctx.globalAlpha=1;
 }
 
 /* ---------- loop ---------- */
@@ -1261,6 +1262,7 @@ function renderSand(full){
     if(!Z.building){Z.building=true;sandStart(S.sandLevel||1,()=>{Z.building=false;renderSand(true)})}return}
   renderSandQueue();renderSandOverlay();
   SG=sandGeom();
+  try{if(!renderSand.ro){renderSand.ro=new ResizeObserver(()=>{if(S.mode==='sand'&&Z.ready&&$('#sandWrap')){SG=sandGeom();sandDraw()}})}renderSand.ro.disconnect();renderSand.ro.observe($('#sandWrap'))}catch(e){}
   const spd=S.sandSpeed||1;
   controls.innerHTML=`<div class="row"><button class="btn ${Z.confirmRestart?'danger':''}" id="sandRestart">${Z.confirmRestart?'Tap again to restart':'Restart level'}</button>
     <button class="btn ${spd>1?'primary':''}" id="sandFF" aria-label="Game speed ${spd} times" style="flex:.7">▶▶ ${spd}×</button></div>`;
