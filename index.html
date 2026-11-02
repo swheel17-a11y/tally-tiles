@@ -1340,8 +1340,20 @@ PROD.forEach((p,i)=>TIERS.forEach(([need,m,name],t)=>UPGRADES.push({id:`${p.id}$
 const UPG_BY_ID=Object.fromEntries(UPGRADES.map(u=>[u.id,u]));
 const blankYard=()=>({cash:0,owned:PROD.map(()=>0),upg:[],run:0,total:0,rep:0,sold:0,cuts:0,last:Date.now(),buy:1,seen:0});
 let Y=blankYard(),yardAway=null,yardConfirm=false;
-try{const d=JSON.parse(localStorage.getItem(YARD_KEY)||'null');if(d)Y=Object.assign(blankYard(),d,{owned:PROD.map((_,i)=>(d.owned||[])[i]||0)})}catch(e){}
-const yardSave=()=>{try{localStorage.setItem(YARD_KEY,JSON.stringify(Y))}catch(e){}};
+// saves never go backwards: "earned all time" only grows, so a copy with less of it is out of date
+const YARD_BK=YARD_KEY+'-backup';
+function readYard(key){try{const d=JSON.parse(localStorage.getItem(key)||'null');return d&&typeof d.total==='number'?d:null}catch(e){return null}}
+function adoptYard(d){Y=Object.assign(blankYard(),d,{owned:PROD.map((_,i)=>(d.owned||[])[i]||0)})}
+{const best=[readYard(YARD_KEY),readYard(YARD_BK)].filter(Boolean).sort((a,b)=>b.total-a.total)[0];if(best)adoptYard(best)}
+function yardSyncFromStorage(){const d=readYard(YARD_KEY);if(d&&d.total>Y.total+0.5){adoptYard(d);if(S.mode==='yard'&&$('#yardCash'))renderYard(true);return true}return false}
+const yardSave=()=>{try{
+  if(yardSyncFromStorage())return;
+  const s=JSON.stringify(Y);localStorage.setItem(YARD_KEY,s);
+  if(Date.now()-(yardSave.bk||0)>30000){yardSave.bk=Date.now();const b=readYard(YARD_BK);if(!b||b.total<=Y.total)localStorage.setItem(YARD_BK,s)}
+}catch(e){}};
+window.addEventListener('storage',e=>{if(e.key===YARD_KEY)yardSyncFromStorage()});
+window.addEventListener('pagehide',()=>yardSave());
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist().catch(()=>{})}catch(e){}
 
 /* ---------- numbers ---------- */
 const SUFX=['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc'];
@@ -1383,7 +1395,7 @@ function yardTick(){
   if(S.mode==='yard'&&$('#yardCash'))yardUpdate(false);
 }
 setInterval(yardTick,250);setInterval(yardSave,5000);
-document.addEventListener('visibilitychange',()=>{if(document.hidden)yardSave();else yardTick()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)yardSave();else{yardSyncFromStorage();yardTick()}});
 const dur=s=>s>=3600?`${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}m`:`${Math.floor(s/60)}m`;
 
 /* ---------- UI ---------- */
