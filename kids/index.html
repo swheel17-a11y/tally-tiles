@@ -127,6 +127,32 @@ button:disabled{opacity:.4;cursor:default}
 .tool[aria-pressed="true"]{background:var(--ink);color:#fff;box-shadow:0 4px 0 #0b1430}
 .tool.warn{background:var(--coral);color:#fff;box-shadow:0 4px 0 #c94a3f}
 
+
+/* fruit pop */
+.fwrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:12px;padding-top:4px}
+.fstats{display:flex;gap:12px;align-items:stretch;width:min(640px,100%)}
+.fbox{background:var(--card);border-radius:20px;padding:6px 18px;text-align:center;box-shadow:0 5px 0 var(--sky-2);display:flex;flex-direction:column;justify-content:center}
+.fbox small{font-size:14px;color:var(--muted)}
+.fbox b{font-family:var(--f-display);font-size:36px;line-height:1}
+.fgoal{flex:1;min-width:0;background:var(--card);border-radius:20px;padding:10px 16px;box-shadow:0 5px 0 var(--sky-2);display:flex;flex-direction:column;justify-content:center;gap:8px}
+.fglabel{display:flex;justify-content:space-between;gap:8px;font-size:16px;color:var(--muted);flex-wrap:wrap}
+.fglabel b{font-family:var(--f-display);color:var(--ink);font-size:20px}
+.fbarw{height:16px;border-radius:999px;background:var(--sky);overflow:hidden}
+.fbarw i{display:block;height:100%;width:0;background:var(--sun);border-radius:999px;transition:width .4s}
+.fbarw i.done{background:var(--grass)}
+.fboard{position:relative;aspect-ratio:1;max-width:100%;border-radius:24px;background:#ffd6e6;box-shadow:0 6px 0 #f3a9c6;overflow:hidden;touch-action:none;padding:0}
+.flayer{position:absolute;inset:2%}
+.ft{position:absolute;left:0;top:0;width:12.5%;height:12.5%;display:grid;place-items:center;transition:transform .2s ease-in;will-change:transform}
+.ft span{width:88%;height:88%;border-radius:22%;background:rgba(255,255,255,.75);display:grid;place-items:center;font-size:clamp(22px,5.2vmin,46px);line-height:1;transition:transform .18s,opacity .18s}
+.ft.sel span{background:#fff;box-shadow:0 0 0 4px var(--berry)}
+.ft.pop span{transform:scale(0) rotate(40deg);opacity:0}
+.ft.sp-h span{background:repeating-linear-gradient(0deg,rgba(255,255,255,.85) 0 18%,rgba(124,92,255,.35) 18% 26%)}
+.ft.sp-v span{background:repeating-linear-gradient(90deg,rgba(255,255,255,.85) 0 18%,rgba(124,92,255,.35) 18% 26%)}
+.ft.sp-b span{background:radial-gradient(circle,#fff 45%,#ffc93c 46%,#ff9f1c 100%);box-shadow:0 0 12px rgba(255,159,28,.8)}
+.ft.sp-r span{background:conic-gradient(#ff4d4d,#ffd23f,#3fbf7f,#2f8cff,#7c5cff,#ff4d4d);box-shadow:0 0 14px rgba(124,92,255,.7)}
+.ft.hint span{animation:wig .6s ease-in-out 3}
+@keyframes wig{25%{transform:rotate(-12deg) scale(1.08)}75%{transform:rotate(12deg) scale(1.08)}}
+
 /* stickers + grown-ups */
 .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:12px}
 .sticker{aspect-ratio:1;border-radius:22px;background:var(--card);display:grid;place-items:center;font-size:52px;box-shadow:0 5px 0 var(--sky-2)}
@@ -180,7 +206,8 @@ const GAMES=[
   {id:'rhyme',name:'Rhyme Time',em:'🎵',sub:'Find the rhyme',color:'#e0569b',max:3},
   {id:'memory',name:'Memory Match',em:'🃏',sub:'Find the pairs',color:'#16a3a3',max:4},
   {id:'pattern',name:'What Comes Next',em:'🔷',sub:'Finish the pattern',color:'#3fbf7f',max:5},
-  {id:'doodle',name:'Doodle Pad',em:'🎨',sub:'Draw anything',color:'#f59a23',max:0}
+  {id:'fruit',name:'Fruit Pop',em:'🍓',sub:'Match 3 in a row',color:'#ff4f8b',max:999,play:true},
+  {id:'doodle',name:'Doodle Pad',em:'🎨',sub:'Draw anything',color:'#f59a23',max:0,play:true}
 ];
 const STICKERS='🐶🐱🦊🐻🐼🐨🐯🦁🐮🐷🐸🐵🐔🐧🐦🦉🦄🐝🦋🐢🐙🦈🐬🐳🦖🦕🚒🚜🏎️🚂✈️🛸🌈⭐🌟🍕🍩🎈🏆👑'.match(/\p{Extended_Pictographic}️?/gu);
 const blank=()=>({stars:0,sound:true,lv:Object.fromEntries(GAMES.map(g=>[g.id,1])),got:Object.fromEntries(GAMES.map(g=>[g.id,0]))});
@@ -459,13 +486,160 @@ function playDoodle(){
 }
 
 /* =========================================================
+   FRUIT POP (match 3)
+   ========================================================= */
+const FR=['🍓','🍊','🍋','🍏','🍇','🍑'];
+const FN=8;
+let F=null,fid=0;
+const fsleep=ms=>new Promise(r=>setTimeout(r,ms));
+const fColors=lv=>lv<=4?5:6;
+const fTarget=lv=>1200+lv*500;
+const fMoves=lv=>Math.max(18,24-Math.floor(lv/4));
+const fTile=c=>({id:++fid,c,s:null});
+function fNewBoard(lv){
+  const n=fColors(lv),G=new Array(FN*FN);
+  for(let p=0;p<FN*FN;p++){const y=Math.floor(p/FN),x=p%FN;let c;
+    do{c=rnd(0,n-1)}while((x>=2&&G[p-1].c===c&&G[p-2].c===c)||(y>=2&&G[p-FN].c===c&&G[p-2*FN].c===c));
+    G[p]=fTile(c)}
+  return G;
+}
+function fRuns(G){
+  const runs=[];
+  for(const dir of ['h','v'])for(let a=0;a<FN;a++){let start=0;
+    for(let b=1;b<=FN;b++){
+      const p=dir==='h'?a*FN+b:b*FN+a,q=dir==='h'?a*FN+start:start*FN+a;
+      const same=b<FN&&G[p]&&G[q]&&G[p].c>=0&&G[p].c===G[q].c;
+      if(!same){if(b-start>=3){const cells=[];for(let k=start;k<b;k++)cells.push(dir==='h'?a*FN+k:k*FN+a);runs.push({dir,cells,c:G[q].c})}start=b}
+    }}
+  return runs;
+}
+function fHasMove(G){
+  for(let p=0;p<FN*FN;p++){if(G[p].s==='r')return[p,p%FN<FN-1?p+1:p+FN];
+    for(const q of [p%FN<FN-1?p+1:-1,p+FN<FN*FN?p+FN:-1]){if(q<0)continue;
+      if(G[p].s&&G[q].s)return[p,q];
+      [G[p],G[q]]=[G[q],G[p]];const ok=fRuns(G).length>0;[G[p],G[q]]=[G[q],G[p]];if(ok)return[p,q]}}
+  return null;
+}
+// what one special does when it goes off
+function fBlast(p,t,G){const y=Math.floor(p/FN),x=p%FN,out=[];
+  if(t.s==='h')for(let k=0;k<FN;k++)out.push(y*FN+k);
+  else if(t.s==='v')for(let k=0;k<FN;k++)out.push(k*FN+x);
+  else if(t.s==='b')for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const yy=y+dy,xx=x+dx;if(yy>=0&&yy<FN&&xx>=0&&xx<FN)out.push(yy*FN+xx)}
+  else if(t.s==='r'){const c=rnd(0,fColors(F.level)-1);G.forEach((u,i)=>{if(u&&u.c===c)out.push(i)})}
+  return out}
+function fRender(fresh){
+  const layer=$('#fLayer');if(!layer)return;
+  const els=new Map([...layer.children].map(e=>[+e.dataset.id,e]));const keep=new Set();
+  F.G.forEach((t,p)=>{if(!t)return;const y=Math.floor(p/FN),x=p%FN;let e=els.get(t.id);
+    if(!e){e=document.createElement('div');e.className='ft';e.dataset.id=t.id;
+      const startY=fresh&&fresh.has(t.id)?fresh.get(t.id):y;e.style.transform=`translate(${x*100}%,${startY*100}%)`;layer.appendChild(e);void e.offsetWidth}
+    e.dataset.p=p;e.className='ft'+(t.s?' sp-'+t.s:'')+(F.sel===p?' sel':'');
+    e.innerHTML=t.s==='r'?'<span>🌈</span>':`<span>${FR[t.c]}</span>`;
+    e.style.transform=`translate(${x*100}%,${y*100}%)`;keep.add(t.id)});
+  els.forEach((e,id)=>{if(!keep.has(id))e.remove()});
+  const pct=Math.min(100,F.score/F.target*100);
+  $('#fScore').textContent=F.score.toLocaleString();$('#fMoves').textContent=F.moves;$('#fBar').style.width=pct+'%';
+  $('#fBar').classList.toggle('done',F.score>=F.target);
+}
+// clear a set of cells (setting off any specials inside), make new specials, then let fruit fall
+async function fClear(seed,creates,combo){
+  const G=F.G,all=new Set(seed),queue=[...seed];
+  while(queue.length){const p=queue.pop(),t=G[p];if(!t||!t.s)continue;
+    for(const q of fBlast(p,t,G))if(!all.has(q)){all.add(q);queue.push(q)}}
+  const keepAt=new Map(creates.map(c=>[c.p,c]));
+  F.score+=all.size*10*combo+(creates.length?60*combo:0);
+  all.forEach(p=>{const t=G[p];if(!t)return;const e=document.querySelector(`.ft[data-id="${t.id}"]`);if(e)e.classList.add('pop')});
+  sfx[combo>1?'up':'yes']();
+  await fsleep(190);
+  all.forEach(p=>{G[p]=null});
+  keepAt.forEach(c=>{const t=fTile(c.c);t.s=c.s;G[c.p]=t});
+  // fall and refill
+  const fresh=new Map();
+  for(let x=0;x<FN;x++){let w=FN-1;
+    for(let y=FN-1;y>=0;y--){const t=G[y*FN+x];if(t){G[y*FN+x]=null;G[w*FN+x]=t;w--}}
+    for(let y=w,k=1;y>=0;y--,k++){const t=fTile(rnd(0,fColors(F.level)-1));G[y*FN+x]=t;fresh.set(t.id,-k)}}
+  fRender(fresh);await fsleep(260);
+}
+async function fCascade(swapPos){
+  let combo=1;
+  for(;;){const runs=fRuns(F.G);if(!runs.length)break;
+    const seed=new Set(),creates=[],used=new Set();runs.forEach(r=>r.cells.forEach(p=>seed.add(p)));
+    const pickPos=r=>r.cells.find(p=>swapPos&&swapPos.includes(p))??r.cells[Math.floor(r.cells.length/2)];
+    for(const h of runs.filter(r=>r.dir==='h'))for(const v of runs.filter(r=>r.dir==='v')){
+      if(used.has(h)||used.has(v))continue;const x=h.cells.find(p=>v.cells.includes(p));
+      if(x!==undefined){used.add(h);used.add(v);creates.push({p:x,s:'b',c:h.c})}}
+    for(const r of runs){if(used.has(r))continue;
+      if(r.cells.length>=5)creates.push({p:pickPos(r),s:'r',c:-1});
+      else if(r.cells.length===4)creates.push({p:pickPos(r),s:r.dir==='h'?'v':'h',c:r.c})}
+    await fClear(seed,creates,combo);combo++;swapPos=null;
+  }
+}
+async function fSwap(a,b){
+  if(F.busy||F.moves<=0)return;F.busy=true;F.sel=null;clearTimeout(F.hintT);fClearHint();
+  const G=F.G,ta=G[a],tb=G[b];
+  [G[a],G[b]]=[G[b],G[a]];fRender();await fsleep(170);
+  if(ta.s==='r'||tb.s==='r'){F.moves--;const other=ta.s==='r'?tb:ta;const seed=new Set([a,b]);
+    if(other.s==='r')G.forEach((_,i)=>seed.add(i));else G.forEach((t,i)=>{if(t.c===other.c)seed.add(i)});
+    await fClear(seed,[],2);await fCascade(null)}
+  else if(ta.s&&tb.s){F.moves--;await fClear(new Set([a,b]),[],2);await fCascade(null)}
+  else if(fRuns(G).length){F.moves--;await fCascade([a,b])}
+  else{[G[a],G[b]]=[G[b],G[a]];sfx.no();fRender();await fsleep(170)}
+  F.busy=false;fRender();
+  if(F.moves<=0)return fEnd();
+  if(!fHasMove(F.G)){await fsleep(300);fShuffle()}
+  fArmHint();
+}
+function fShuffle(){let tries=0;do{const cs=shuffle(F.G.map(t=>t.c>=0?t.c:rnd(0,4)));F.G.forEach((t,i)=>{if(t.s!=='r')t.c=cs[i]})}while((fRuns(F.G).length||!fHasMove(F.G))&&tries++<50);
+  if(fRuns(F.G).length||!fHasMove(F.G))F.G=fNewBoard(F.level);fRender()}
+function fClearHint(){document.querySelectorAll('.ft.hint').forEach(e=>e.classList.remove('hint'))}
+function fArmHint(){clearTimeout(F.hintT);F.hintT=setTimeout(()=>{if(!F||F.busy||location.hash!=='#fruit')return;const m=fHasMove(F.G);
+  if(m)m.forEach(p=>{const e=document.querySelector(`.ft[data-p="${p}"]`);if(e)e.classList.add('hint')})},6000)}
+function fEnd(){
+  const won=F.score>=F.target,stars=won?(F.score>=F.target*2?3:F.score>=F.target*1.5?2:1):0;
+  if(won){const lv=F.level;K.lv.fruit=Math.max(K.lv.fruit,lv+1);K.fbest=K.fbest||{};K.fbest[lv]=Math.max(K.fbest[lv]||0,stars);save();
+    addStars(stars,$('#fBoard'),'fruit');
+    popup('⭐'.repeat(stars),`Level ${lv} done!`,`You scored ${F.score.toLocaleString()} points.`,'Next level',()=>playFruit(lv+1))}
+  else popup('🍓','Out of moves!',`You got ${F.score.toLocaleString()} of ${F.target.toLocaleString()} points. So close!`,'Try again',()=>playFruit(F.level));
+}
+function playFruit(lv){
+  lv=lv||K.lv.fruit;setHeader('Fruit Pop',`Level ${lv}`);
+  F={level:lv,G:fNewBoard(lv),score:0,moves:fMoves(lv),target:fTarget(lv),busy:false,sel:null,hintT:0};
+  view.innerHTML=`<div class="fwrap">
+    <div class="fstats"><div class="fbox"><small>Moves</small><b id="fMoves"></b></div>
+      <div class="fgoal"><div class="fglabel"><span>Score <b id="fScore"></b></span><span>Goal ${F.target.toLocaleString()}</span></div><div class="fbarw"><i id="fBar"></i></div></div></div>
+    <div class="fboard" id="fBoard"><div class="flayer" id="fLayer"></div></div>
+    <p class="note" style="text-align:center;margin:0 auto">Swipe a fruit to swap it. Match 4 for a blaster, 5 for a rainbow!</p></div>`;
+  const board=$('#fBoard');
+  const fitBoard=()=>{const r=view.getBoundingClientRect();const s=Math.max(260,Math.min(r.width,r.height-150));board.style.width=s+'px'};
+  fitBoard();playFruit.fit=fitBoard;
+  fRender();fArmHint();
+  let start=null;
+  const cellAt=e=>{const r=board.getBoundingClientRect();const x=Math.floor((e.clientX-r.left)/r.width*FN),y=Math.floor((e.clientY-r.top)/r.height*FN);return x>=0&&x<FN&&y>=0&&y<FN?y*FN+x:-1};
+  board.onpointerdown=e=>{if(F.busy)return;const p=cellAt(e);if(p<0)return;start={p,x:e.clientX,y:e.clientY,moved:false};try{board.setPointerCapture(e.pointerId)}catch(_){}};
+  board.onpointermove=e=>{if(!start||start.moved)return;const dx=e.clientX-start.x,dy=e.clientY-start.y,cell=board.getBoundingClientRect().width/FN;
+    if(Math.max(Math.abs(dx),Math.abs(dy))<cell*0.35)return;start.moved=true;
+    const p=start.p,y=Math.floor(p/FN),x=p%FN;let q=-1;
+    if(Math.abs(dx)>Math.abs(dy))q=dx>0?(x<FN-1?p+1:-1):(x>0?p-1:-1);else q=dy>0?(y<FN-1?p+FN:-1):(y>0?p-FN:-1);
+    if(q>=0)fSwap(p,q)};
+  board.onpointerup=e=>{const s=start;start=null;if(!s||s.moved||F.busy)return;
+    // tap one fruit, then a neighbour
+    const p=s.p;if(F.sel===null){F.sel=p;sfx.tap();fRender();return}
+    const a=F.sel;F.sel=null;const ay=Math.floor(a/FN),ax=a%FN,y=Math.floor(p/FN),x=p%FN;
+    if(Math.abs(ay-y)+Math.abs(ax-x)===1)fSwap(a,p);else{F.sel=p===a?null:p;fRender()}};
+  board.onpointercancel=()=>{start=null};
+}
+
+/* =========================================================
    HOME, STICKERS, GROWN-UPS
    ========================================================= */
 function home(){
   setHeader('Star Quest');
   const n=stickersEarned();
-  view.innerHTML=`<p class="hello">Pick a game!</p>
-    <div class="tiles">${GAMES.map(g=>`<button class="tile" data-g="${g.id}" style="background:${g.color}"><span class="em">${g.em}</span>${g.max?`<span class="lv">Level ${K.lv[g.id]}</span>`:''}<span><b>${g.name}</b><br><small>${g.sub}</small></span></button>`).join('')}
+  const tile=g=>`<button class="tile" data-g="${g.id}" style="background:${g.color}"><span class="em">${g.em}</span>${g.max?`<span class="lv">Level ${K.lv[g.id]}</span>`:''}<span><b>${g.name}</b><br><small>${g.sub}</small></span></button>`;
+  view.innerHTML=`<p class="hello">Play</p>
+    <div class="tiles">${GAMES.filter(g=>g.play).map(tile).join('')}</div>
+    <p class="hello">Learn</p>
+    <div class="tiles">${GAMES.filter(g=>!g.play).map(tile).join('')}
       <button class="tile" data-g="stickers" style="background:#1d2b4f"><span class="em">${n?STICKERS[n-1]:'📒'}</span><span><b>Sticker Book</b><br><small>${n} of ${STICKERS.length} stickers</small></span></button></div>
     <div class="home-foot"><p class="note">Every 10 stars earns a new sticker. ${10-K.stars%10} more to go!</p>
       <button class="grownup" id="grown">Grown-ups: press and hold<i></i></button></div>`;
@@ -485,7 +659,7 @@ let resetArm=false;
 function grownups(){
   setHeader('Grown-ups');
   view.innerHTML=`<p class="note">Star Quest has no ads, no purchases and no accounts. Progress is saved only on this tablet.</p>
-    ${GAMES.filter(g=>g.max).map(g=>`<div class="prow"><span>${g.em} ${g.name}</span><span class="ctl"><button class="pm" data-d="-1" data-id="${g.id}" aria-label="Easier">−</button>Level ${K.lv[g.id]} <small style="font-size:14px;color:var(--muted)">/ ${g.max}</small><button class="pm" data-d="1" data-id="${g.id}" aria-label="Harder">+</button></span></div>`).join('')}
+    ${GAMES.filter(g=>g.max).map(g=>`<div class="prow"><span>${g.em} ${g.name}</span><span class="ctl"><button class="pm" data-d="-1" data-id="${g.id}" aria-label="Easier">−</button>Level ${K.lv[g.id]} <small style="font-size:14px;color:var(--muted)">${g.play?'':'/ '+g.max}</small><button class="pm" data-d="1" data-id="${g.id}" aria-label="Harder">+</button></span></div>`).join('')}
     <div class="row" style="justify-content:flex-start">
       <button class="pbtn" id="snd">Sound: ${K.sound?'On':'Off'}</button>
       <button class="pbtn ${resetArm?'warn':''}" id="rst">${resetArm?'Tap again to erase everything':'Reset stars and stickers'}</button></div>
@@ -496,13 +670,13 @@ function grownups(){
 }
 
 /* ---------- navigation (plain #names so the back button works) ---------- */
-const ROUTES={math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
+const ROUTES={fruit:()=>playFruit(),math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
 function go(name){if(location.hash.slice(1)!==name)location.hash=name;else show()}
 function show(){const r=location.hash.slice(1);resetArm=false;$('#overlay').hidden=true;popQ.length=0;if(canSpeak)try{speechSynthesis.cancel()}catch(e){}
   view.scrollTop=0;(ROUTES[r]||home)()}
 window.addEventListener('hashchange',show);
 $('#homeBtn').onclick=()=>{sfx.tap();go('home')};
-window.addEventListener('resize',()=>{if(location.hash==='#doodle'&&playDoodle.resize)playDoodle.resize()});
+window.addEventListener('resize',()=>{if(location.hash==='#doodle'&&playDoodle.resize)playDoodle.resize();if(location.hash==='#fruit'&&playFruit.fit)playFruit.fit()});
 updateStars();show();
 })();
 </script>
