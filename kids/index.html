@@ -452,7 +452,7 @@ function tone(notes,type='sine',vol=0.12){
 const sfx={yes:()=>tone([[660,0,.15],[880,.1,.25]]),no:()=>tone([[220,0,.22]],'triangle',0.1),
   up:()=>tone([[523,0,.15],[659,.12,.15],[784,.24,.15],[1047,.36,.35]]),tap:()=>tone([[520,0,.06]],'sine',0.05)};
 const canSpeak=!!window.SQAndroid||'speechSynthesis' in window;
-function say(text){if(canSpeak)speakNow(text)}
+function say(text,force){if(canSpeak)speakNow(text,force)}
 
 /* ---------- stars, levels, stickers ---------- */
 /* ---------- star gate: Learn games fill a wallet, Fun games spend it as play time ---------- */
@@ -619,7 +619,7 @@ function playWords(){
   view.innerHTML=`<div class="board"><div class="row"><div class="pic">${em}</div>${canSpeak?'<button class="speak" id="say" aria-label="Say the word">🔊</button>':''}</div>
     <div class="slots">${w.split('').map((_,i)=>`<div class="slot" id="sl${i}"></div>`).join('')}</div>
     <div class="letters">${tiles.map((c,i)=>`<button class="letter" data-i="${i}">${c}</button>`).join('')}</div>${progressDots('words')}</div>`;
-  if(canSpeak)$('#say').onclick=()=>say(w);
+  if(canSpeak)$('#say').onclick=()=>say(w,true);
   view.querySelectorAll('.letter').forEach(b=>b.onclick=()=>{
     const c=tiles[+b.dataset.i];
     if(c===w[pos]){sfx.tap();b.classList.add('gone');const s=$('#sl'+pos);s.textContent=c;s.classList.add('fill');pos++;
@@ -643,7 +643,7 @@ function playRhyme(){
   let wrong=lv>=2?others.filter(x=>x[0]===word[0]||x[0]===ans[0]).slice(0,1):[];
   wrong=wrong.concat(others.filter(x=>!wrong.includes(x))).slice(0,lv>=3?4:3);
   view.innerHTML=`<div class="board"><p class="prompt">Which word rhymes with…</p><div class="row"><div class="panel"><div class="big">${word}</div></div>${canSpeak?'<button class="speak" id="say" aria-label="Say the word">🔊</button>':''}</div><div id="ch"></div>${progressDots('rhyme')}</div>`;
-  if(canSpeak)$('#say').onclick=()=>say(word);
+  if(canSpeak)$('#say').onclick=()=>say(word,true);
   $('#ch').replaceWith(choices(shuffle([ans,...wrong]),ans,btn=>{say(`${word}, ${ans}`);addStars(1,btn,'rhyme');if(correct('rhyme'))setTimeout(()=>levelUp('rhyme',playRhyme),700);else setTimeout(playRhyme,1100)},wrong.length>=4?'c3':''));
 }
 
@@ -1215,7 +1215,9 @@ const isLittle=()=>K.mode==='little';
 function applyMode(){document.documentElement.classList.toggle('little',isLittle())}
 // speak with the tablet's own voice when running as the installed app
 function webVoices(){try{return speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang))}catch(e){return[]}}
-function speakNow(t){try{if(window.SQAndroid){SQAndroid.speak(t);return}if('speechSynthesis' in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.rate=K.vrate||0.95;u.pitch=K.vpitch||1;const v=webVoices().find(x=>x.name===K.voiceName);if(v)u.voice=v;speechSynthesis.speak(u)}}catch(e){}}
+const voiceOn=()=>K.voiceOn!==undefined?K.voiceOn:K.mode==='little';
+// force: a speaker button the child tapped on purpose still talks when the voice is off
+function speakNow(t,force){if(!force&&!voiceOn())return;try{if(window.SQAndroid){SQAndroid.speak(t);return}if('speechSynthesis' in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.rate=K.vrate||0.95;u.pitch=K.vpitch||1;const v=webVoices().find(x=>x.name===K.voiceName);if(v)u.voice=v;speechSynthesis.speak(u)}}catch(e){}}
 
 /* ---------- BUTTERFLY GARDEN: catch and count ---------- */
 const BF_COL=[['#ff7eb6','#ffb3d6'],['#c48bff','#e3c9ff'],['#ffd75e','#ffe9a3'],['#7cc4ff','#bfe3ff'],['#ff9f6b','#ffd0b3']];
@@ -1484,8 +1486,8 @@ function playStory(){
       ${pg.items.map((it,i)=>`<button class="sit ${it[4]==='tap'?'tapme':''}" data-i="${i}" style="left:${it[1]}%;top:${it[2]}%;font-size:${it[3]}vmin" aria-label="${it[0]}">${it[0]}</button>`).join('')}</div>
     <div class="stext"><button class="speak" id="say" aria-label="Read it again">🔊</button><p>${fillName(pg.text)}</p></div>
     <div class="row"><button class="pbtn" id="prev" ${pi?'':'disabled'}>◀</button><button class="pbtn snext" id="next" hidden>${last?'The end ⭐':'Next ▶'}</button><button class="pbtn" id="stories">📚 Stories</button></div></div>`;
-  const read=()=>speakNow(fillName(pg.text));setTimeout(read,250);
-  $('#say').onclick=read;
+  const read=f=>speakNow(fillName(pg.text),f);setTimeout(read,250);
+  $('#say').onclick=()=>read(true);
   $('#prev').onclick=()=>{playStory.page=pi-1;playStory()};
   $('#stories').onclick=()=>{playStory.cur=null;playStory()};
   const next=$('#next');
@@ -1757,7 +1759,7 @@ function grownups(){
     <div class="row" style="justify-content:flex-start">
       <button class="pbtn" id="snd">Sound: ${K.sound?'On':'Off'}</button>
       <button class="pbtn" id="fs">Full screen: ${K.full===false?'Off':'On'}</button></div>
-    <div class="prow" id="vrow" style="flex-wrap:wrap"><span>Voice</span><span class="ctl" style="flex-wrap:wrap"><select id="vsel" style="font:inherit;font-size:17px;padding:8px;border-radius:12px;border:2px solid var(--sky-2);max-width:16em"></select>
+    <div class="prow" id="vrow" style="flex-wrap:wrap"><span>Voice</span><span class="ctl" style="flex-wrap:wrap"><button class="pbtn" id="vonoff" style="${voiceOn()?'background:var(--ink);color:#fff':''}">${voiceOn()?'On':'Off'}</button><select id="vsel" style="font:inherit;font-size:17px;padding:8px;border-radius:12px;border:2px solid var(--sky-2);max-width:16em"></select>
       <button class="pm" id="vslow" aria-label="Slower">🐢</button><button class="pm" id="vfast" aria-label="Faster">🐇</button><button class="pbtn" id="vtest">▶ Test</button></span></div>
     ${K.mode!=='little'?`<div class="prow" style="flex-wrap:wrap"><span>Play games cost stars <small style="color:var(--muted)">(Fruit Pop, Bubble Pop, Dino Dash, Tower Builder)</small></span><span class="ctl"><button class="pbtn" id="gateT">${K.gate===false?'Off':'On'}</button></span></div>
     ${K.gate!==false?`<div class="prow" style="flex-wrap:wrap"><span>Each star buys</span><span class="ctl">${[1,2,3,5].map(m=>`<button class="pbtn" data-mps="${m}" style="${minsPerStar()===m?'background:var(--ink);color:#fff':''}">${m} min</button>`).join('')}</span></div>
@@ -1774,7 +1776,8 @@ function grownups(){
     list.sort((a,b)=>(b.label.includes('★')-a.label.includes('★'))||a.label.localeCompare(b.label));
     if(!list.length){$('#vrow').querySelector('span').textContent='Voice (this tablet has no voices to choose from)';sel.hidden=true}
     sel.innerHTML=list.map(v=>`<option value="${v.id.replace(/"/g,'')}" ${v.on||v.id===K.voiceName?'selected':''}>${v.label}</option>`).join('');
-    const test=()=>speakNow(K.name?`Hi ${K.name}! Let's catch some butterflies!`:`Hi! Let's play Star Quest!`);
+    $('#vonoff').onclick=()=>{K.voiceOn=!voiceOn();save();grownups();if(K.voiceOn)speakNow('Voice is on!')};
+    const test=()=>speakNow(K.name?`Hi ${K.name}! Let's catch some butterflies!`:`Hi! Let's play Star Quest!`,true);
     sel.onchange=()=>{K.voiceName=sel.value;save();if(window.SQAndroid&&SQAndroid.setVoice)SQAndroid.setVoice(sel.value);test()};
     const pace=d=>{K.vrate=Math.max(0.6,Math.min(1.4,(K.vrate||0.95)+d));save();if(window.SQAndroid&&SQAndroid.setPace)SQAndroid.setPace(K.vrate,K.vpitch||1);test()};
     $('#vslow').onclick=()=>pace(-0.1);$('#vfast').onclick=()=>pace(0.1);$('#vtest').onclick=test;
@@ -1783,7 +1786,7 @@ function grownups(){
     view.querySelectorAll('[data-mps]').forEach(b=>b.onclick=()=>{K.minsPerStar=+b.dataset.mps;save();grownups()});
     if($('#give5')){$('#give5').onclick=()=>{K.wallet=(K.wallet||0)+5;save();grownups()};$('#time5').onclick=()=>{K.playSec=(K.playSec||0)+300;save();grownups()};$('#time0').onclick=()=>{K.playSec=0;save();grownups()}}}
   $('#fs').onclick=()=>{K.full=K.full===false;save();if(K.full===false&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});grownups()};
-  $('#rst').onclick=()=>{if(!resetArm){resetArm=true;return grownups()}resetArm=false;const keep={mode:K.mode,name:K.name,voiceName:K.voiceName,gate:K.gate,minsPerStar:K.minsPerStar};K=Object.assign(blank(),keep,{wallet:0,playSec:0});save();updateStars();grownups()};
+  $('#rst').onclick=()=>{if(!resetArm){resetArm=true;return grownups()}resetArm=false;const keep={mode:K.mode,name:K.name,voiceName:K.voiceName,voiceOn:K.voiceOn,gate:K.gate,minsPerStar:K.minsPerStar};K=Object.assign(blank(),keep,{wallet:0,playSec:0});save();updateStars();grownups()};
 }
 
 /* ---------- navigation (plain #names so the back button works) ---------- */
