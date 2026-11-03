@@ -1,0 +1,19 @@
+plugins { id 'com.android.application' }
+def run = (System.getenv('GITHUB_RUN_NUMBER') ?: '1') as int
+android {
+  namespace 'com.swheel.starquest'
+  compileSdk 34
+  defaultConfig {
+    applicationId 'com.swheel.starquest'
+    minSdk 22
+    targetSdk 34
+    versionCode run
+    versionName "1.${run}"
+  }
+  // One fixed signing key, so each new version installs over the old one and keeps his progress.
+  signingConfigs {
+    stable { storeFile file('starquest.keystore'); storeType 'pkcs12'; storePassword 'starquest'; keyAlias 'starquest'; keyPassword 'starquest' }
+  }
+  buildTypes { release { minifyEnabled false; signingConfig signingConfigs.stable } }
+  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}

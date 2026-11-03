@@ -998,10 +998,12 @@ function grownups(){
     ${GAMES.filter(g=>g.max).map(g=>`<div class="prow"><span>${g.em} ${g.name}</span><span class="ctl"><button class="pm" data-d="-1" data-id="${g.id}" aria-label="Easier">−</button>Level ${K.lv[g.id]} <small style="font-size:14px;color:var(--muted)">${g.play?'':'/ '+g.max}</small><button class="pm" data-d="1" data-id="${g.id}" aria-label="Harder">+</button></span></div>`).join('')}
     <div class="row" style="justify-content:flex-start">
       <button class="pbtn" id="snd">Sound: ${K.sound?'On':'Off'}</button>
+      <button class="pbtn" id="fs">Full screen: ${K.full===false?'Off':'On'}</button>
       <button class="pbtn ${resetArm?'warn':''}" id="rst">${resetArm?'Tap again to erase everything':'Reset stars and stickers'}</button></div>
     <p class="note">Levels go up by themselves after ${PER_LEVEL} right answers. Use − and + if a game feels too hard or too easy.</p>`;
   view.querySelectorAll('.pm').forEach(b=>b.onclick=()=>{const g=GAMES.find(x=>x.id===b.dataset.id);K.lv[g.id]=Math.max(1,Math.min(g.max,K.lv[g.id]+ +b.dataset.d));K.got[g.id]=0;save();grownups()});
   $('#snd').onclick=()=>{K.sound=!K.sound;save();grownups()};
+  $('#fs').onclick=()=>{K.full=K.full===false;save();if(K.full===false&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});grownups()};
   $('#rst').onclick=()=>{if(!resetArm){resetArm=true;return grownups()}resetArm=false;K=blank();save();updateStars();grownups()};
 }
 
@@ -1013,6 +1015,11 @@ function show(){loopToken++;const r=location.hash.slice(1);resetArm=false;$('#ov
 window.addEventListener('hashchange',show);
 $('#homeBtn').onclick=()=>{sfx.tap();go('home')};
 window.addEventListener('resize',()=>{if(location.hash==='#doodle'&&playDoodle.resize)playDoodle.resize();if(location.hash==='#fruit'&&playFruit.fit)playFruit.fit();const S=canvasGame.cur;if(S&&S.alive())S.fit()});
+// In a browser, go full screen on the first tap so it feels like an app (not needed inside the installed app)
+const inApp=/\bwv\b|; wv\)/.test(navigator.userAgent)||matchMedia('(display-mode: standalone)').matches;
+function goFull(){if(inApp||K.full===false||document.fullscreenElement)return;const el=document.documentElement,f=el.requestFullscreen||el.webkitRequestFullscreen;
+  if(f)try{const r=f.call(el);r&&r.catch&&r.catch(()=>{})}catch(e){}}
+document.addEventListener('pointerup',goFull,{passive:true});
 updateStars();show();
 })();
 </script>
