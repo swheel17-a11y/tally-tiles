@@ -3,7 +3,10 @@ package com.swheel.starquest;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
+import android.speech.tts.TextToSpeech;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
+import java.util.Locale;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -11,6 +14,16 @@ import android.webkit.WebViewClient;
 // Star Quest runs from files inside the app, so it works with no internet and has no browser bar.
 public class MainActivity extends Activity {
   private WebView web;
+  private TextToSpeech tts;
+  private boolean ttsReady = false;
+
+  // Lets the game talk out loud with the tablet's voice (the in-app browser has no speech of its own).
+  public class Voice {
+    @JavascriptInterface public void speak(String text) {
+      if (tts != null && ttsReady) tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "sq");
+    }
+    @JavascriptInterface public void stop() { if (tts != null) tts.stop(); }
+  }
 
   @Override protected void onCreate(Bundle saved) {
     super.onCreate(saved);
@@ -23,6 +36,10 @@ public class MainActivity extends Activity {
     s.setDatabaseEnabled(true);
     s.setAllowFileAccess(true);
     s.setMediaPlaybackRequiresUserGesture(false);
+    tts = new TextToSpeech(this, status -> {
+      if (status == TextToSpeech.SUCCESS) { tts.setLanguage(Locale.US); tts.setSpeechRate(0.9f); tts.setPitch(1.15f); ttsReady = true; }
+    });
+    web.addJavascriptInterface(new Voice(), "SQAndroid");
     web.setWebChromeClient(new WebChromeClient());
     // Stay inside the game: never open other web pages.
     web.setWebViewClient(new WebViewClient() {
@@ -42,6 +59,7 @@ public class MainActivity extends Activity {
   @Override protected void onSaveInstanceState(Bundle out) { super.onSaveInstanceState(out); web.saveState(out); }
   // Back goes back inside the game (game -> home); from the home screen it leaves the app.
   @Override public void onBackPressed() { if (web.canGoBack()) web.goBack(); else super.onBackPressed(); }
-  @Override protected void onPause() { super.onPause(); web.onPause(); }
+  @Override protected void onPause() { super.onPause(); web.onPause(); if (tts != null) tts.stop(); }
+  @Override protected void onDestroy() { if (tts != null) tts.shutdown(); super.onDestroy(); }
   @Override protected void onResume() { super.onResume(); web.onResume(); hideBars(); }
 }
