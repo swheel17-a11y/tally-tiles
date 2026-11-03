@@ -103,10 +103,10 @@ button:disabled{opacity:.4;cursor:default}
 
 /* memory */
 .mgrid{display:grid;gap:12px;width:min(760px,100%)}
-.card{aspect-ratio:3/4;max-width:100%;border-radius:18px;perspective:600px}
-.card .in{position:relative;width:100%;height:100%;transition:transform .35s;transform-style:preserve-3d}
+.card{position:relative;height:0;padding:0 0 133% 0;max-width:100%;border-radius:18px;perspective:600px}
+.card .in{position:absolute;top:0;left:0;width:100%;height:100%;transition:transform .35s;transform-style:preserve-3d}
 .card.up .in,.card.done .in{transform:rotateY(180deg)}
-.card .f,.card .b{position:absolute;inset:0;border-radius:18px;display:grid;place-items:center;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.card .f,.card .b{position:absolute;top:0;right:0;bottom:0;left:0;border-radius:18px;display:grid;place-items:center;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .card .f{background:repeating-linear-gradient(45deg,var(--ocean) 0 10px,#4a9dff 10px 20px);box-shadow:0 5px 0 #1f64bd}
 .card .b{background:var(--card);transform:rotateY(180deg);font-size:clamp(34px,7vw,58px);box-shadow:0 5px 0 var(--sky-2)}
 .card.done .b{background:#d9f7e8;box-shadow:0 5px 0 #9fe0bf}
@@ -119,7 +119,7 @@ button:disabled{opacity:.4;cursor:default}
 /* doodle */
 .dwrap{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px}
 .dcanvas{flex:1;min-height:0;position:relative;border-radius:22px;background:#fff;box-shadow:0 6px 0 var(--sky-2);overflow:hidden;touch-action:none}
-.dcanvas canvas{position:absolute;inset:0;width:100%;height:100%}
+.dcanvas canvas{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%}
 .dtools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center}
 .sw{width:46px;height:46px;border-radius:50%;box-shadow:inset 0 0 0 3px rgba(0,0,0,.12)}
 .sw[aria-pressed="true"]{outline:4px solid var(--ink);outline-offset:2px}
@@ -140,8 +140,8 @@ button:disabled{opacity:.4;cursor:default}
 .fbarw{height:16px;border-radius:999px;background:var(--sky);overflow:hidden}
 .fbarw i{display:block;height:100%;width:0;background:var(--sun);border-radius:999px;transition:width .4s}
 .fbarw i.done{background:var(--grass)}
-.fboard{position:relative;aspect-ratio:1;max-width:100%;border-radius:24px;background:#ffd6e6;box-shadow:0 6px 0 #f3a9c6;overflow:hidden;touch-action:none;padding:0}
-.flayer{position:absolute;inset:2%}
+.fboard{position:relative;max-width:100%;border-radius:24px;background:#ffd6e6;box-shadow:0 6px 0 #f3a9c6;overflow:hidden;touch-action:none;padding:0}
+.flayer{position:absolute;top:2%;right:2%;bottom:2%;left:2%}
 .ft{position:absolute;left:0;top:0;width:12.5%;height:12.5%;display:grid;place-items:center;will-change:transform}
 .ft span{width:88%;height:88%;border-radius:22%;background:rgba(255,255,255,.75);display:grid;place-items:center;font-size:clamp(22px,5.2vmin,46px);line-height:1;transition:transform .26s cubic-bezier(.3,1.6,.5,1),opacity .3s,box-shadow .26s,background .26s}
 .ft.sel span{background:#fff;box-shadow:0 0 0 4px var(--berry);transform:scale(1.08)}
@@ -158,7 +158,7 @@ button:disabled{opacity:.4;cursor:default}
 @keyframes spinr{to{filter:hue-rotate(360deg)}}
 .ft.hint span{animation:wig .7s ease-in-out 3}
 @keyframes wig{25%{transform:rotate(-12deg) scale(1.1)}75%{transform:rotate(12deg) scale(1.1)}}
-.ffx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5}
+.ffx{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5}
 .fboard.shake{animation:bshake .3s}
 .fboard.shake2{animation:bshake2 .45s}
 @keyframes bshake{25%{transform:translate(-4px,2px)}50%{transform:translate(3px,-2px)}75%{transform:translate(-2px,1px)}}
@@ -171,7 +171,7 @@ button:disabled{opacity:.4;cursor:default}
 .chud>span{background:var(--card);border-radius:14px;padding:6px 14px;box-shadow:0 4px 0 var(--sky-2);font-size:17px}
 .chud b{font-family:var(--f-display);font-size:22px}
 .cbox{flex:1;min-height:320px;position:relative;border-radius:24px;overflow:hidden;box-shadow:0 6px 0 var(--sky-2);touch-action:none;background:#e9f4ff}
-.cbox canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+.cbox canvas{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;touch-action:none}
 
 
 /* little kids: pink theme */
@@ -199,7 +199,7 @@ button:disabled{opacity:.4;cursor:default}
 /* dress-up */
 .dress{flex:1;display:flex;gap:16px;align-items:stretch;flex-wrap:wrap;min-height:0}
 .stagep{position:relative;flex:1 1 300px;min-height:380px;border-radius:28px;background:radial-gradient(circle at 50% 30%,#fff,#ffe0f0 70%);box-shadow:0 6px 0 var(--sky-2);display:grid;place-items:center;overflow:hidden}
-.pwrap{height:min(100%,62vh);aspect-ratio:200/320;max-width:100%;display:grid;place-items:center}
+.pwrap{height:min(100%,62vh);width:min(100%,38.75vh);max-width:100%;display:grid;place-items:center}
 .pwrap .psvg{width:100%;height:100%}
 .pwrap.twirl{animation:twirl .5s cubic-bezier(.3,1.5,.5,1)}
 @keyframes twirl{0%{transform:scale(.92) rotate(-4deg)}100%{transform:none}}
@@ -209,14 +209,14 @@ button:disabled{opacity:.4;cursor:default}
 .pcat{height:70px;border-radius:20px;background:var(--card);font-size:36px;box-shadow:0 5px 0 var(--sky-2)}
 .pcat[aria-pressed="true"]{background:#ff8ac4;box-shadow:0 5px 0 #e0609f;transform:translateY(2px)}
 .popts{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:10px;background:rgba(255,255,255,.6);padding:12px;border-radius:22px}
-.popt{aspect-ratio:1;max-width:100%;border-radius:20px;background:var(--card);display:grid;place-items:center;box-shadow:0 4px 0 var(--sky-2);font-size:40px;overflow:hidden}
+.popt{height:84px;max-width:100%;border-radius:20px;background:var(--card);display:grid;place-items:center;box-shadow:0 4px 0 var(--sky-2);font-size:40px;overflow:hidden}
 .popt[aria-pressed="true"]{outline:5px solid #ff5fa2;outline-offset:-1px}
 .popt i{width:70%;height:70%;border-radius:50%;box-shadow:inset 0 0 0 3px rgba(0,0,0,.12)}
 .popt .psvg{width:100%;height:100%}
 .album{display:flex;gap:8px;overflow-x:auto;padding:4px}
 .ph{flex:none;width:64px;height:100px;border-radius:14px;background:#fff;box-shadow:0 3px 0 var(--sky-2);padding:2px}
 .ph .psvg{width:100%;height:100%}
-.flash{position:fixed;inset:0;background:#fff;z-index:80;animation:flashout .5s forwards;pointer-events:none}
+.flash{position:fixed;top:0;right:0;bottom:0;left:0;background:#fff;z-index:80;animation:flashout .5s forwards;pointer-events:none}
 @keyframes flashout{to{opacity:0}}
 .twinkle{position:fixed;z-index:70;font-size:30px;pointer-events:none;animation:twk 1s ease-out forwards}
 @keyframes twk{0%{transform:scale(0) rotate(0)}40%{transform:scale(1.3) rotate(90deg)}100%{transform:scale(0) translateY(-30px) rotate(180deg);opacity:0}}
@@ -235,26 +235,26 @@ button:disabled{opacity:.4;cursor:default}
 .cpg[aria-pressed="true"]{background:#ff8ac4}
 /* color sort */
 .sortz{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:16px;min-height:420px;padding:10px 0}
-.sitem{width:min(200px,40vw);aspect-ratio:1;touch-action:none;transition:transform .55s cubic-bezier(.5,0,.4,1);filter:drop-shadow(0 6px 0 rgba(90,32,80,.15));cursor:grab}
+.sitem{width:min(200px,40vw);height:min(200px,40vw);touch-action:none;transition:transform .55s cubic-bezier(.5,0,.4,1);filter:drop-shadow(0 6px 0 rgba(90,32,80,.15));cursor:grab}
 .sitem.drag{transition:none}
 .sitem.in{animation:popin .4s cubic-bezier(.3,1.5,.6,1)}
 .sitem.wig{animation:shake .4s}
 .sitem svg{width:100%;height:100%}
 .sdots{display:flex;gap:8px}.sdots i{width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 3px var(--sky-2)}.sdots i.on{background:#ff8ac4}
 .baskets{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;width:100%}
-.basket{width:min(190px,22vw);min-width:120px;aspect-ratio:4/3;border-radius:22px;background:rgba(255,255,255,.6);display:grid;place-items:center;padding:8px}
+.basket{width:min(190px,22vw);min-width:120px;border-radius:22px;background:rgba(255,255,255,.6);display:grid;place-items:center;padding:8px}
 .basket svg{width:100%}
 .basket.got{animation:bump .4s}
 /* tracing */
 .trace{flex:1;display:flex;flex-direction:column;gap:12px;min-height:0}
 .tbox{flex:1;min-height:360px;position:relative;border-radius:28px;background:#fff;box-shadow:0 6px 0 var(--sky-2);overflow:hidden;touch-action:none}
-.tbox canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+.tbox canvas{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;touch-action:none}
 .tword{position:absolute;left:0;right:0;bottom:14px;display:flex;justify-content:center;align-items:center;gap:12px;pointer-events:none;font-family:var(--f-display);font-size:34px;color:var(--ink)}
 .tword span{font-size:56px}
 
 /* stickers + grown-ups */
 .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:12px}
-.sticker{aspect-ratio:1;border-radius:22px;background:var(--card);display:grid;place-items:center;font-size:52px;box-shadow:0 5px 0 var(--sky-2)}
+.sticker{height:100px;border-radius:22px;background:var(--card);display:grid;place-items:center;font-size:52px;box-shadow:0 5px 0 var(--sky-2)}
 .sticker.locked{background:rgba(255,255,255,.45);color:var(--muted);font-family:var(--f-display);font-size:30px;box-shadow:none}
 .note{color:var(--muted);font-size:16px;margin:0;max-width:62ch}
 .prow{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--card);border-radius:18px;padding:10px 12px 10px 16px;box-shadow:0 4px 0 var(--sky-2)}
@@ -264,7 +264,7 @@ button:disabled{opacity:.4;cursor:default}
 .pbtn.warn{background:var(--coral);color:#fff;box-shadow:0 4px 0 #c94a3f}
 
 /* popups */
-.overlay{position:fixed;inset:0;background:rgba(29,43,79,.45);display:grid;place-items:center;z-index:50;padding:20px}
+.overlay{position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(29,43,79,.45);display:grid;place-items:center;z-index:50;padding:20px}
 .pop{background:var(--card);border-radius:30px;padding:26px 30px;text-align:center;max-width:420px;width:100%;box-shadow:0 10px 0 var(--sky-2);animation:popin .35s cubic-bezier(.3,1.5,.6,1)}
 .pop .em{font-size:96px;line-height:1.1}
 .pop h2{margin:6px 0 4px;font-family:var(--f-display);font-weight:700;font-size:32px}
@@ -814,7 +814,7 @@ function playFruit(lv){
     <div class="fboard" id="fBoard"><div class="flayer" id="fLayer"></div><canvas class="ffx" id="fFx"></canvas></div>
     <p class="note" style="text-align:center;margin:0 auto">Swipe a fruit to swap it. Match 4 for a blaster, 5 for a rainbow!</p></div>`;
   const board=$('#fBoard');
-  const fitBoard=()=>{const r=view.getBoundingClientRect();const s=Math.max(260,Math.min(r.width,r.height-150));board.style.width=s+'px'};
+  const fitBoard=()=>{const r=view.getBoundingClientRect();const s=Math.max(260,Math.min(r.width,r.height-150));board.style.width=s+'px';board.style.height=s+'px'};
   fitBoard();playFruit.fit=fitBoard;
   // the board drops in at the start
   F.busy=true;const fresh=new Map(F.G.map((t,p)=>[t.id,fy(p)-FN-1]));
@@ -839,6 +839,8 @@ function playFruit(lv){
    CANVAS GAMES: shared setup
    ========================================================= */
 let loopToken=0;
+if(!CanvasRenderingContext2D.prototype.roundRect)CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){r=Math.max(0,Math.min(r||0,w/2,h/2));
+  this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath();return this};
 function canvasGame(title,sub,hud){
   setHeader(title,sub);
   view.innerHTML=`<div class="cgame"><div class="chud">${hud||''}</div><div class="cbox" id="cbox"><canvas id="cv"></canvas></div></div>`;
@@ -1070,7 +1072,8 @@ const LITTLE_STICKERS='👑🦋🌸🦄🌈💖🎀🌷🍓🐱🐰🦢🌟🧁�
 const isLittle=()=>K.mode==='little';
 function applyMode(){document.documentElement.classList.toggle('little',isLittle())}
 // speak with the tablet's own voice when running as the installed app
-function speakNow(t){try{if(window.SQAndroid){SQAndroid.speak(t);return}if('speechSynthesis' in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.rate=0.85;u.pitch=1.15;speechSynthesis.speak(u)}}catch(e){}}
+function webVoices(){try{return speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang))}catch(e){return[]}}
+function speakNow(t){try{if(window.SQAndroid){SQAndroid.speak(t);return}if('speechSynthesis' in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.rate=K.vrate||0.95;u.pitch=K.vpitch||1;const v=webVoices().find(x=>x.name===K.voiceName);if(v)u.voice=v;speechSynthesis.speak(u)}}catch(e){}}
 
 /* ---------- BUTTERFLY GARDEN: catch and count ---------- */
 const BF_COL=[['#ff7eb6','#ffb3d6'],['#c48bff','#e3c9ff'],['#ffd75e','#ffe9a3'],['#7cc4ff','#bfe3ff'],['#ff9f6b','#ffd0b3']];
@@ -1346,13 +1349,26 @@ function grownups(){
     ${GAMES.filter(g=>g.max&&(K.mode==='little'?(g.little||g.both):!g.little)).map(g=>`<div class="prow"><span>${g.em} ${g.name}</span><span class="ctl"><button class="pm" data-d="-1" data-id="${g.id}" aria-label="Easier">−</button>Level ${K.lv[g.id]} <small style="font-size:14px;color:var(--muted)">${g.play?'':'/ '+g.max}</small><button class="pm" data-d="1" data-id="${g.id}" aria-label="Harder">+</button></span></div>`).join('')}
     <div class="row" style="justify-content:flex-start">
       <button class="pbtn" id="snd">Sound: ${K.sound?'On':'Off'}</button>
-      <button class="pbtn" id="fs">Full screen: ${K.full===false?'Off':'On'}</button>
+      <button class="pbtn" id="fs">Full screen: ${K.full===false?'Off':'On'}</button></div>
+    <div class="prow" id="vrow" style="flex-wrap:wrap"><span>Voice</span><span class="ctl" style="flex-wrap:wrap"><select id="vsel" style="font:inherit;font-size:17px;padding:8px;border-radius:12px;border:2px solid var(--sky-2);max-width:16em"></select>
+      <button class="pm" id="vslow" aria-label="Slower">🐢</button><button class="pm" id="vfast" aria-label="Faster">🐇</button><button class="pbtn" id="vtest">▶ Test</button></span>
       <button class="pbtn ${resetArm?'warn':''}" id="rst">${resetArm?'Tap again to erase everything':'Reset stars and stickers'}</button></div>
     <p class="note">Levels go up by themselves after ${PER_LEVEL} right answers. Use − and + if a game feels too hard or too easy.</p>`;
   view.querySelectorAll('.pm').forEach(b=>b.onclick=()=>{const g=GAMES.find(x=>x.id===b.dataset.id);K.lv[g.id]=Math.max(1,Math.min(g.max,K.lv[g.id]+ +b.dataset.d));K.got[g.id]=0;save();grownups()});
   $('#snd').onclick=()=>{K.sound=!K.sound;save();grownups()};
   $('#modeB').onclick=()=>{K.mode='big';save();applyMode();grownups()};$('#modeL').onclick=()=>{K.mode='little';save();applyMode();grownups()};
   $('#kidName').onchange=e=>{K.name=e.target.value.trim().replace(/[^A-Za-z \-']/g,'');K.traceIdx=0;save()};
+  (function voicePicker(){const sel=$('#vsel');if(!sel)return;let list=[];
+    if(window.SQAndroid&&SQAndroid.voices){try{list=JSON.parse(SQAndroid.voices()).map(v=>({id:v.name,label:v.name.replace(/[-_]/g,' ')+(v.q>=400?' ★':'')+(v.net?' (needs internet)':''),on:v.on}))}catch(e){}}
+    else list=webVoices().map(v=>({id:v.name,label:v.name+(v.localService?'':' (needs internet)'),on:v.name===K.voiceName}));
+    list.sort((a,b)=>(b.label.includes('★')-a.label.includes('★'))||a.label.localeCompare(b.label));
+    if(!list.length){$('#vrow').querySelector('span').textContent='Voice (this tablet has no voices to choose from)';sel.hidden=true}
+    sel.innerHTML=list.map(v=>`<option value="${v.id.replace(/"/g,'')}" ${v.on||v.id===K.voiceName?'selected':''}>${v.label}</option>`).join('');
+    const test=()=>speakNow(K.name?`Hi ${K.name}! Let's catch some butterflies!`:`Hi! Let's play Star Quest!`);
+    sel.onchange=()=>{K.voiceName=sel.value;save();if(window.SQAndroid&&SQAndroid.setVoice)SQAndroid.setVoice(sel.value);test()};
+    const pace=d=>{K.vrate=Math.max(0.6,Math.min(1.4,(K.vrate||0.95)+d));save();if(window.SQAndroid&&SQAndroid.setPace)SQAndroid.setPace(K.vrate,K.vpitch||1);test()};
+    $('#vslow').onclick=()=>pace(-0.1);$('#vfast').onclick=()=>pace(0.1);$('#vtest').onclick=test;
+    if(!window.SQAndroid&&'speechSynthesis' in window&&!list.length)speechSynthesis.onvoiceschanged=()=>{if(location.hash==='#grownups')grownups()}})();
   $('#fs').onclick=()=>{K.full=K.full===false;save();if(K.full===false&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});grownups()};
   $('#rst').onclick=()=>{if(!resetArm){resetArm=true;return grownups()}resetArm=false;K=blank();save();updateStars();grownups()};
 }
