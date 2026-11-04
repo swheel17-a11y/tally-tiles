@@ -2495,6 +2495,18 @@ async function tvPlay(top){
 }
 function tvPlayFail(over){over.hidden=false;over.innerHTML='<p>This one won\'t play right now. Try another one, or ask a grown-up.</p>'}
 
+// When sign-in can't get through, find out which step is blocked so a grown-up knows what to fix
+async function jfDiagnose(url){
+  const host=esc(url.replace(/^https?:\/\//,'')),me=esc(location.origin&&location.origin!=='null'?location.origin:'this page');
+  if(!/^https:/i.test(url))return `<b>Step 1 failed:</b> the address must start with https:// (this app is on a secure page, so tablets won't talk to plain http servers).`;
+  const t=(p,o)=>Promise.race([fetch(url+p,o),new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),9000))]);
+  try{await t('/System/Info/Public',{mode:'no-cors',cache:'no-store'})}catch(e){return `<b>Step 1 failed:</b> this tablet can't reach <b>${host}</b> at all. Check the address and Wi-Fi, and try opening https://${host} in the browser on this tablet.`}
+  let info=null;try{const r=await t('/System/Info/Public',{cache:'no-store'});info=await r.json()}catch(e){
+    return `<b>Step 2 failed:</b> the server is there, but it is blocking apps that live on other websites (CORS). Ask the server owner to allow <b>${me}</b>: in Jellyfin, Dashboard › Networking › "CORS hosts"/"Known proxies" area, or in the reverse proxy (nginx, Caddy, Cloudflare) add an Access-Control-Allow-Origin header for that address.`}
+  try{await t('/System/Info/Public',{cache:'no-store',headers:{'X-Emby-Authorization':jfHdr()}})}catch(e){
+    return `<b>Step 3 failed:</b> the server ${info&&info.ServerName?`(“${esc(info.ServerName)}”) `:''}answers simple requests but blocks the sign-in check (CORS preflight). The reverse proxy in front of Jellyfin needs to answer OPTIONS requests and allow the Authorization and X-Emby-Authorization headers for <b>${me}</b>.`}
+  return `The server ${info&&info.ServerName?`“${esc(info.ServerName)}” `:''}is reachable and allows this app, but the sign-in still failed. Try again in a minute.`;
+}
 /* grown-ups section for the movie server */
 function tvGrownups(){
   const J=K.jf&&K.jf.token?K.jf:null;
@@ -2515,7 +2527,8 @@ function tvGrownupsWire(redraw){
     if(!url||!user){msg.textContent='Type the server address and username.';return}
     btn.disabled=true;msg.textContent='Signing in…';K.jfLast={url:jfUrl(url),user};save();
     try{await jfLogin(url,user,pw);TV.stack=[];sfx.up();redraw();const m=$('#jfMsg');if(m)m.textContent='Connected! The kids can open Movies & Shows now.'}
-    catch(e){btn.disabled=false;msg.textContent=jfErrText(e)}};
+    catch(e){if(e&&(e.auth||e.status)){btn.disabled=false;msg.textContent=jfErrText(e);return}
+      msg.textContent='Checking the connection…';const why=await jfDiagnose(jfUrl(url));btn.disabled=false;msg.innerHTML=why}};
 }
 
 /* =========================================================
