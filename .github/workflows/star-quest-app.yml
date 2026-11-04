@@ -1,8 +1,6 @@
 name: Build Star Quest app
+# Manual only: the tablets use the web version now, which updates by itself.
 on:
-  push:
-    branches: [main]
-    paths: ['kids/**', 'android/**', '.github/workflows/star-quest-app.yml']
   workflow_dispatch:
 permissions:
   contents: write
