@@ -444,6 +444,18 @@ button:disabled{opacity:.4;cursor:default}
 .aend{position:absolute;left:66%;top:42%;transform:translate(-50%,-50%);font-size:min(26vmin,200px);animation:spinin 1s}
 .ascene.night .stext p{color:inherit}
 @media (orientation:portrait){.apr{width:36%;height:48%}.afr{left:34%}}
+/* fishing trip */
+.fspot{height:44px;font-size:16px;padding:0 12px}
+.fspot[aria-pressed="true"]{background:var(--ink);color:#fff;box-shadow:0 4px 0 #0d1630}
+.fbook{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(223,241,255,.97);padding:16px;overflow-y:auto;z-index:3;touch-action:pan-y}
+.fbook h3{font-family:var(--f-display);font-size:22px;margin:14px 0 8px}
+.fbook h3 small{font-family:var(--f-body);font-size:15px;color:var(--muted)}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.fcard{background:var(--card);border-radius:16px;padding:10px;text-align:center;box-shadow:0 4px 0 var(--sky-2);display:flex;flex-direction:column;gap:2px}
+.fcard span{font-size:44px;line-height:1.1}
+.fcard b{font-family:var(--f-display);font-size:18px}
+.fcard small{font-size:13px;color:var(--muted)}
+.fcard.unk span{filter:brightness(0);opacity:.25}
 /* stickers + grown-ups */
 .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:12px}
 .sticker{height:100px;border-radius:22px;background:var(--card);display:grid;place-items:center;font-size:52px;box-shadow:0 5px 0 var(--sky-2)}
@@ -502,6 +514,7 @@ const GAMES=[
   {id:'bubble',name:'Bubble Pop',em:'🎯',sub:'Aim, bounce, pop!',color:'#13a5d6',max:999,play:true},
   {id:'runner',name:'Dino Dash',em:'🦖',sub:'Run, jump, grab stars',color:'#4fae3c',max:0,play:true},
   {id:'tower',name:'Tower Builder',em:'🏗️',sub:'Stack it sky high',color:'#8a5cf6',max:0,play:true},
+  {id:'fish',name:'Fishing Trip',em:'🎣',sub:'Catch them all',color:'#1a8fb5',max:0,play:true},
   {id:'brick',name:'Brick Builder',em:'🧱',sub:'Build anything in 3D',color:'#d9262b',max:0,play:true},
   {id:'doodle',name:'Doodle Pad',em:'🎨',sub:'Draw anything',color:'#f59a23',max:0,play:true,both:true},
   {id:'adventure',name:'Magic Adventure',em:'🦄',sub:'You pick what happens',color:'#9b6bff',max:0,little:true},
@@ -543,7 +556,7 @@ function say(text,force){if(canSpeak)speakNow(text,force)}
 
 /* ---------- stars, levels, stickers ---------- */
 /* ---------- star gate: Learn games fill a wallet, Fun games spend it as play time ---------- */
-const GATED=['fruit','bubble','runner','tower','brick'];
+const GATED=['fruit','bubble','runner','tower','brick','fish'];
 const gateOn=()=>K.mode!=='little'&&K.gate!==false;
 const isGated=id=>gateOn()&&GATED.includes(id);
 const minsPerStar=()=>K.minsPerStar||2;
@@ -2153,6 +2166,165 @@ const ADV_ACTS={
 };
 
 /* =========================================================
+   FISHING TRIP: tap the water to drop the hook, then keep the fish in the green to reel it in
+   ========================================================= */
+// [emoji, name, depth 0-1, weight (higher = more common), difficulty 1-5, min cm, max cm, kind]  kind: s=swims, b=bottom crawler, j=junk/treasure on the floor
+const FISH_SPOTS=[
+  {id:'pond',name:'Lily Pond',em:'🐸',top:'#bfe8ff',sky:'#e8f6ff',w1:'#5cc1b0',w2:'#1f6f6a',floor:'#7a6a3a',weed:'#3f9a4a',fish:[
+    ['🐟','Bluegill',0.3,10,1,10,25,'s'],['🐠','Sunfish',0.5,8,1,12,28,'s'],['🐸','Pond Frog',0.08,4,2,6,14,'s'],['🐡','Spiny Puffer',0.65,4,2,10,30,'s'],
+    ['🦞','Crawdad',1,6,2,6,15,'b'],['🐢','Snapping Turtle',0.8,2,3,25,60,'s'],['🐍','Water Snake',0.55,2,4,50,120,'s'],['👢','Old Boot',1,3,0,25,30,'j']]},
+  {id:'sea',name:'Coral Sea',em:'🐚',top:'#9fdcff',sky:'#dff4ff',w1:'#36b6e6',w2:'#0d4f8a',floor:'#e8cf8f',weed:'#ff7f9e',fish:[
+    ['🐠','Clownfish',0.35,10,1,6,12,'s'],['🐟','Mackerel',0.25,9,2,25,45,'s'],['🐡','Pufferfish',0.55,6,2,15,40,'s'],['🦀','Red Crab',1,6,1,8,22,'b'],
+    ['⭐','Starfish',1,4,0,10,30,'j'],['🦑','Squid',0.7,4,3,30,90,'s'],['🐢','Sea Turtle',0.5,2,3,60,140,'s'],['🦈','Shark',0.75,1.5,5,150,400,'s'],['🥫','Old Can',1,2,0,10,12,'j']]},
+  {id:'deep',name:'Deep Dark Sea',em:'🌑',top:'#5b8fd6',sky:'#cfe0f7',w1:'#1f4f9a',w2:'#070d2e',floor:'#3a3550',weed:'#6a5acd',night:true,fish:[
+    ['🦐','Glow Shrimp',0.4,10,1,5,15,'s'],['🐙','Octopus',0.85,6,3,40,200,'s'],['🦑','Giant Squid',0.7,4,4,300,1200,'s'],['🐡','Angler Puffer',0.6,6,2,20,60,'s'],
+    ['🐳','Blue Whale',0.4,1,5,2000,3000,'s'],['🐉','Sea Dragon',0.9,0.7,5,500,900,'s'],['💎','Sunken Gem',1,2,0,3,8,'j'],['👑','Pirate Crown',1,1,0,20,25,'j']]}];
+const FISH_UNLOCK=4; // species to find before the next spot opens
+function fishBook(){K.fish=K.fish||{book:{},spot:0};return K.fish}
+function fishFound(si){const B=fishBook().book;return FISH_SPOTS[si].fish.filter((_,i)=>B[si+':'+i]).length}
+function fishOpen(si){return si===0||fishFound(si-1)>=FISH_UNLOCK}
+function playFish(){
+  if(location.hash!=='#fish')return; // a late timer from a game you already left
+  const F=fishBook();if(!fishOpen(F.spot))F.spot=0;
+  const SP=FISH_SPOTS[F.spot];
+  const S=canvasGame('Fishing Trip',SP.name,`<span>Found <b id="fFound">${fishFound(F.spot)}</b> of ${SP.fish.length}</span>
+    ${FISH_SPOTS.map((p,i)=>`<button class="pbtn fspot" data-sp="${i}" aria-pressed="${i===F.spot}" ${fishOpen(i)?'':'disabled'}>${fishOpen(i)?p.em:'🔒'} ${p.name}</button>`).join('')}
+    <button class="pbtn" id="fBookB">📖 Fish book</button>`);
+  view.querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>{const i=+b.dataset.sp;if(!fishOpen(i)){sfx.no();return}F.spot=i;save();sfx.tap();playFish()});
+  const G={t:0,boatX:0,boatTo:0,hook:{x:0,y:0,ty:0,state:'up'},fish:[],items:[],bubbles:[],sparks:[],ring:[],hold:false,reel:null,show:null,msg:'Tap the water to drop your hook!',msgT:4,tutorial:!F.tutDone};
+  const Wy=()=>S.H*0.2,floorY=()=>S.H-28,depthY=d=>Wy()+40+d*(floorY()-Wy()-70),sz=()=>Math.max(30,Math.min(S.W,S.H)*0.075);
+  const rodTip=()=>({x:G.boatX+sz()*0.55,y:Wy()-sz()*0.9});
+  G.boatX=G.boatTo=S.W*0.4;G.hook.x=rodTip().x;G.hook.y=Wy()-10;
+  const weeds=[...Array(14)].map(()=>({x:Math.random(),h:0.5+Math.random(),p:Math.random()*6}));
+  const pickSpecies=kind=>{const list=SP.fish.map((f,i)=>[f,i]).filter(([f])=>kind==='j'?f[7]!=='s':f[7]==='s');const tot=list.reduce((a,[f])=>a+f[3],0);let r=Math.random()*tot;
+    for(const [f,i] of list){r-=f[3];if(r<=0)return i}return list[0][1]};
+  function spawnFish(edge){const i=pickSpecies('s'),f=SP.fish[i],dir=Math.random()<.5?1:-1,d=Math.max(0.02,Math.min(0.95,f[2]+(Math.random()-.5)*0.3));
+    G.fish.push({i,x:edge?(dir>0?-60:S.W+60):40+Math.random()*(S.W-80),d,dir,v:(30+Math.random()*30)*(1+f[4]*0.18),ph:Math.random()*6,want:Math.random()<0.75})}
+  function spawnItem(){const i=pickSpecies('j'),f=SP.fish[i];G.items.push({i,x:60+Math.random()*(S.W-120),dir:Math.random()<.5?1:-1,v:f[7]==='b'?12+Math.random()*10:0})}
+  for(let k=0;k<6;k++)spawnFish(false);for(let k=0;k<3;k++)spawnItem();
+  if(/[?&]bot\b/.test(location.search))window.__fishG=G;
+  const fy=o=>depthY(o.d)+Math.sin(G.t*2+o.ph)*6;
+  // ----- input -----
+  S.cv.onpointerdown=e=>{e.preventDefault();const r=S.cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;G.hold=true;
+    if(G.reel)return; if(G.show){if(G.show.t>0.6){G.show=null;G.hook.state='up'}return}
+    if(y<Wy()){G.hook.state='up';return}
+    G.boatTo=Math.max(sz(),Math.min(S.W-sz(),x-sz()*0.55));G.hook.tx=G.boatTo+sz()*0.55;G.hook.ty=Math.min(y,floorY()-14);G.hook.state='move';G.hook.wait=0;
+    G.fish.forEach(o=>{o.want=Math.random()<0.8;o.chase=false});
+    if(G.tutorial&&G.msgT>0){G.msgT=0}};
+  const release=()=>{G.hold=false};S.cv.onpointerup=release;S.cv.onpointercancel=release;S.cv.onpointerleave=release;
+  // ----- reeling mini-game -----
+  function startReel(o){const f=SP.fish[o.i];o.hooked=true;
+    G.reel={o,f,diff:f[4],zone:0.35-f[4]*0.035,z:0.3,zv:0,fish:0.5,fishTo:0.5,ft:0,p:0.3,startY:G.hook.y,warn:0.5};
+    sfx.yes();tone([[300,0,.08],[300,.12,.08]],'square',0.05);
+    if(G.tutorial){G.msg='Hold your finger down to lift the green box. Keep the fish inside it!';G.msgT=6}}
+  function catchIt(o,instant){const f=SP.fish[o.i],key=F.spot+':'+o.i,B=F.book,cm=Math.round(f[5]+Math.random()*Math.random()*(f[6]-f[5]));
+    const old=B[key],isNew=!old,rec=old&&cm>old.best;B[key]={n:(old?old.n:0)+1,best:Math.max(cm,old?old.best:0)};
+    const firstTime=G.tutorial;G.tutorial=false;F.tutDone=true;save();
+    G.show={o,f,cm,isNew,rec,t:0};G.reel=null;sfx.up();sparks(G.sparks,G.hook.x,Wy(),'#ffd23f',26,260);
+    const unlocked=isNew&&F.spot<2&&fishFound(F.spot)===FISH_UNLOCK;
+    say(isNew?`New fish! A ${f[1]}!`:rec?`New record! ${cm} centimeters!`:`You caught a ${f[1]}!`);
+    if(isNew)addStars(1,S.cv,'fish');
+    $('#fFound').textContent=fishFound(F.spot);
+    if(unlocked)setTimeout(()=>{if(S.alive())popup(FISH_SPOTS[F.spot+1].em,`${FISH_SPOTS[F.spot+1].name} is open!`,`You found ${FISH_UNLOCK} kinds of ${instant?'things':'fish'} here. Tap the new spot at the top to fish somewhere new.`,'Cool!',()=>playFish())},1800);
+    if(instant)G.items.splice(G.items.indexOf(o),1);else G.fish.splice(G.fish.indexOf(o),1)}
+  function lose(){const o=G.reel.o;o.hooked=false;o.chase=false;o.want=false;o.dir=Math.random()<.5?1:-1;o.v*=2.2;o.flee=2;G.reel=null;G.hook.state='up';
+    sfx.no();G.msg='It got away! Try again.';G.msgT=2.2;say('It got away!')}
+  // ----- loop -----
+  S.loop(dt=>{
+    const c=S.ctx,W=S.W,H=S.H,s=sz();G.t+=dt;
+    // update boat + hook
+    G.boatX+=(G.boatTo-G.boatX)*Math.min(1,dt*3);
+    const tip=rodTip(),h=G.hook;
+    if(h.state==='move'){h.x+=(tip.x-h.x)*Math.min(1,dt*8);if(Math.abs(G.boatX-G.boatTo)<4){h.state='sink';h.x=tip.x;if(h.y<Wy()){h.y=Wy();tone([[220,0,.12],[160,.05,.15]],'sine',0.08);G.ring.push({x:h.x,t:0})}}}
+    else if(h.state==='sink'){h.x=tip.x;h.y=Math.min(h.ty,h.y+Math.max(120,H*0.45)*dt);if(h.y>=h.ty)h.state='wait';if(h.y<Wy())h.y=Wy()}
+    else if(h.state==='wait'){h.x=tip.x+Math.sin(G.t*2)*3;h.wait+=dt}
+    else if(h.state==='up'&&!G.show){h.x+=(tip.x-h.x)*Math.min(1,dt*6);h.y+=(tip.y+30-h.y)*Math.min(1,dt*4)}
+    // treasure on the floor: grab it if the hook lands right on it
+    if(h.state==='wait'&&!G.reel&&!G.show)for(const it of G.items){if(Math.hypot(it.x-h.x,floorY()-14-h.y)<s*0.9){catchIt(it,true);break}}
+    // fish
+    for(const o of G.fish){const f=SP.fish[o.i];
+      if(o.hooked){o.x=h.x+Math.sin(G.t*18)*6;continue}
+      if(o.flee){o.flee-=dt;if(o.flee<=0){o.flee=0;o.v/=2.2}}
+      const y=fy(o);
+      if(h.state==='wait'&&!G.reel&&!G.show&&o.want&&!o.flee&&Math.hypot(o.x-h.x,y-h.y)<Math.max(170,W*0.2))o.chase=true;
+      if(o.chase&&h.state==='wait'&&!G.reel&&!G.show){const dx=h.x-o.x,dy=h.y-y;o.dir=dx>0?1:-1;o.x+=Math.sign(dx)*Math.min(Math.abs(dx),o.v*1.3*dt);
+        const want=(h.y-Wy()-40)/(floorY()-Wy()-70);o.d+=(want-o.d)*Math.min(1,dt*1.5);
+        if(Math.hypot(dx,dy)<s*0.55)startReel(o)}
+      else{o.chase=false;o.x+=o.dir*o.v*dt;if(Math.random()<dt*0.15)o.dir*=-1}
+      if(o.x<-120||o.x>W+120)o.gone=true}
+    G.fish=G.fish.filter(o=>!o.gone);while(G.fish.length<6)spawnFish(true);
+    for(const it of G.items){if(!it.v)continue;it.x+=it.dir*it.v*dt;if(it.x<30||it.x>W-30)it.dir*=-1}
+    while(G.items.length<3)spawnItem();
+    if(Math.random()<dt*3)G.bubbles.push({x:Math.random()*W,y:floorY(),r:2+Math.random()*4});
+    // reeling
+    const R=G.reel;
+    if(R){R.ft-=dt;if(R.ft<=0){R.fishTo=Math.random();R.ft=(1.6-R.diff*0.22)*(0.5+Math.random())}
+      R.fish+=(R.fishTo-R.fish)*Math.min(1,dt*(0.8+R.diff*0.55));
+      R.zv+=(G.hold?2.6:-2.1)*dt;R.zv=Math.max(-1.3,Math.min(1.3,R.zv));R.z+=R.zv*dt;
+      if(R.z<0){R.z=0;R.zv=Math.max(0,R.zv)*-0.3}if(R.z>1-R.zone){R.z=1-R.zone;R.zv=Math.min(0,R.zv)*-0.3}
+      const inZone=R.fish>=R.z&&R.fish<=R.z+R.zone;R.p+=(inZone?0.32-R.diff*0.025:-(0.15+R.diff*0.03))*dt;
+      if(inZone&&Math.random()<dt*8)tone([[900+R.p*400,0,.03]],'square',0.015);
+      h.y=R.startY+(Wy()-R.startY)*Math.max(0,R.p);
+      if(R.p>=1)catchIt(R.o,false);else if(R.p<=0)lose()}
+    if(G.show){G.show.t+=dt;h.y+=(tip.y+30-h.y)*Math.min(1,dt*3);h.x+=(tip.x-h.x)*Math.min(1,dt*3)}
+    // ----- draw -----
+    const sky=c.createLinearGradient(0,0,0,Wy());sky.addColorStop(0,SP.night?'#26305e':SP.top);sky.addColorStop(1,SP.sky);c.fillStyle=sky;c.fillRect(0,0,W,Wy());
+    emojiAt(c,SP.night?'🌙':'☀️',W*0.88,Wy()*0.35,s*0.9);emojiAt(c,'☁️',(G.t*12)%(W+200)-100,Wy()*0.3,s*0.9);
+    const wg=c.createLinearGradient(0,Wy(),0,H);wg.addColorStop(0,SP.w1);wg.addColorStop(1,SP.w2);c.fillStyle=wg;c.fillRect(0,Wy(),W,H-Wy());
+    c.globalAlpha=0.08;c.fillStyle='#fff';for(let k=0;k<5;k++){const x=((k*W/4)+G.t*10)%(W+200)-100;c.beginPath();c.moveTo(x,Wy());c.lineTo(x+60,Wy());c.lineTo(x-80,H);c.lineTo(x-180,H);c.fill()}c.globalAlpha=1;
+    c.fillStyle=SP.floor;c.beginPath();c.moveTo(0,H);for(let x=0;x<=W;x+=20)c.lineTo(x,floorY()+Math.sin(x*0.03)*6);c.lineTo(W,H);c.fill();
+    c.strokeStyle=SP.weed;c.lineWidth=5;c.lineCap='round';for(const w of weeds){const x=w.x*W,hh=s*1.6*w.h;c.beginPath();c.moveTo(x,floorY()+4);
+      c.quadraticCurveTo(x+Math.sin(G.t*1.5+w.p)*14,floorY()-hh/2,x+Math.sin(G.t*1.5+w.p+1)*18,floorY()-hh);c.stroke()}
+    c.fillStyle='rgba(255,255,255,.5)';for(const b of G.bubbles){b.y-=40*dt;b.x+=Math.sin(G.t*3+b.r)*0.4;c.beginPath();c.arc(b.x,b.y,b.r,0,7);c.fill()}G.bubbles=G.bubbles.filter(b=>b.y>Wy());
+    for(const it of G.items)emojiAt(c,SP.fish[it.i][0],it.x,floorY()-s*0.35,s*0.85,it.dir>0);
+    for(const o of G.fish){const f=SP.fish[o.i],big=f[4]>=4?1.35:1;emojiAt(c,f[0],o.x,o.hooked?h.y+s*0.3:fy(o),s*big,o.dir>0)}
+    // surface wave on top of the fish
+    c.fillStyle='rgba(255,255,255,.35)';c.beginPath();c.moveTo(0,Wy());for(let x=0;x<=W;x+=16)c.lineTo(x,Wy()+Math.sin(x*0.05+G.t*2)*3);c.lineTo(W,Wy()+8);c.lineTo(0,Wy()+8);c.fill();
+    for(const r of G.ring){r.t+=dt;c.strokeStyle=`rgba(255,255,255,${Math.max(0,1-r.t)})`;c.lineWidth=2;c.beginPath();c.ellipse(r.x,Wy(),10+r.t*50,3+r.t*10,0,0,7);c.stroke()}G.ring=G.ring.filter(r=>r.t<1);
+    // boat, rod and line
+    const by=Wy()+Math.sin(G.t*2)*2;
+    c.fillStyle='#b5651d';c.beginPath();c.moveTo(G.boatX-s*1.1,by-s*0.35);c.lineTo(G.boatX+s*1.1,by-s*0.35);c.lineTo(G.boatX+s*0.8,by+s*0.15);c.lineTo(G.boatX-s*0.8,by+s*0.15);c.closePath();c.fill();
+    c.fillStyle='#8a4a14';c.fillRect(G.boatX-s*1.1,by-s*0.4,s*2.2,s*0.12);
+    emojiAt(c,'🧒',G.boatX-s*0.15,by-s*0.85,s*0.95);
+    c.strokeStyle='#5a3a1a';c.lineWidth=4;c.beginPath();c.moveTo(G.boatX+s*0.05,by-s*0.55);c.lineTo(tip.x,tip.y);c.stroke();
+    c.strokeStyle='rgba(255,255,255,.9)';c.lineWidth=1.5;c.beginPath();c.moveTo(tip.x,tip.y);
+    if(R)c.lineTo(h.x+Math.sin(G.t*30)*2,h.y);else c.quadraticCurveTo((tip.x+h.x)/2,Math.max(tip.y,h.y)-(h.state==='up'?10:0),h.x,h.y);c.stroke();
+    if(h.y>Wy()&&!R){c.fillStyle='#ff3b3b';c.beginPath();c.arc(h.x,Wy()-2+Math.sin(G.t*3)*2,5,0,7);c.fill();c.fillStyle='#fff';c.fillRect(h.x-5,Wy()-3+Math.sin(G.t*3)*2,10,2)}
+    c.strokeStyle='#d8d8d8';c.lineWidth=3;c.beginPath();c.moveTo(h.x,h.y);c.lineTo(h.x,h.y+10);c.arc(h.x-5,h.y+10,5,0,Math.PI*0.9);c.stroke();
+    if(h.state==='wait'&&!R&&!G.show&&h.wait>6&&Math.floor(G.t*2)%2){c.fillStyle='rgba(255,255,255,.85)';c.font=`700 ${Math.round(s*0.32)}px ${getComputedStyle(document.body).fontFamily}`;c.textAlign='center';c.fillText('Tap near a fish!',h.x,h.y+s*0.9)}
+    drawSparks(c,G.sparks,dt,300);
+    // reel meter
+    if(R){const bh=Math.min(H*0.62,440),bw=Math.max(46,s*0.95),bx=W-bw-58,bt=Wy()+(H-Wy()-bh)/2;
+      c.fillStyle='rgba(13,30,60,.78)';c.beginPath();c.roundRect(bx-10,bt-10,bw+46,bh+20,16);c.fill();
+      c.fillStyle='#163a63';c.fillRect(bx,bt,bw,bh);
+      c.fillStyle=(R.fish>=R.z&&R.fish<=R.z+R.zone)?'#4fe08a':'#3fbf7f';c.globalAlpha=0.9;c.fillRect(bx+3,bt+bh*(1-R.z-R.zone),bw-6,bh*R.zone);c.globalAlpha=1;
+      emojiAt(c,R.f[0],bx+bw/2,bt+bh*(1-R.fish),bw*0.7,Math.sin(G.t*6)>0);
+      c.fillStyle='#0b2140';c.fillRect(bx+bw+10,bt,14,bh);const pc=Math.max(0,Math.min(1,R.p));c.fillStyle=pc<0.25?'#ff6f61':'#ffd23f';c.fillRect(bx+bw+10,bt+bh*(1-pc),14,bh*pc);
+      if(R.warn>0){R.warn-=dt;c.font=`700 ${Math.round(s*0.9)}px ${getComputedStyle(document.body).fontFamily}`;c.textAlign='center';c.fillStyle='#ffd23f';c.fillText('!',h.x,h.y-s*0.7)}}
+    // catch card
+    if(G.show){const g=G.show,k=Math.min(1,g.t*3),cw=Math.min(W*0.8,420),ch=Math.min(H*0.46,280),cx=W/2,cy=H*0.5;
+      c.save();c.translate(cx,cy);c.scale(0.6+0.4*k,0.6+0.4*k);c.globalAlpha=k;
+      c.fillStyle='#fff';c.beginPath();c.roundRect(-cw/2,-ch/2,cw,ch,24);c.fill();
+      if(g.isNew||g.rec){c.fillStyle=g.isNew?'#ff4f8b':'#f08a12';c.beginPath();c.roundRect(-cw/2+16,-ch/2+14,g.isNew?92:150,30,15);c.fill();
+        c.fillStyle='#fff';c.font=`700 17px ${getComputedStyle(document.body).fontFamily}`;c.textAlign='left';c.fillText(g.isNew?'NEW! ⭐':'NEW RECORD!',-cw/2+30,-ch/2+35)}
+      emojiAt(c,g.f[0],0,-ch*0.1,ch*0.36,Math.sin(g.t*4)>0);
+      c.fillStyle='#1d2b4f';c.textAlign='center';c.font=`700 ${Math.round(ch*0.12)}px Fredoka,system-ui`;c.fillText(g.f[1],0,ch*0.22);
+      c.fillStyle='#5d6b8a';c.font=`700 ${Math.round(ch*0.075)}px Nunito,system-ui`;c.fillText(g.cm>=100?`${(g.cm/100).toFixed(g.cm>=1000?0:1)} meters long!`:`${g.cm} cm long`,0,ch*0.34);
+      if(g.t>0.6){c.fillStyle='#2f8cff';c.font=`700 ${Math.round(ch*0.065)}px Nunito,system-ui`;c.fillText('Tap to keep fishing',0,ch*0.45)}
+      c.restore()}
+    if(G.msgT>0){G.msgT-=dt;c.globalAlpha=Math.min(1,G.msgT);c.fillStyle='rgba(13,30,60,.8)';c.font=`700 ${Math.round(Math.max(16,s*0.36))}px Nunito,system-ui`;c.textAlign='center';
+      const tw=Math.min(W-40,c.measureText(G.msg).width+36);c.beginPath();c.roundRect(W/2-tw/2,Wy()+14,tw,s*0.75,14);c.fill();c.fillStyle='#fff';c.fillText(G.msg,W/2,Wy()+14+s*0.5,W-60);c.globalAlpha=1}
+    else if(G.tutorial&&!R&&!G.show&&h.state==='up'){G.msg='Tap the water to drop your hook!';G.msgT=3}
+  });
+  // fish book
+  $('#fBookB').onclick=()=>{sfx.tap();const B=F.book;let o=$('#fbook');if(o){o.remove();return}
+    o=document.createElement('div');o.id='fbook';o.className='fbook';
+    o.innerHTML=`<div class="bbgh"><b>📖 Fish book</b><button class="pbtn" id="fbClose">Close</button></div>${FISH_SPOTS.map((p,si)=>`<h3>${fishOpen(si)?p.em:'🔒'} ${p.name} <small>${fishFound(si)} of ${p.fish.length}</small></h3>
+      <div class="fgrid">${p.fish.map((f,i)=>{const e=B[si+':'+i];return `<div class="fcard ${e?'':'unk'}"><span>${f[0]}</span><b>${e?f[1]:'???'}</b><small>${e?`Caught ${e.n} · best ${e.best>=100?(e.best/100).toFixed(1)+' m':e.best+' cm'}`:(fishOpen(si)?'Not caught yet':'Locked')}</small></div>`}).join('')}</div>`).join('')}`;
+    $('#cbox').appendChild(o);$('#fbClose').onclick=()=>o.remove()};
+}
+
+/* =========================================================
    HOME, STICKERS, GROWN-UPS
    ========================================================= */
 function home(){
@@ -2200,7 +2372,7 @@ function grownups(){
       <button class="pbtn" id="fs">Full screen: ${K.full===false?'Off':'On'}</button></div>
     <div class="prow" id="vrow" style="flex-wrap:wrap"><span>Voice</span><span class="ctl" style="flex-wrap:wrap"><button class="pbtn" id="vonoff" style="${voiceOn()?'background:var(--ink);color:#fff':''}">${voiceOn()?'On':'Off'}</button><select id="vsel" style="font:inherit;font-size:17px;padding:8px;border-radius:12px;border:2px solid var(--sky-2);max-width:16em"></select>
       <button class="pm" id="vslow" aria-label="Slower">🐢</button><button class="pm" id="vfast" aria-label="Faster">🐇</button><button class="pbtn" id="vtest">▶ Test</button></span></div>
-    ${K.mode!=='little'?`<div class="prow" style="flex-wrap:wrap"><span>Play games cost stars <small style="color:var(--muted)">(Fruit Pop, Bubble Pop, Dino Dash, Tower Builder, Brick Builder)</small></span><span class="ctl"><button class="pbtn" id="gateT">${K.gate===false?'Off':'On'}</button></span></div>
+    ${K.mode!=='little'?`<div class="prow" style="flex-wrap:wrap"><span>Play games cost stars <small style="color:var(--muted)">(Fruit Pop, Bubble Pop, Dino Dash, Tower Builder, Brick Builder, Fishing Trip)</small></span><span class="ctl"><button class="pbtn" id="gateT">${K.gate===false?'Off':'On'}</button></span></div>
     ${K.gate!==false?`<div class="prow" style="flex-wrap:wrap"><span>Each star buys</span><span class="ctl">${[1,2,3,5].map(m=>`<button class="pbtn" data-mps="${m}" style="${minsPerStar()===m?'background:var(--ink);color:#fff':''}">${m} min</button>`).join('')}</span></div>
     <div class="prow" style="flex-wrap:wrap"><span>Stars to spend: <b>${K.wallet}</b> · Play time left: <b>${fmtSec(K.playSec||0)}</b></span><span class="ctl"><button class="pbtn" id="give5">+5 stars</button><button class="pbtn" id="time5">+5 min</button><button class="pbtn" id="time0">Clear time</button></span></div>`:''}`:''}
     <div class="row" style="justify-content:flex-start"><button class="pbtn ${resetArm?'warn':''}" id="rst">${resetArm?'Tap again to erase everything':'Reset stars and stickers'}</button></div>
@@ -2229,7 +2401,7 @@ function grownups(){
 }
 
 /* ---------- navigation (plain #names so the back button works) ---------- */
-const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
+const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
 function go(name){if(location.hash.slice(1)!==name)location.hash=name;else show()}
 function show(){loopToken++;const r=location.hash.slice(1);resetArm=false;$('#timeChip').hidden=true;updateStars();$('#overlay').hidden=true;popQ.length=0;try{if(window.SQAndroid)SQAndroid.stop();else if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}
   view.scrollTop=0;(ROUTES[r]||home)()}
