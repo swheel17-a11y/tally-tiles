@@ -456,6 +456,36 @@ button:disabled{opacity:.4;cursor:default}
 .fcard b{font-family:var(--f-display);font-size:18px}
 .fcard small{font-size:13px;color:var(--muted)}
 .fcard.unk span{filter:brightness(0);opacity:.25}
+/* movies & shows */
+.tvhome{display:flex;flex-direction:column;gap:10px;padding-bottom:10px}
+.tvh{font-family:var(--f-display);font-size:24px;margin:8px 0 0}
+.tvgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.tvgrid.wide{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.tvrow{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px;touch-action:pan-x}
+.tvrow .tve{flex:none;width:250px}
+.tvp,.tve{display:flex;flex-direction:column;gap:6px;text-align:left}
+.tvp b,.tve b{font-family:var(--f-display);font-weight:600;font-size:17px;line-height:1.15;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.tvimg{position:relative;display:block;width:100%;padding-bottom:150%;border-radius:16px;overflow:hidden;background:#1d2b4f;box-shadow:0 5px 0 var(--sky-2)}
+.tvimg.wide{padding-bottom:56.25%}
+.tvimg img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}
+.tvimg i{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:48px;font-style:normal}
+.tvimg u{position:absolute;left:0;bottom:0;height:6px;background:var(--sun)}
+.tvimg em{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:var(--grass);color:#fff;font-style:normal;display:flex;align-items:center;justify-content:center;font-size:17px}
+.tvp:active .tvimg,.tve:active .tvimg{transform:translateY(3px)}
+.tvs[aria-pressed="true"]{background:var(--ink);color:#fff;box-shadow:0 4px 0 #0d1630}
+.tvplay{flex:1;display:flex;flex-direction:column;gap:10px;min-height:0}
+.tvvwrap{position:relative;flex:1;min-height:240px;background:#000;border-radius:20px;overflow:hidden}
+.tvvwrap video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;background:#000}
+.tvover{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;pointer-events:none;color:#fff;text-align:center;padding:20px;font-family:var(--f-display);font-size:22px}
+.tvover[hidden]{display:none}
+.tvover button{pointer-events:auto}
+.tvbig{width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.9);color:var(--ink);font-size:46px}
+.tvmsg{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted);font-family:var(--f-display);font-size:20px}
+.tvspin{width:54px;height:54px;border-radius:50%;border:6px solid rgba(127,140,170,.3);border-top-color:var(--ocean);animation:tvspin 1s linear infinite}
+@keyframes tvspin{to{transform:rotate(360deg)}}
+.gin{font:inherit;font-size:18px;padding:8px 12px;border-radius:12px;border:2px solid var(--sky-2);width:13em;max-width:100%;user-select:text;-webkit-user-select:text}
+html.little .tvgrid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+html.little .tvp b,html.little .tve b{font-size:20px}
 /* stickers + grown-ups */
 .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:12px}
 .sticker{height:100px;border-radius:22px;background:var(--card);display:grid;place-items:center;font-size:52px;box-shadow:0 5px 0 var(--sky-2)}
@@ -514,6 +544,7 @@ const GAMES=[
   {id:'bubble',name:'Bubble Pop',em:'🎯',sub:'Aim, bounce, pop!',color:'#13a5d6',max:999,play:true},
   {id:'runner',name:'Dino Dash',em:'🦖',sub:'Run, jump, grab stars',color:'#4fae3c',max:0,play:true},
   {id:'tower',name:'Tower Builder',em:'🏗️',sub:'Stack it sky high',color:'#8a5cf6',max:0,play:true},
+  {id:'tv',name:'Movies & Shows',em:'🍿',sub:'Watch your shows',color:'#3b3f8f',max:0,play:true,both:true},
   {id:'fish',name:'Fishing Trip',em:'🎣',sub:'Catch them all',color:'#1a8fb5',max:0,play:true},
   {id:'brick',name:'Brick Builder',em:'🧱',sub:'Build anything in 3D',color:'#d9262b',max:0,play:true},
   {id:'doodle',name:'Doodle Pad',em:'🎨',sub:'Draw anything',color:'#f59a23',max:0,play:true,both:true},
@@ -556,7 +587,7 @@ function say(text,force){if(canSpeak)speakNow(text,force)}
 
 /* ---------- stars, levels, stickers ---------- */
 /* ---------- star gate: Learn games fill a wallet, Fun games spend it as play time ---------- */
-const GATED=['fruit','bubble','runner','tower','brick','fish'];
+const GATED=['fruit','bubble','runner','tower','brick','fish','tv'];
 const gateOn=()=>K.mode!=='little'&&K.gate!==false;
 const isGated=id=>gateOn()&&GATED.includes(id);
 const minsPerStar=()=>K.minsPerStar||2;
@@ -2325,6 +2356,169 @@ function playFish(){
 }
 
 /* =========================================================
+   MOVIES & SHOWS: a kid-sized Jellyfin screen. Only what the kids' account can see shows up.
+   The login lives only on this tablet (never in the code).
+   ========================================================= */
+const JF_DEFAULT='https://media.casadesnowfox.com';
+const HLS_URL='https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js';
+const TV={stack:[]};
+const jfDev=()=>{if(!K.jfDev){K.jfDev='sq-'+Math.random().toString(36).slice(2,10);save()}return K.jfDev};
+const jfHdr=tok=>`MediaBrowser Client="Star Quest", Device="Kids Tablet", DeviceId="${jfDev()}", Version="1.0.0"${tok?`, Token="${tok}"`:''}`;
+function jfUrl(u){u=(u||'').trim().replace(/\/+$/,'').replace(/\/web(\/.*)?$/i,'');if(u&&!/^https?:\/\//i.test(u))u='https://'+u;return u}
+async function jfFetch(base,tok,path,opt={}){
+  const h={'Authorization':jfHdr(tok),'X-Emby-Authorization':jfHdr(tok)};if(opt.body)h['Content-Type']='application/json';
+  const r=await fetch(base+path,{method:opt.method||'GET',headers:h,body:opt.body?JSON.stringify(opt.body):undefined,keepalive:!!opt.keepalive});
+  if(r.status===401){const e=new Error('signed out');e.auth=true;throw e}
+  if(!r.ok){const e=new Error('HTTP '+r.status);e.status=r.status;throw e}
+  const t=await r.text();return t?JSON.parse(t):null;
+}
+const jf=(path,opt)=>jfFetch(K.jf.url,K.jf.token,path,opt);
+async function jfLogin(url,user,pw){
+  url=jfUrl(url);const r=await jfFetch(url,null,'/Users/AuthenticateByName',{method:'POST',body:{Username:user,Pw:pw}});
+  K.jf={url,token:r.AccessToken,userId:r.User.Id,userName:r.User.Name};save();return K.jf;
+}
+function jfErrText(e){
+  if(e&&e.auth)return 'Wrong username or password.';
+  if(e&&e.status)return `The server answered with an error (${e.status}).`;
+  return 'Could not reach the server. Check the address and Wi-Fi. If the address is right, the server may be blocking apps on other websites: in Jellyfin, Dashboard › Networking, the "CORS" / known hosts setting must allow https://swheel17-a11y.github.io.';
+}
+const jfImg=(id,tag,h,type)=>`${K.jf.url}/Items/${id}/Images/${type||'Primary'}?fillHeight=${h}&quality=85${tag?'&tag='+tag:''}`;
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+let hlsP=null;
+function loadHls(){if(window.Hls)return Promise.resolve();if(hlsP)return hlsP;
+  hlsP=new Promise((res,rej)=>{const s=document.createElement('script');s.src=HLS_URL;s.onload=()=>window.Hls?res():rej();s.onerror=()=>{hlsP=null;s.remove();rej()};document.head.appendChild(s)});return hlsP}
+
+function playTv(){
+  if(location.hash!=='#tv')return; // a late timer from a screen you already left
+  if(!K.jf||!K.jf.token){setHeader('Movies & Shows');
+    view.innerHTML=`<div class="board"><div class="panel spend"><div class="em">🍿</div><h2>Movies & Shows</h2>
+      <p>A grown-up needs to connect the movie server first.</p><p class="note" style="margin:8px auto 0">Grown-ups: press and hold <b>Grown-ups</b> on the home screen, then sign in under <b>Movies & Shows</b>.</p></div></div>`;return}
+  const top=TV.stack[TV.stack.length-1];
+  if(top&&top.kind==='series')return tvSeries(top);
+  if(top&&top.kind==='play')return tvPlay(top);
+  tvHome();
+}
+function tvOpen(item){sfx.tap();if(isLittle())speakNow(item.Name);
+  TV.stack.push(item.Type==='Series'?{kind:'series',id:item.Id,name:item.Name}:{kind:'play',item});playTv()}
+function tvBack(){TV.stack.pop();sfx.tap();playTv()}
+function tvLoading(msg){view.innerHTML=`<div class="tvmsg"><div class="tvspin"></div><p>${msg||'Loading…'}</p></div>`}
+function tvFail(e){
+  if(e&&e.auth){K.jf.token=null;save()}
+  view.innerHTML=`<div class="board"><div class="panel spend"><div class="em">📺</div><h2>${e&&e.auth?'Signed out':'The movies are taking a nap'}</h2>
+    <p>${e&&e.auth?'A grown-up needs to sign in again in Grown-ups.':'Could not reach the movie server. Check the Wi-Fi and try again.'}</p>
+    <button class="pbtn go" id="tvRetry" style="margin-top:12px">Try again</button></div></div>`;
+  $('#tvRetry').onclick=()=>playTv();
+}
+const tvPoster=(it,i)=>{const pct=it.UserData&&it.UserData.PlayedPercentage;
+  return `<button class="tvp" data-i="${i}" aria-label="${esc(it.Name)}"><span class="tvimg">${it.ImageTags&&it.ImageTags.Primary?`<img loading="lazy" src="${jfImg(it.Id,it.ImageTags.Primary,420)}" alt="">`:`<i>${it.Type==='Series'?'📺':'🎬'}</i>`}
+    ${pct?`<u style="width:${pct}%"></u>`:''}${it.UserData&&it.UserData.Played&&it.Type!=='Series'?'<em>✓</em>':''}</span><b>${esc(it.Name)}</b></button>`};
+const tvThumb=(it,i)=>{const pct=it.UserData&&it.UserData.PlayedPercentage,img=it.ImageTags&&it.ImageTags.Primary?jfImg(it.Id,it.ImageTags.Primary,300):it.SeriesId&&it.SeriesPrimaryImageTag?jfImg(it.SeriesId,it.SeriesPrimaryImageTag,300):'';
+  return `<button class="tve" data-i="${i}" aria-label="${esc(it.Name)}"><span class="tvimg wide">${img?`<img loading="lazy" src="${img}" alt="">`:'<i>📺</i>'}${pct?`<u style="width:${pct}%"></u>`:''}${it.UserData&&it.UserData.Played?'<em>✓</em>':''}</span>
+    <b>${it.Type==='Episode'?`${it.SeriesName&&TV.stack.length===0?esc(it.SeriesName)+' · ':''}E${it.IndexNumber||'?'} `:''}${esc(it.Name)}</b></button>`};
+async function tvHome(){
+  setHeader('Movies & Shows',K.jf.userName?`Watching as ${K.jf.userName}`:'');const tok=loopToken;tvLoading();
+  try{
+    const u=K.jf.userId,[views,resume]=await Promise.all([jf(`/Users/${u}/Views`),jf(`/Users/${u}/Items/Resume?Limit=12&MediaTypes=Video&Fields=PrimaryImageAspectRatio,UserData,SeriesPrimaryImage&EnableImageTypes=Primary,Thumb`).catch(()=>({Items:[]}))]);
+    const libs=(views.Items||[]).filter(v=>!['music','books','photos','livetv','playlists','musicvideos'].includes((v.CollectionType||'').toLowerCase()));
+    const rows=await Promise.all(libs.map(v=>jf(`/Users/${u}/Items?ParentId=${v.Id}&Recursive=true&IncludeItemTypes=Movie,Series,Video&SortBy=SortName&SortOrder=Ascending&Fields=PrimaryImageAspectRatio,UserData&ImageTypeLimit=1&EnableImageTypes=Primary&Limit=400`).then(r=>({v,items:r.Items||[]})).catch(()=>({v,items:[]}))));
+    if(tok!==loopToken)return;
+    const all=[],add=it=>{all.push(it);return all.length-1};
+    const keep=(resume&&resume.Items)||[];
+    const shown=rows.filter(r=>r.items.length);
+    view.innerHTML=`<div class="tvhome">
+      ${keep.length?`<h3 class="tvh">▶ Keep watching</h3><div class="tvrow">${keep.map(it=>tvThumb(it,add(it))).join('')}</div>`:''}
+      ${shown.map(r=>`<h3 class="tvh">${(r.v.CollectionType||'')==='tvshows'?'📺':'🎬'} ${esc(r.v.Name)}</h3><div class="tvgrid">${r.items.map(it=>tvPoster(it,add(it))).join('')}</div>`).join('')}
+      ${!keep.length&&!shown.length?`<div class="board"><div class="panel spend"><div class="em">🍿</div><h2>Nothing here yet</h2><p>This account can't see any movies or shows yet. A grown-up can share some with it on the server.</p></div></div>`:''}</div>`;
+    view.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>tvOpen(all[+b.dataset.i]));
+  }catch(e){if(tok===loopToken)tvFail(e)}
+}
+async function tvSeries(top){
+  setHeader(top.name,'Pick an episode');const tok=loopToken;tvLoading();
+  try{
+    const r=await jf(`/Shows/${top.id}/Episodes?UserId=${K.jf.userId}&Fields=PrimaryImageAspectRatio,UserData,Overview&EnableImageTypes=Primary&ImageTypeLimit=1`);
+    if(tok!==loopToken)return;
+    const eps=(r.Items||[]).filter(e=>e.LocationType!=='Virtual');top.eps=eps;
+    const seasons=[...new Set(eps.map(e=>e.ParentIndexNumber==null?1:e.ParentIndexNumber))];
+    if(top.season==null){const next=eps.find(e=>!(e.UserData&&e.UserData.Played));top.season=next?(next.ParentIndexNumber==null?1:next.ParentIndexNumber):seasons[0]}
+    const list=eps.filter(e=>(e.ParentIndexNumber==null?1:e.ParentIndexNumber)===top.season);
+    view.innerHTML=`<div class="tvhome"><div class="row" style="justify-content:flex-start"><button class="pbtn" id="tvBack">◀ Back</button>
+        ${seasons.length>1?seasons.map(s=>`<button class="pbtn tvs" data-s="${s}" aria-pressed="${s===top.season}">${s===0?'Extras':'Season '+s}</button>`).join(''):''}</div>
+      <div class="tvgrid wide">${list.map((e,i)=>tvThumb(e,i)).join('')}</div>
+      ${!eps.length?'<p class="note">No episodes yet.</p>':''}</div>`;
+    $('#tvBack').onclick=tvBack;
+    view.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{top.season=+b.dataset.s;sfx.tap();tvSeries(top)});
+    view.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{const it=list[+b.dataset.i];sfx.tap();if(isLittle())speakNow(it.Name);TV.stack.push({kind:'play',item:it,eps});playTv()});
+  }catch(e){if(tok===loopToken)tvFail(e)}
+}
+const TV_PROFILE={MaxStreamingBitrate:8000000,MaxStaticBitrate:100000000,MusicStreamingTranscodingBitrate:192000,
+  DirectPlayProfiles:[{Container:'mp4,m4v',Type:'Video',VideoCodec:'h264',AudioCodec:'aac,mp3'},{Container:'webm',Type:'Video',VideoCodec:'vp8,vp9',AudioCodec:'vorbis,opus'}],
+  TranscodingProfiles:[{Container:'ts',Type:'Video',AudioCodec:'aac',VideoCodec:'h264',Context:'Streaming',Protocol:'hls',MaxAudioChannels:'2',MinSegments:1,BreakOnNonKeyFrames:true}],
+  ContainerProfiles:[],CodecProfiles:[],SubtitleProfiles:[{Format:'vtt',Method:'External'}]};
+async function tvPlay(top){
+  const it=top.item,tok=loopToken,J=K.jf;
+  setHeader(it.Type==='Episode'&&it.SeriesName?it.SeriesName:it.Name,it.Type==='Episode'?`S${it.ParentIndexNumber||1} E${it.IndexNumber||'?'} · ${it.Name}`:'');
+  view.innerHTML=`<div class="tvplay"><div class="tvvwrap"><video id="tvv" controls playsinline controlslist="nofullscreen nodownload noremoteplayback" disablepictureinpicture preload="auto"></video><div class="tvover" id="tvover"><div class="tvspin"></div></div></div>
+    <div class="row"><button class="pbtn" id="tvBack">◀ Back</button><button class="pbtn go" id="tvNext" hidden>Next episode ▶</button></div></div>`;
+  $('#tvBack').onclick=tvBack;
+  const v=$('#tvv'),over=$('#tvover');let hls=null,iv=0,sess=null,stopped=false;
+  const ticks=()=>Math.round((v.currentTime||0)*1e7);
+  const report=(what,extra)=>{if(!sess)return Promise.resolve();return jf('/Sessions/Playing'+what,{method:'POST',keepalive:what==='/Stopped',body:Object.assign({ItemId:it.Id,MediaSourceId:sess.ms,PlaySessionId:sess.ps,PositionTicks:ticks(),CanSeek:true,PlayMethod:sess.method,IsPaused:v.paused},extra||{})}).catch(()=>{})};
+  const stop=()=>{if(stopped)return;stopped=true;clearInterval(iv);report('/Stopped');try{hls&&hls.destroy()}catch(e){}try{v.pause();v.removeAttribute('src');v.load()}catch(e){}
+    window.removeEventListener('pagehide',stop)};
+  window.addEventListener('pagehide',stop);
+  let n10=0;iv=setInterval(()=>{if(tok!==loopToken||!document.body.contains(v)){stop();return}if(++n10%10===0&&!v.paused)report('/Progress')},1000);
+  // the next episode, if there is one
+  const eps=top.eps,ix=eps?eps.findIndex(e=>e.Id===it.Id):-1,nextEp=ix>=0?eps[ix+1]:null;
+  const nb=$('#tvNext');if(nextEp){nb.onclick=()=>{stop();sfx.tap();TV.stack[TV.stack.length-1]={kind:'play',item:nextEp,eps};playTv()}}
+  v.addEventListener('ended',()=>{report('/Stopped');stopped=true;clearInterval(iv);if(nextEp){nb.hidden=false;speakNow('Want to watch the next one?')}else{nb.hidden=true}});
+  v.addEventListener('playing',()=>{over.hidden=true});v.addEventListener('waiting',()=>{over.hidden=false});
+  try{
+    const info=await jf(`/Items/${it.Id}/PlaybackInfo?UserId=${J.userId}`,{method:'POST',body:{DeviceProfile:TV_PROFILE,UserId:J.userId,MaxStreamingBitrate:TV_PROFILE.MaxStreamingBitrate,AutoOpenLiveStream:true,IsPlayback:true,EnableDirectPlay:true,EnableDirectStream:true,EnableTranscoding:true,AllowVideoStreamCopy:true,AllowAudioStreamCopy:true}});
+    if(tok!==loopToken||stopped)return;
+    const ms=(info.MediaSources||[])[0];if(!ms)throw new Error('no media');
+    let src,method;
+    if(ms.SupportsDirectPlay&&/mp4|m4v|webm/i.test(ms.Container||'')){method='DirectPlay';src=`${J.url}/Videos/${it.Id}/stream?Static=true&MediaSourceId=${ms.Id}&DeviceId=${jfDev()}&api_key=${J.token}&PlaySessionId=${info.PlaySessionId}`}
+    else if(ms.TranscodingUrl){method='Transcode';src=J.url+ms.TranscodingUrl;if(!/api_key=/i.test(src))src+=(src.includes('?')?'&':'?')+'api_key='+J.token}
+    else throw new Error('cannot play');
+    sess={ms:ms.Id,ps:info.PlaySessionId,method};
+    const pos=it.UserData&&it.UserData.PlaybackPositionTicks?it.UserData.PlaybackPositionTicks/1e7:0,start=pos>20?pos-3:0;
+    const begin=()=>{v.play().catch(()=>{over.hidden=false;over.innerHTML='<button class="tvbig" id="tvGo">▶</button>';$('#tvGo').onclick=()=>{over.innerHTML='<div class="tvspin"></div>';v.play().catch(()=>{})}});report('')};
+    if(/\.m3u8/i.test(src)){
+      let useHls=false;try{await loadHls();useHls=window.Hls&&Hls.isSupported()}catch(e){}
+      if(tok!==loopToken||stopped)return;
+      if(useHls){hls=new Hls({startPosition:start||-1,maxBufferLength:30});hls.loadSource(src);hls.attachMedia(v);hls.on(Hls.Events.MANIFEST_PARSED,begin);
+        hls.on(Hls.Events.ERROR,(ev,d)=>{if(d.fatal){if(d.type===Hls.ErrorTypes.NETWORK_ERROR)hls.startLoad();else if(d.type===Hls.ErrorTypes.MEDIA_ERROR)hls.recoverMediaError();else tvPlayFail(over)}})}
+      else{v.src=src;v.addEventListener('loadedmetadata',()=>{if(start)v.currentTime=start;begin()},{once:true})}
+    }else{v.src=src;v.addEventListener('loadedmetadata',()=>{if(start)v.currentTime=start;begin()},{once:true})}
+    v.addEventListener('error',()=>{if(!hls)tvPlayFail(over)});
+  }catch(e){if(tok===loopToken){stop();if(e.auth)return tvFail(e);tvPlayFail(over)}}
+}
+function tvPlayFail(over){over.hidden=false;over.innerHTML='<p>This one won\'t play right now. Try another one, or ask a grown-up.</p>'}
+
+/* grown-ups section for the movie server */
+function tvGrownups(){
+  const J=K.jf&&K.jf.token?K.jf:null;
+  return `<div class="prow" id="jfrow" style="flex-wrap:wrap;align-items:flex-start"><span>🍿 Movies & Shows <small style="color:var(--muted)">(Jellyfin)</small>
+      <br><small style="color:var(--muted)">${J?`Signed in as <b>${esc(J.userName)}</b> on ${esc(J.url.replace(/^https?:\/\//,''))}`:'Use an account that only sees the kids’ movies and shows.'}</small></span>
+    <span class="ctl" style="flex-wrap:wrap">${J?`<button class="pbtn" id="jfOut">Sign out</button>`:
+      `<input id="jfUrl" class="gin" value="${esc((K.jfLast&&K.jfLast.url)||JF_DEFAULT)}" placeholder="Server address" autocapitalize="off" autocorrect="off" spellcheck="false">
+       <input id="jfUser" class="gin" value="${esc((K.jfLast&&K.jfLast.user)||'')}" placeholder="Username" autocapitalize="off" autocorrect="off" spellcheck="false">
+       <input id="jfPw" class="gin" type="password" placeholder="Password">
+       <button class="pbtn go" id="jfIn">Sign in</button>`}</span>
+    <p class="note" id="jfMsg" style="width:100%;margin:6px 0 0"></p></div>`;
+}
+function tvGrownupsWire(redraw){
+  const out=$('#jfOut');if(out)out.onclick=()=>{const J=K.jf;K.jf=null;save();TV.stack=[];redraw();
+    try{jfFetch(J.url,J.token,'/Sessions/Logout',{method:'POST'}).catch(()=>{})}catch(e){}};
+  const btn=$('#jfIn');if(!btn)return;
+  btn.onclick=async()=>{const url=$('#jfUrl').value,user=$('#jfUser').value.trim(),pw=$('#jfPw').value,msg=$('#jfMsg');
+    if(!url||!user){msg.textContent='Type the server address and username.';return}
+    btn.disabled=true;msg.textContent='Signing in…';K.jfLast={url:jfUrl(url),user};save();
+    try{await jfLogin(url,user,pw);TV.stack=[];sfx.up();redraw();const m=$('#jfMsg');if(m)m.textContent='Connected! The kids can open Movies & Shows now.'}
+    catch(e){btn.disabled=false;msg.textContent=jfErrText(e)}};
+}
+
+/* =========================================================
    HOME, STICKERS, GROWN-UPS
    ========================================================= */
 function home(){
@@ -2372,9 +2566,10 @@ function grownups(){
       <button class="pbtn" id="fs">Full screen: ${K.full===false?'Off':'On'}</button></div>
     <div class="prow" id="vrow" style="flex-wrap:wrap"><span>Voice</span><span class="ctl" style="flex-wrap:wrap"><button class="pbtn" id="vonoff" style="${voiceOn()?'background:var(--ink);color:#fff':''}">${voiceOn()?'On':'Off'}</button><select id="vsel" style="font:inherit;font-size:17px;padding:8px;border-radius:12px;border:2px solid var(--sky-2);max-width:16em"></select>
       <button class="pm" id="vslow" aria-label="Slower">🐢</button><button class="pm" id="vfast" aria-label="Faster">🐇</button><button class="pbtn" id="vtest">▶ Test</button></span></div>
-    ${K.mode!=='little'?`<div class="prow" style="flex-wrap:wrap"><span>Play games cost stars <small style="color:var(--muted)">(Fruit Pop, Bubble Pop, Dino Dash, Tower Builder, Brick Builder, Fishing Trip)</small></span><span class="ctl"><button class="pbtn" id="gateT">${K.gate===false?'Off':'On'}</button></span></div>
+    ${K.mode!=='little'?`<div class="prow" style="flex-wrap:wrap"><span>Play games cost stars <small style="color:var(--muted)">(Fruit Pop, Bubble Pop, Dino Dash, Tower Builder, Brick Builder, Fishing Trip, Movies & Shows)</small></span><span class="ctl"><button class="pbtn" id="gateT">${K.gate===false?'Off':'On'}</button></span></div>
     ${K.gate!==false?`<div class="prow" style="flex-wrap:wrap"><span>Each star buys</span><span class="ctl">${[1,2,3,5].map(m=>`<button class="pbtn" data-mps="${m}" style="${minsPerStar()===m?'background:var(--ink);color:#fff':''}">${m} min</button>`).join('')}</span></div>
     <div class="prow" style="flex-wrap:wrap"><span>Stars to spend: <b>${K.wallet}</b> · Play time left: <b>${fmtSec(K.playSec||0)}</b></span><span class="ctl"><button class="pbtn" id="give5">+5 stars</button><button class="pbtn" id="time5">+5 min</button><button class="pbtn" id="time0">Clear time</button></span></div>`:''}`:''}
+    ${tvGrownups()}
     <div class="row" style="justify-content:flex-start"><button class="pbtn ${resetArm?'warn':''}" id="rst">${resetArm?'Tap again to erase everything':'Reset stars and stickers'}</button></div>
     <p class="note">Levels go up by themselves after ${PER_LEVEL} right answers. Use − and + if a game feels too hard or too easy.</p>`;
   view.querySelectorAll('.pm').forEach(b=>b.onclick=()=>{const g=GAMES.find(x=>x.id===b.dataset.id);K.lv[g.id]=Math.max(1,Math.min(g.max,K.lv[g.id]+ +b.dataset.d));K.got[g.id]=0;save();grownups()});
@@ -2396,12 +2591,13 @@ function grownups(){
   if($('#gateT')){$('#gateT').onclick=()=>{K.gate=K.gate===false;save();grownups()};
     view.querySelectorAll('[data-mps]').forEach(b=>b.onclick=()=>{K.minsPerStar=+b.dataset.mps;save();grownups()});
     if($('#give5')){$('#give5').onclick=()=>{K.wallet=(K.wallet||0)+5;save();grownups()};$('#time5').onclick=()=>{K.playSec=(K.playSec||0)+300;save();grownups()};$('#time0').onclick=()=>{K.playSec=0;save();grownups()}}}
+  tvGrownupsWire(grownups);
   $('#fs').onclick=()=>{K.full=K.full===false;save();if(K.full===false&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});grownups()};
-  $('#rst').onclick=()=>{if(!resetArm){resetArm=true;return grownups()}resetArm=false;const keep={mode:K.mode,name:K.name,voiceName:K.voiceName,voiceOn:K.voiceOn,gate:K.gate,minsPerStar:K.minsPerStar};K=Object.assign(blank(),keep,{wallet:0,playSec:0});save();updateStars();grownups()};
+  $('#rst').onclick=()=>{if(!resetArm){resetArm=true;return grownups()}resetArm=false;const keep={jf:K.jf,jfDev:K.jfDev,jfLast:K.jfLast,mode:K.mode,name:K.name,voiceName:K.voiceName,voiceOn:K.voiceOn,gate:K.gate,minsPerStar:K.minsPerStar};K=Object.assign(blank(),keep,{wallet:0,playSec:0});save();updateStars();grownups()};
 }
 
 /* ---------- navigation (plain #names so the back button works) ---------- */
-const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
+const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),tv:gated('tv',()=>{TV.stack=[];playTv()}),adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
 function go(name){if(location.hash.slice(1)!==name)location.hash=name;else show()}
 function show(){loopToken++;const r=location.hash.slice(1);resetArm=false;$('#timeChip').hidden=true;updateStars();$('#overlay').hidden=true;popQ.length=0;try{if(window.SQAndroid)SQAndroid.stop();else if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}
   view.scrollTop=0;(ROUTES[r]||home)()}
