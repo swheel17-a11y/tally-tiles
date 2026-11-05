@@ -545,6 +545,7 @@ const GAMES=[
   {id:'runner',name:'Dino Dash',em:'🦖',sub:'Run, jump, grab stars',color:'#4fae3c',max:0,play:true},
   {id:'tower',name:'Tower Builder',em:'🏗️',sub:'Stack it sky high',color:'#8a5cf6',max:0,play:true},
   {id:'tv',name:'Movies & Shows',em:'🍿',sub:'Watch your shows',color:'#3b3f8f',max:0,play:true,both:true},
+  {id:'slice',name:'Fruit Slice',em:'🔪',sub:'Swipe, slice, splat!',color:'#e8443a',max:0,play:true},
   {id:'fish',name:'Fishing Trip',em:'🎣',sub:'Catch them all',color:'#1a8fb5',max:0,play:true},
   {id:'brick',name:'Brick Builder',em:'🧱',sub:'Build anything in 3D',color:'#d9262b',max:0,play:true},
   {id:'doodle',name:'Doodle Pad',em:'🎨',sub:'Draw anything',color:'#f59a23',max:0,play:true,both:true},
@@ -587,7 +588,7 @@ function say(text,force){if(canSpeak)speakNow(text,force)}
 
 /* ---------- stars, levels, stickers ---------- */
 /* ---------- star gate: Learn games fill a wallet, Fun games spend it as play time ---------- */
-const GATED=['fruit','bubble','runner','tower','brick','fish','tv'];
+const GATED=['fruit','bubble','runner','tower','brick','fish','tv','slice'];
 const gateOn=()=>K.mode!=='little'&&K.gate!==false;
 const isGated=id=>gateOn()&&GATED.includes(id);
 const minsPerStar=()=>K.minsPerStar||2;
@@ -2532,6 +2533,110 @@ function tvGrownupsWire(redraw){
 }
 
 /* =========================================================
+   FRUIT SLICE: swipe to slice the fruit, don't slice the bombs
+   ========================================================= */
+const SL_FRUIT=[['🍉','#ff4d6d','#3fae3c'],['🍊','#ffa23a','#ff8a00'],['🍎','#fff1c9','#e8343a'],['🍋','#fff27a','#f5d21f'],['🍍','#ffe066','#d9a21b'],
+  ['🍓','#ff5d73','#e0263a'],['🥝','#9be15d','#7a5a2e'],['🍑','#ffc3a0','#ff9a76'],['🍇','#c08cff','#7b3fbf'],['🥥','#ffffff','#7a4a26'],['🍐','#f1ffb0','#a6c83a'],['🍌','#fff6b0','#ffd23f']];
+function slNoise(len,vol,hi){if(!K.sound)return;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const n=Math.floor(ac.sampleRate*len),b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);
+  for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,2);const s=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();s.buffer=b;f.type='bandpass';f.frequency.value=hi||2500;f.Q.value=0.8;g.gain.value=vol;
+  s.connect(f).connect(g).connect(ac.destination);s.start()}catch(e){}}
+function playSlice(){
+  if(location.hash!=='#slice')return; // a late timer from a game you already left
+  K.sliceBest=K.sliceBest||{classic:0,zen:0};
+  const S=canvasGame('Fruit Slice','Swipe to slice! Watch out for bombs 💣',`<span>Score <b id="slScore">0</b></span><span id="slLives"></span><span>Best <b id="slBest">0</b></span>`);
+  const G={mode:null,state:'menu',items:[],halves:[],splats:[],sparks:[],texts:[],trail:[],score:0,lives:3,t:0,spawn:1,wave:0,time:60,shake:0,swipe:[],flash:0};
+  const size=()=>Math.max(54,Math.min(S.W,S.H)*0.13),grav=()=>S.H*1.05;
+  const hud=()=>{$('#slScore').textContent=G.score;$('#slBest').textContent=G.mode?K.sliceBest[G.mode]:Math.max(K.sliceBest.classic,K.sliceBest.zen);
+    $('#slLives').innerHTML=G.mode==='zen'?`⏱️ <b>${Math.ceil(G.time)}</b>`:G.mode?'❌'.repeat(Math.max(0,3-G.lives))+'<span style="opacity:.25">❌</span>'.repeat(Math.max(0,G.lives)):'Pick a mode'};
+  // the menu: slice a fruit to pick a mode
+  function menu(){G.state='menu';G.mode=null;G.items=[];
+    const s=size()*1.5;
+    G.items.push({e:'🍉',f:SL_FRUIT[0],x:S.W*0.3,y:S.H*0.55,vx:0,vy:0,r:s/2,s,rot:0,vr:0.6,menu:'classic',label:'Classic'});
+    G.items.push({e:'🍓',f:SL_FRUIT[5],x:S.W*0.7,y:S.H*0.55,vx:0,vy:0,r:s/2,s,rot:0,vr:-0.6,menu:'zen',label:'Zen (no bombs)'});hud()}
+  function start(mode){G.mode=mode;G.state='play';G.items=[];G.score=0;G.lives=3;G.wave=0;G.spawn=0.8;G.time=60;hud();sfx.up()}
+  function launch(bomb){const s=size()*(0.9+Math.random()*0.25),x=S.W*(0.15+Math.random()*0.7),peak=S.H*(0.12+Math.random()*0.3);
+    const vy=-Math.sqrt(2*grav()*(S.H+s-peak)),tFlight=-vy/grav();const tx=S.W*(0.3+Math.random()*0.4);
+    const f=pick(SL_FRUIT);G.items.push({e:bomb?'💣':f[0],f,bomb,x,y:S.H+s/2,vx:(tx-x)/tFlight*0.9,vy,r:s*0.42,s,rot:Math.random()*6,vr:(Math.random()-.5)*5})}
+  function wave(){G.wave++;const lvl=Math.min(10,1+G.wave/4),n=Math.min(6,1+Math.floor(Math.random()*(1+lvl*0.5)));
+    const bombs=G.mode==='classic'&&G.wave>2?(Math.random()<0.25+lvl*0.03?1:0)+(lvl>6&&Math.random()<0.25?1:0):0;
+    for(let i=0;i<n;i++)setTimeout(()=>{if(S.alive()&&G.state==='play')launch(false)},i*rnd(80,260));
+    for(let i=0;i<bombs;i++)setTimeout(()=>{if(S.alive()&&G.state==='play')launch(true)},rnd(0,400));
+    G.spawn=Math.max(0.9,2.3-lvl*0.13)+Math.random()*0.5}
+  function cut(o,ang){
+    o.dead=true;const nx=Math.cos(ang+Math.PI/2),ny=Math.sin(ang+Math.PI/2),sp=S.W*0.12;
+    if(o.bomb){boom(o);return}
+    for(const side of [1,-1])G.halves.push({e:o.e,x:o.x,y:o.y,vx:o.vx*0.6+nx*sp*side,vy:Math.min(o.vy,0)*0.4+ny*sp*side-80,s:o.s,rot:o.rot,vr:o.vr+side*3,rel:ang-o.rot,side,life:2.5});
+    for(let k=0;k<3;k++)G.splats.push({x:o.x+(Math.random()-.5)*o.s*0.8,y:o.y+(Math.random()-.5)*o.s*0.8,r:o.s*(0.25+Math.random()*0.35),c:o.f[1],a:0.55});
+    sparks(G.sparks,o.x,o.y,o.f[1],16,S.H*0.5);
+    if(o.menu){slNoise(0.18,0.5,3000);setTimeout(()=>{if(S.alive())start(o.menu)},450);return}
+    G.score++;G.swipe.push(o);slNoise(0.16,0.45,2200+Math.random()*1500);tone([[300+Math.random()*200,0,.06]],'triangle',0.04)}
+  function boom(o){G.shake=0.5;G.flash=1;slNoise(0.6,0.9,500);tone([[90,0,.4],[60,.05,.5]],'sawtooth',0.12);sparks(G.sparks,o.x,o.y,'#ffb347',40,S.H*0.9);sparks(G.sparks,o.x,o.y,'#555',20,S.H*0.6);
+    G.texts.push({x:o.x,y:o.y,t:'BOOM!',c:'#ff4d4d',life:1.2,big:1.6});
+    if(G.mode==='classic'){G.lives--;hud();if(G.lives<=0)over()}}
+  function miss(o){if(G.mode!=='classic'||G.state!=='play')return;G.lives--;hud();sfx.no();G.texts.push({x:o.x,y:S.H-40,t:'❌',c:'#ff4d4d',life:1,big:1});if(G.lives<=0)over()}
+  function endSwipe(){const n=G.swipe.length;if(n>=3){const bonus=n;G.score+=bonus;const o=G.swipe[n-1];
+      G.texts.push({x:o.x,y:o.y-o.s,t:`${n} fruit combo! +${bonus}`,c:'#ffd23f',life:1.4,big:1.1});tone([[660,0,.1],[880,.08,.1],[1100,.16,.2]],'sine',0.08);if(n>=4)say(`${n} fruit combo!`)}
+    G.swipe=[];hud()}
+  function over(){if(G.state!=='play')return;G.state='over';endSwipe();const best=K.sliceBest[G.mode],rec=G.score>best;if(rec)K.sliceBest[G.mode]=G.score;save();hud();
+    say(rec?`New best! ${G.score} points!`:`Game over! ${G.score} points.`);
+    setTimeout(()=>{if(!S.alive())return;G.items=G.items.filter(o=>!o.bomb);popup(rec?'🏆':'🍉',rec?'New best score!':'Game over!',`You sliced ${G.score} point${G.score===1?'':'s'}. Best: ${K.sliceBest[G.mode]}.`,'Play again',()=>{menu()})},1100)}
+  // swiping
+  let down=false,last=null;
+  const pt=e=>{const r=S.cv.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top,t:performance.now()}};
+  S.cv.onpointerdown=e=>{e.preventDefault();try{S.cv.setPointerCapture(e.pointerId)}catch(_){}down=true;last=pt(e);G.trail=[last];G.swipe=[]};
+  S.cv.onpointermove=e=>{if(!down)return;const p=pt(e),dx=p.x-last.x,dy=p.y-last.y,L=Math.hypot(dx,dy);if(L<2)return;
+    G.trail.push(p);if(G.trail.length>14)G.trail.shift();
+    if(L>4&&G.state!=='over')for(const o of G.items){if(o.dead)continue;
+      const t=Math.max(0,Math.min(1,((o.x-last.x)*dx+(o.y-last.y)*dy)/(L*L))),cx=last.x+dx*t,cy=last.y+dy*t;
+      if(Math.hypot(o.x-cx,o.y-cy)<o.r)cut(o,Math.atan2(dy,dx))}
+    if(L>30&&Math.random()<0.25)slNoise(0.08,0.12,4000);
+    last=p};
+  const up=()=>{if(!down)return;down=false;endSwipe()};S.cv.onpointerup=up;S.cv.onpointercancel=up;
+  menu();if(/[?&]bot\b/.test(location.search))window.__slG=G;
+  S.loop(dt=>{
+    const c=S.ctx,W=S.W,H=S.H;G.t+=dt;
+    if(G.state==='play'){G.spawn-=dt;if(G.spawn<=0&&G.items.filter(o=>!o.dead).length<8)wave();
+      if(G.mode==='zen'){const before=Math.ceil(G.time);G.time-=dt;if(Math.ceil(G.time)!==before)hud();if(G.time<=0){G.time=0;over()}}}
+    for(const o of G.items){if(o.menu){o.y=H*0.55+Math.sin(G.t*2+(o.menu==='zen'?1:0))*8;o.x=o.menu==='classic'?W*0.3:W*0.7;o.rot+=o.vr*dt;continue}
+      o.vy+=grav()*dt;o.x+=o.vx*dt;o.y+=o.vy*dt;o.rot+=o.vr*dt;
+      if(o.vy>0&&o.y>H+o.s){o.gone=true;if(!o.dead&&!o.bomb)miss(o)}}
+    G.items=G.items.filter(o=>!o.dead&&!o.gone);
+    // background
+    c.save();if(G.shake>0){G.shake-=dt;c.translate((Math.random()-.5)*16*G.shake,(Math.random()-.5)*16*G.shake)}
+    const bg=c.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#6b3f1f');bg.addColorStop(1,'#4a2a12');c.fillStyle=bg;c.fillRect(-20,-20,W+40,H+40);
+    c.strokeStyle='rgba(0,0,0,.18)';c.lineWidth=3;for(let i=1;i<6;i++){c.beginPath();c.moveTo(0,H*i/6);c.lineTo(W,H*i/6+Math.sin(i)*10);c.stroke()}
+    for(const s of G.splats){s.a-=dt*0.08;c.globalAlpha=Math.max(0,s.a);c.fillStyle=s.c;c.beginPath();c.arc(s.x,s.y,s.r,0,7);c.fill();
+      c.beginPath();c.arc(s.x+s.r*0.9,s.y+s.r*0.3,s.r*0.3,0,7);c.fill()}c.globalAlpha=1;G.splats=G.splats.filter(s=>s.a>0);
+    // halves
+    for(const h of G.halves){h.vy+=grav()*dt;h.x+=h.vx*dt;h.y+=h.vy*dt;h.rot+=h.vr*dt;h.life-=dt;
+      c.save();c.translate(h.x,h.y);c.rotate(h.rot+h.rel);c.beginPath();if(h.side>0)c.rect(-h.s,0,h.s*2,h.s);else c.rect(-h.s,-h.s,h.s*2,h.s);c.clip();
+      c.rotate(-h.rel);emojiAt(c,h.e,0,0,h.s);c.restore()}
+    G.halves=G.halves.filter(h=>h.life>0&&h.y<H+h.s*2);
+    // whole fruit
+    for(const o of G.items){c.save();c.translate(o.x,o.y);c.rotate(o.rot);
+      if(o.bomb){c.shadowColor='#ff3b3b';c.shadowBlur=18+Math.sin(G.t*12)*8}
+      emojiAt(c,o.e,0,0,o.s);c.restore();
+      if(o.bomb&&Math.random()<0.5)sparks(G.sparks,o.x+o.s*0.25,o.y-o.s*0.4,'#ffd23f',1,60);
+      if(o.menu){c.fillStyle='#fff';c.textAlign='center';c.font=`700 ${Math.round(Math.max(18,o.s*0.2))}px Fredoka,system-ui`;c.fillText(o.label,o.x,o.y+o.s*0.8)}}
+    if(G.state==='menu'){c.fillStyle='#fff';c.textAlign='center';c.font=`700 ${Math.round(Math.max(24,size()*0.45))}px Fredoka,system-ui`;c.fillText('Slice a fruit to start!',W/2,H*0.22);
+      c.font=`700 ${Math.round(Math.max(15,size()*0.22))}px Nunito,system-ui`;c.fillStyle='rgba(255,255,255,.75)';
+      c.fillText(`Classic: miss 3 fruit or hit bombs and it's over · Zen: 60 seconds, no bombs`,W/2,H*0.22+size()*0.5,W-40)}
+    drawSparks(c,G.sparks,dt,H*0.8);
+    for(const t of G.texts){t.life-=dt;t.y-=40*dt;c.globalAlpha=Math.max(0,Math.min(1,t.life*1.5));c.fillStyle=t.c;c.strokeStyle='rgba(0,0,0,.5)';c.lineWidth=5;c.textAlign='center';
+      c.font=`700 ${Math.round(Math.max(22,size()*0.4)*t.big)}px Fredoka,system-ui`;c.strokeText(t.t,t.x,t.y,W-20);c.fillText(t.t,t.x,t.y,W-20)}
+    c.globalAlpha=1;G.texts=G.texts.filter(t=>t.life>0);
+    // blade trail
+    const now=performance.now();G.trail=G.trail.filter(p=>now-p.t<140);
+    if(G.trail.length>1){c.lineCap='round';c.lineJoin='round';
+      for(let i=1;i<G.trail.length;i++){const a=G.trail[i-1],b=G.trail[i],k=i/G.trail.length;
+        c.strokeStyle=`rgba(180,230,255,${0.35*k})`;c.lineWidth=18*k;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke();
+        c.strokeStyle=`rgba(255,255,255,${k})`;c.lineWidth=7*k;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke()}}
+    c.restore();
+    if(G.flash>0){G.flash-=dt*2.5;c.fillStyle=`rgba(255,255,255,${Math.max(0,G.flash)*0.8})`;c.fillRect(0,0,W,H)}
+  });
+}
+
+/* =========================================================
    HOME, STICKERS, GROWN-UPS
    ========================================================= */
 function home(){
@@ -2579,7 +2684,7 @@ function grownups(){
       <button class="pbtn" id="fs">Full screen: ${K.full===false?'Off':'On'}</button></div>
     <div class="prow" id="vrow" style="flex-wrap:wrap"><span>Voice</span><span class="ctl" style="flex-wrap:wrap"><button class="pbtn" id="vonoff" style="${voiceOn()?'background:var(--ink);color:#fff':''}">${voiceOn()?'On':'Off'}</button><select id="vsel" style="font:inherit;font-size:17px;padding:8px;border-radius:12px;border:2px solid var(--sky-2);max-width:16em"></select>
       <button class="pm" id="vslow" aria-label="Slower">🐢</button><button class="pm" id="vfast" aria-label="Faster">🐇</button><button class="pbtn" id="vtest">▶ Test</button></span></div>
-    ${K.mode!=='little'?`<div class="prow" style="flex-wrap:wrap"><span>Play games cost stars <small style="color:var(--muted)">(Fruit Pop, Bubble Pop, Dino Dash, Tower Builder, Brick Builder, Fishing Trip, Movies & Shows)</small></span><span class="ctl"><button class="pbtn" id="gateT">${K.gate===false?'Off':'On'}</button></span></div>
+    ${K.mode!=='little'?`<div class="prow" style="flex-wrap:wrap"><span>Play games cost stars <small style="color:var(--muted)">(Fruit Pop, Bubble Pop, Dino Dash, Tower Builder, Brick Builder, Fishing Trip, Fruit Slice, Movies & Shows)</small></span><span class="ctl"><button class="pbtn" id="gateT">${K.gate===false?'Off':'On'}</button></span></div>
     ${K.gate!==false?`<div class="prow" style="flex-wrap:wrap"><span>Each star buys</span><span class="ctl">${[1,2,3,5].map(m=>`<button class="pbtn" data-mps="${m}" style="${minsPerStar()===m?'background:var(--ink);color:#fff':''}">${m} min</button>`).join('')}</span></div>
     <div class="prow" style="flex-wrap:wrap"><span>Stars to spend: <b>${K.wallet}</b> · Play time left: <b>${fmtSec(K.playSec||0)}</b></span><span class="ctl"><button class="pbtn" id="give5">+5 stars</button><button class="pbtn" id="time5">+5 min</button><button class="pbtn" id="time0">Clear time</button></span></div>`:''}`:''}
     ${tvGrownups()}
@@ -2610,7 +2715,7 @@ function grownups(){
 }
 
 /* ---------- navigation (plain #names so the back button works) ---------- */
-const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),tv:gated('tv',()=>{TV.stack=[];playTv()}),adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
+const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),tv:gated('tv',()=>{TV.stack=[];playTv()}),adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
 function go(name){if(location.hash.slice(1)!==name)location.hash=name;else show()}
 function show(){loopToken++;const r=location.hash.slice(1);resetArm=false;$('#timeChip').hidden=true;updateStars();$('#overlay').hidden=true;popQ.length=0;try{if(window.SQAndroid)SQAndroid.stop();else if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}
   view.scrollTop=0;(ROUTES[r]||home)()}
