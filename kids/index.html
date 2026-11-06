@@ -486,6 +486,36 @@ button:disabled{opacity:.4;cursor:default}
 .gin{font:inherit;font-size:18px;padding:8px 12px;border-radius:12px;border:2px solid var(--sky-2);width:13em;max-width:100%;user-select:text;-webkit-user-select:text}
 html.little .tvgrid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
 html.little .tvp b,html.little .tve b{font-size:20px}
+/* ninja portal */
+.njmenu{display:flex;flex-direction:column;gap:14px;max-width:900px;margin:0 auto;width:100%}
+.njpick{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.njcard{position:relative;width:132px;padding:10px 8px;border-radius:20px;background:var(--card);box-shadow:0 5px 0 var(--sky-2);display:flex;flex-direction:column;align-items:center;gap:4px}
+.njcard img{width:96px;height:96px;display:block}
+.njcard b{font-family:var(--f-display);font-size:20px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.njcard[aria-pressed="true"]{outline:5px solid var(--sun);outline-offset:-1px;transform:translateY(-3px)}
+.njnew span{font-size:56px;line-height:96px;height:96px;color:var(--muted)}
+.njdel{position:absolute;top:6px;right:6px;min-width:30px;height:30px;border-radius:10px;background:rgba(0,0,0,.08);font-size:14px;display:flex;align-items:center;justify-content:center;padding:0 6px}
+.njdel[data-arm="1"]{background:var(--coral);color:#fff}
+.njhow b{font-family:var(--f-display);font-size:20px}
+.njhow ul{margin:6px 0 0;padding-left:22px;line-height:1.6;font-size:17px;text-align:left}
+.njcoin{display:inline-block;width:.85em;height:.85em;border-radius:50%;background:#f7c62f;border:2px solid #b8860b;vertical-align:-.08em;font-style:normal}
+.njbar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.njpw{position:relative;overflow:hidden;min-height:80px;border-radius:18px;background:#fff6d6;box-shadow:0 5px 0 #e0b83a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 4px}
+.njpw .njpi{font-size:28px;line-height:1;height:30px;display:flex;align-items:center}
+.njpw b{font-size:14px;font-family:var(--f-display);line-height:1.1}
+.njpw small{font-size:14px;font-weight:700}
+.njpw:disabled{background:var(--card);box-shadow:0 5px 0 var(--sky-2);opacity:.5}
+.njpw.on{background:#d9f7ff;box-shadow:0 5px 0 #7fc8e6;opacity:1}
+.njpw u{position:absolute;left:0;bottom:0;height:7px;background:var(--ocean);width:0}
+.njteam{display:inline-flex;gap:3px}
+.njteam i{width:12px;height:24px;border-radius:6px;display:block;border:2px solid rgba(0,0,0,.25)}
+.njmaker{display:flex;gap:20px;align-items:center;justify-content:center;flex-wrap:wrap}
+.njmaker img{width:160px;height:160px;background:var(--card);border-radius:24px;box-shadow:0 5px 0 var(--sky-2)}
+.njform{display:flex;flex-direction:column;gap:14px;font-family:var(--f-display);font-size:18px}
+.njform label{display:flex;flex-direction:column;gap:6px}
+.njcols{display:grid;grid-template-columns:repeat(5,52px);gap:10px}
+.njcols button{width:52px;height:52px;border-radius:50%;border:3px solid rgba(0,0,0,.2)}
+.njcols button[aria-pressed="true"]{outline:4px solid var(--ink);outline-offset:3px}
 /* stickers + grown-ups */
 .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:12px}
 .sticker{height:100px;border-radius:22px;background:var(--card);display:grid;place-items:center;font-size:52px;box-shadow:0 5px 0 var(--sky-2)}
@@ -545,6 +575,7 @@ const GAMES=[
   {id:'runner',name:'Dino Dash',em:'🦖',sub:'Run, jump, grab stars',color:'#4fae3c',max:0,play:true},
   {id:'tower',name:'Tower Builder',em:'🏗️',sub:'Stack it sky high',color:'#8a5cf6',max:0,play:true},
   {id:'tv',name:'Movies & Shows',em:'🍿',sub:'Watch your shows',color:'#3b3f8f',max:0,play:true,both:true},
+  {id:'ninja',name:'Ninja Portal',em:'⚔️',sub:'Tib vs the robots',color:'#1d2b4f',max:0,play:true},
   {id:'slice',name:'Fruit Slice',em:'🔪',sub:'Swipe, slice, splat!',color:'#e8443a',max:0,play:true},
   {id:'fish',name:'Fishing Trip',em:'🎣',sub:'Catch them all',color:'#1a8fb5',max:0,play:true},
   {id:'brick',name:'Brick Builder',em:'🧱',sub:'Build anything in 3D',color:'#d9262b',max:0,play:true},
@@ -588,7 +619,7 @@ function say(text,force){if(canSpeak)speakNow(text,force)}
 
 /* ---------- stars, levels, stickers ---------- */
 /* ---------- star gate: Learn games fill a wallet, Fun games spend it as play time ---------- */
-const GATED=['fruit','bubble','runner','tower','brick','fish','tv','slice'];
+const GATED=['fruit','bubble','runner','tower','brick','fish','tv','slice','ninja'];
 const gateOn=()=>K.mode!=='little'&&K.gate!==false;
 const isGated=id=>gateOn()&&GATED.includes(id);
 const minsPerStar=()=>K.minsPerStar||2;
@@ -2637,6 +2668,271 @@ function playSlice(){
 }
 
 /* =========================================================
+   NINJA PORTAL: Noah's game. Tib (gold), Drock (red) and Kuko (blue) vs the robots.
+   Drag to move, grab coins, buy power-ups, hit the middle portal 5 times, escape through a side portal.
+   Built light for slow tablets: every picture is drawn once into a sprite and reused.
+   ========================================================= */
+const NJ_TEAM=[{name:'Tib',color:'#f2b705'},{name:'Drock',color:'#e0352b'},{name:'Kuko',color:'#2f6fe0'}];
+const NJ_COLORS=['#f2b705','#e0352b','#2f6fe0','#2e9e45','#8a4fd8','#ff7eb6','#f57c1f','#18b5b0','#f2f2f2','#2b2b2b'];
+const NJ_POWERS=[{id:'stars',name:'Ninja Stars',icon:'✴️',cost:3,say:'Ninja stars!'},{id:'fast',name:'Super Fast',icon:'⚡',cost:3,time:7,say:'Super fast!'},
+  {id:'invis',name:'Invisible',icon:'👻',cost:4,time:6,say:'Invisible!'},{id:'team',name:'Team Up',icon:'',cost:6,time:10,say:'Team up!'}];
+const NJ_BOTS={bot:{col:'#9aa3ad',size:1,hp:1,spd:1},zip:{col:'#f57c1f',size:0.8,hp:1,spd:1.6},tank:{col:'#7a5bd0',size:1.3,hp:2,spd:0.7}};
+const NJ_LEVELS=10,NJ_HEARTS=10,NJ_PORTAL_HP=5;
+function njData(){K.ninja=K.ninja||{sel:0,custom:[],best:1,won:0};return K.ninja}
+function njList(){return NJ_TEAM.concat(njData().custom)}
+function njShade(hex,k){const n=parseInt(hex.slice(1),16),f=v=>Math.max(0,Math.min(255,Math.round(k<0?v*(1+k):v+(255-v)*k)));return `rgb(${f(n>>16)},${f(n>>8&255)},${f(n&255)})`}
+function njLight(hex){const n=parseInt(hex.slice(1),16);return (0.3*(n>>16)+0.59*(n>>8&255)+0.11*(n&255))>150}
+function njCanvas(w,h){const c=document.createElement('canvas');c.width=Math.max(1,Math.ceil(w));c.height=Math.max(1,Math.ceil(h||w));return c}
+function njRR(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
+// a ninja, drawn once; robo=true is the "turned into a robot" version for game over
+function njNinja(color,px,robo){
+  const c=njCanvas(px),g=c.getContext('2d'),s=px;g.translate(s/2,s/2);
+  const suit=robo?'#8f98a3':color,dark=robo?'#5b636d':njShade(color,-0.38),band=robo?'#ff3b3b':njLight(color)?'#1d2b4f':'#ffffff';
+  g.fillStyle='rgba(0,0,0,.28)';g.beginPath();g.ellipse(0,.43*s,.27*s,.06*s,0,0,7);g.fill();
+  g.fillStyle=dark;njRR(g,-.21*s,.33*s,.15*s,.1*s,.04*s);g.fill();njRR(g,.06*s,.33*s,.15*s,.1*s,.04*s);g.fill();
+  g.lineWidth=.03*s;g.strokeStyle=dark;g.fillStyle=suit;njRR(g,-.24*s,0,.48*s,.37*s,.12*s);g.fill();g.stroke();
+  g.fillStyle=dark;g.fillRect(-.24*s,.16*s,.48*s,.06*s);
+  g.fillStyle=suit;for(const x of [-.29,.29]){g.beginPath();g.arc(x*s,.13*s,.08*s,0,7);g.fill();g.stroke()}
+  g.beginPath();g.arc(0,-.15*s,.27*s,0,7);g.fill();g.stroke();
+  g.fillStyle=robo?'#2b3340':'#ffd9b3';njRR(g,-.19*s,-.21*s,.38*s,.13*s,.06*s);g.fill();
+  if(robo){g.fillStyle='#ff3b3b';g.fillRect(-.13*s,-.175*s,.08*s,.05*s);g.fillRect(.05*s,-.175*s,.08*s,.05*s)}
+  else{g.fillStyle='#1b1b1b';for(const x of [-.08,.08]){g.beginPath();g.ellipse(x*s,-.145*s,.035*s,.045*s,0,0,7);g.fill()}
+    g.fillStyle='#fff';for(const x of [-.07,.09]){g.beginPath();g.arc(x*s,-.16*s,.012*s,0,7);g.fill()}}
+  g.strokeStyle=band;g.lineWidth=.07*s;g.beginPath();g.arc(0,-.15*s,.25*s,Math.PI*1.12,Math.PI*1.88);g.stroke();
+  g.lineWidth=.05*s;g.lineCap='round';g.beginPath();g.moveTo(.2*s,-.28*s);g.lineTo(.42*s,-.38*s);g.moveTo(.2*s,-.27*s);g.lineTo(.43*s,-.23*s);g.stroke();
+  if(robo){g.strokeStyle='#5b636d';g.lineWidth=.03*s;g.beginPath();g.moveTo(0,-.42*s);g.lineTo(0,-.49*s);g.stroke();g.fillStyle='#ff3b3b';g.beginPath();g.arc(0,-.49*s,.04*s,0,7);g.fill()}
+  return c;
+}
+function njRobot(type,px,sleep){
+  const T=NJ_BOTS[type],c=njCanvas(px),g=c.getContext('2d'),s=px;g.translate(s/2,s/2);
+  const col=T.col,dark=njShade(col,-0.42),lite=njShade(col,0.18),eye=sleep?'#5b636d':type==='zip'?'#ffd23f':'#ff3b3b';
+  g.fillStyle='rgba(0,0,0,.28)';g.beginPath();g.ellipse(0,.43*s,.3*s,.06*s,0,0,7);g.fill();
+  g.fillStyle='#2b2f3a';njRR(g,-.3*s,.3*s,.6*s,.12*s,.06*s);g.fill();
+  g.lineWidth=.03*s;g.strokeStyle=dark;g.fillStyle=col;njRR(g,-.29*s,-.04*s,.58*s,.38*s,.09*s);g.fill();g.stroke();
+  if(type==='tank'){g.fillStyle=dark;njRR(g,-.4*s,-.04*s,.14*s,.2*s,.05*s);g.fill();njRR(g,.26*s,-.04*s,.14*s,.2*s,.05*s);g.fill()}
+  g.fillStyle=dark;for(const x of [-.17,0,.17]){g.beginPath();g.arc(x*s,.17*s,.035*s,0,7);g.fill()}
+  g.fillStyle=lite;njRR(g,-.25*s,-.38*s,.5*s,.32*s,.1*s);g.fill();g.stroke();
+  g.fillStyle='#1d2b4f';njRR(g,-.19*s,-.32*s,.38*s,.2*s,.06*s);g.fill();
+  g.fillStyle=eye;
+  if(sleep){g.fillRect(-.13*s,-.225*s,.08*s,.02*s);g.fillRect(.05*s,-.225*s,.08*s,.02*s)}
+  else if(type==='zip'){njRR(g,-.14*s,-.26*s,.28*s,.07*s,.03*s);g.fill()}
+  else for(const x of [-.085,.085]){g.beginPath();g.arc(x*s,-.22*s,.05*s,0,7);g.fill()}
+  g.strokeStyle=dark;g.beginPath();g.moveTo(0,-.38*s);g.lineTo(0,-.46*s);g.stroke();g.fillStyle=sleep?'#5b636d':eye;g.beginPath();g.arc(0,-.47*s,.04*s,0,7);g.fill();
+  return c;
+}
+function njCoin(px){const c=njCanvas(px),g=c.getContext('2d'),r=px/2;g.translate(r,r);
+  g.fillStyle='#f7c62f';g.strokeStyle='#b8860b';g.lineWidth=px*.07;g.beginPath();g.arc(0,0,r*.85,0,7);g.fill();g.stroke();
+  g.lineWidth=px*.05;g.strokeStyle='#e0a91a';g.beginPath();g.arc(0,0,r*.55,0,7);g.stroke();
+  g.strokeStyle='rgba(255,255,255,.8)';g.lineWidth=px*.07;g.beginPath();g.arc(0,0,r*.65,Math.PI*1.1,Math.PI*1.45);g.stroke();return c}
+function njPortalDisc(px,a,b){const c=njCanvas(px),g=c.getContext('2d'),r=px/2;g.translate(r,r);
+  const gr=g.createRadialGradient(0,0,r*.05,0,0,r);gr.addColorStop(0,'#ffffff');gr.addColorStop(.25,a);gr.addColorStop(.85,b);gr.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle=gr;g.beginPath();g.arc(0,0,r,0,7);g.fill();
+  g.strokeStyle='rgba(255,255,255,.55)';g.lineCap='round';
+  for(let k=0;k<4;k++){g.lineWidth=px*.03;g.beginPath();g.arc(0,0,r*(.35+k*.13),k*1.6,k*1.6+2.2);g.stroke()}return c}
+function njShuriken(px){const c=njCanvas(px),g=c.getContext('2d'),r=px/2;g.translate(r,r);g.fillStyle='#dfe6ee';g.strokeStyle='#5b636d';g.lineWidth=px*.06;
+  g.beginPath();for(let k=0;k<8;k++){const a=k*Math.PI/4,rr=k%2?r*.32:r*.95;g.lineTo(Math.cos(a)*rr,Math.sin(a)*rr)}g.closePath();g.fill();g.stroke();
+  g.fillStyle='#5b636d';g.beginPath();g.arc(0,0,r*.12,0,7);g.fill();return c}
+function njAvatar(n,px){return njNinja(n.color,px||96).toDataURL()}
+const njTeamIcon=()=>`<span class="njteam">${NJ_TEAM.map(n=>`<i style="background:${n.color}"></i>`).join('')}</span>`;
+
+/* ---------- menu, picker and ninja maker ---------- */
+function playNinja(){
+  if(location.hash!=='#ninja')return; // a late timer from a game you already left
+  const D=njData(),list=njList();if(!list[D.sel])D.sel=0;
+  setHeader('Ninja Portal','Tib, Drock & Kuko vs the robots');
+  view.innerHTML=`<div class="njmenu">
+    <p class="prompt">Pick your ninja!</p>
+    <div class="njpick">${list.map((n,i)=>`<button class="njcard" data-i="${i}" aria-pressed="${i===D.sel}"><img src="${njAvatar(n)}" alt=""><b>${esc(n.name)}</b>${i>=NJ_TEAM.length?`<span class="njdel" data-del="${i}" role="button" aria-label="Remove ${esc(n.name)}">✕</span>`:''}</button>`).join('')}
+      <button class="njcard njnew" id="njMake"><span>＋</span><b>Make a ninja</b></button></div>
+    <div class="row"><button class="pbtn go" id="njPlay">▶ Play level 1</button>${D.best>1?`<button class="pbtn" id="njCont">Keep going: level ${D.best}</button>`:''}</div>
+    <div class="panel njhow"><b>How to play</b><ul>
+      <li>👆 Slide your finger to move your ninja. Dodge the robots!</li>
+      <li><i class="njcoin"></i> Grab coins to buy power-ups at the bottom.</li>
+      <li>✴️ Hit the <b>middle portal</b> with 5 ninja stars to shut it down.</li>
+      <li>🌀 Then run into a <b>side portal</b> to go to the next level. There are 10 levels!</li></ul></div></div>`;
+  view.querySelectorAll('.njcard[data-i]').forEach(b=>b.onclick=e=>{
+    const del=e.target.closest('[data-del]');
+    if(del){const i=+del.dataset.del;if(del.dataset.arm!=='1'){del.dataset.arm='1';del.textContent='Sure?';return}D.custom.splice(i-NJ_TEAM.length,1);D.sel=0;save();sfx.no();return playNinja()}
+    D.sel=+b.dataset.i;save();sfx.tap();speakNow(list[D.sel].name+'!');view.querySelectorAll('.njcard[data-i]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
+  $('#njMake').onclick=()=>{sfx.tap();njMaker()};
+  $('#njPlay').onclick=()=>njStart(1);
+  const cont=$('#njCont');if(cont)cont.onclick=()=>njStart(D.best);
+}
+function njMaker(){
+  const D=njData();let color=NJ_COLORS[rnd(3,NJ_COLORS.length-1)];
+  setHeader('Ninja Portal','Make a ninja');
+  view.innerHTML=`<div class="njmenu"><p class="prompt">Make a new ninja!</p>
+    <div class="njmaker"><img id="njPrev" alt="Your new ninja">
+      <div class="njform"><label>Name<input id="njName" class="gin" maxlength="12" placeholder="Ninja name" autocomplete="off" autocapitalize="words"></label>
+        <div class="njcols">${NJ_COLORS.map(c=>`<button data-c="${c}" style="background:${c}" aria-label="Suit color"></button>`).join('')}</div></div></div>
+    <div class="row"><button class="pbtn" id="njBack">◀ Back</button><button class="pbtn go" id="njSave">Save ninja</button></div></div>`;
+  const draw=()=>{$('#njPrev').src=njAvatar({color},160);view.querySelectorAll('[data-c]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===color))};draw();
+  view.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{color=b.dataset.c;sfx.tap();draw()});
+  $('#njBack').onclick=()=>playNinja();
+  $('#njSave').onclick=()=>{const name=$('#njName').value.trim();if(!name){$('#njName').focus();sfx.no();return}
+    D.custom.push({name:name.slice(0,12),color});D.sel=NJ_TEAM.length+D.custom.length-1;save();sfx.up();speakNow(`${name} joined the team!`);playNinja()};
+}
+
+/* ---------- the game ---------- */
+function njStart(level,carry){
+  if(location.hash!=='#ninja')return;
+  const D=njData(),me=njList()[D.sel]||NJ_TEAM[0];
+  const mates=NJ_TEAM.filter(n=>n.name!==me.name).slice(0,2);
+  const S=canvasGame('Ninja Portal',`${esc(me.name)} · Level ${level} of ${NJ_LEVELS}`,
+    `<span>❤️ <b id="njH">${NJ_HEARTS}</b></span><span><i class="njcoin"></i> <b id="njC">0</b></span><span>🌀 Portal <b id="njP">${NJ_PORTAL_HP}</b></span>`);
+  // slow tablets: draw at a lower resolution than the screen (it still looks fine for cartoon art)
+  const box=S.box,cv=S.cv,ctx=S.ctx;
+  S.fit=()=>{const r=box.getBoundingClientRect(),dpr=Math.min(1.25,devicePixelRatio||1);S.W=r.width;S.H=r.height;cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);S.onfit&&S.onfit()};
+  const bar=document.createElement('div');bar.className='njbar';
+  bar.innerHTML=NJ_POWERS.map(p=>`<button class="njpw" data-p="${p.id}" disabled><span class="njpi">${p.id==='team'?njTeamIcon():p.icon}</span><b>${p.name}</b><small><i class="njcoin"></i>${p.cost}</small><u></u></button>`).join('');
+  view.querySelector('.cgame').appendChild(bar);
+  const L=level,G={state:'play',t:0,hearts:carry?carry.hearts:NJ_HEARTS,coins:carry?carry.coins:0,
+    tib:{x:0,y:0,ax:0,ay:0,hurt:0,flip:false,trail:[]},bots:[],coinsOn:[],shots:[],poofs:[],texts:[],sparks:[],mates:[],
+    portal:{hp:NJ_PORTAL_HP,alive:true,spawn:1.6,flash:0},coinT:0.5,throwT:0,ammo:0,fast:0,invis:0,team:0,shake:0};
+  if(/[?&]bot\b/.test(location.search))window.__njG=G;
+  const P={spawnEvery:Math.max(1.4,3.4-L*0.2),maxBots:Math.min(8,1+Math.ceil(L*0.7)),speed:0.85+L*0.08,zip:L>=4?0.25:0,tank:L>=6?0.2:0};
+  // sprites, rebuilt only when the screen size changes
+  let U=40,SP={},bg=null;
+  const build=()=>{U=Math.max(30,Math.min(64,Math.min(S.W,S.H)*0.085));const px=Math.round(U*1.6);
+    SP={me:njNinja(me.color,px),mates:mates.map(m=>njNinja(m.color,px)),coin:njCoin(Math.round(U*0.62)),shur:njShuriken(Math.round(U*0.5)),
+      portal:njPortalDisc(Math.round(U*3),'#ff4fd8','#5b2bbf'),side:njPortalDisc(Math.round(U*2.2),'#7ff6ff','#1f6fd0'),sideOff:njPortalDisc(Math.round(U*2.2),'#8f98a3','#2b2f3a'),bots:{},sleep:{}};
+    for(const k in NJ_BOTS){SP.bots[k]=njRobot(k,Math.round(U*1.6*NJ_BOTS[k].size));SP.sleep[k]=njRobot(k,Math.round(U*1.6*NJ_BOTS[k].size),true)}
+    bg=njCanvas(S.W,S.H);const g=bg.getContext('2d');g.fillStyle='#1a1e3a';g.fillRect(0,0,S.W,S.H);
+    const step=U*1.5;g.strokeStyle='#262b52';g.lineWidth=2;for(let x=step/2;x<S.W;x+=step){g.beginPath();g.moveTo(x,0);g.lineTo(x,S.H);g.stroke()}
+    for(let y=step/2;y<S.H;y+=step){g.beginPath();g.moveTo(0,y);g.lineTo(S.W,y);g.stroke()}
+    g.fillStyle='#2f3563';for(let x=step/2;x<S.W;x+=step)for(let y=step/2;y<S.H;y+=step){g.beginPath();g.arc(x,y,2.5,0,7);g.fill()}
+    g.strokeStyle='#ffd23f';g.lineWidth=6;g.setLineDash([16,12]);g.strokeRect(5,5,S.W-10,S.H-10);g.setLineDash([]);
+    if(!G.tib.x){G.tib.x=G.tib.ax=S.W/2;G.tib.y=G.tib.ay=S.H*0.85}
+    G.tib.x=Math.min(S.W-U*0.6,G.tib.x);G.tib.y=Math.min(S.H-U*0.6,G.tib.y);G.tib.ax=G.tib.x;G.tib.ay=G.tib.y};
+  S.onfit=build;S.fit();
+  const center=()=>({x:S.W/2,y:S.H*0.45}),sides=()=>[{x:U*1.4,y:S.H*0.45},{x:S.W-U*1.4,y:S.H*0.45}];
+  const hud={h:-1,c:-1,p:-1};
+  const drawHud=()=>{if(hud.h!==G.hearts){hud.h=G.hearts;$('#njH').textContent=G.hearts}if(hud.c!==G.coins){hud.c=G.coins;$('#njC').textContent=G.coins}
+    if(hud.p!==G.portal.hp){hud.p=G.portal.hp;$('#njP').textContent=G.portal.alive?G.portal.hp:'off ✓'}};
+  const pBtns=[...bar.querySelectorAll('.njpw')],pState={};
+  const drawBar=()=>{for(const b of pBtns){const p=NJ_POWERS.find(x=>x.id===b.dataset.p);
+      const active=p.id==='stars'?G.ammo>0:G[p.id]>0,frac=p.id==='stars'?G.ammo/8:active?G[p.id]/p.time:0,can=G.state==='play'&&!active&&G.coins>=p.cost;
+      const key=`${can}|${active}|${Math.round(frac*20)}`;if(pState[p.id]===key)continue;pState[p.id]=key;
+      b.disabled=!can;b.classList.toggle('on',active);b.querySelector('u').style.width=(active?frac*100:0)+'%'}};
+  bar.querySelectorAll('.njpw').forEach(b=>b.onclick=()=>{const p=NJ_POWERS.find(x=>x.id===b.dataset.p);if(G.state!=='play'||G.coins<p.cost)return;
+    G.coins-=p.cost;sfx.up();say(p.say);txt(p.say,G.tib.x,G.tib.y-U,'#ffd23f');
+    if(p.id==='stars')G.ammo=8;else G[p.id]=p.time;
+    if(p.id==='team')G.mates=mates.map((m,i)=>({i,x:G.tib.x+(i?U:-U),y:G.tib.y,flip:i===0}));
+    drawHud();drawBar()});
+  // moving: the ninja follows the way your finger slides, so your finger never hides him
+  let drag=null;
+  cv.onpointerdown=e=>{e.preventDefault();try{cv.setPointerCapture(e.pointerId)}catch(_){}drag={x:e.clientX,y:e.clientY,id:e.pointerId}};
+  cv.onpointermove=e=>{if(!drag||e.pointerId!==drag.id)return;const k=1.35;G.tib.ax+=(e.clientX-drag.x)*k;G.tib.ay+=(e.clientY-drag.y)*k;drag.x=e.clientX;drag.y=e.clientY;
+    G.tib.ax=Math.max(U*0.6,Math.min(S.W-U*0.6,G.tib.ax));G.tib.ay=Math.max(U*0.7,Math.min(S.H-U*0.6,G.tib.ay))};
+  const lift=e=>{if(drag&&e.pointerId===drag.id)drag=null};cv.onpointerup=lift;cv.onpointercancel=lift;
+  function txt(t,x,y,c){if(G.texts.length>6)G.texts.shift();G.texts.push({t,x,y,c,life:1.2})}
+  function poof(x,y,big){if(G.poofs.length>14)G.poofs.shift();G.poofs.push({x,y,r:U*0.3,life:1,big:big?1.6:1})}
+  function spawnBot(){const r=Math.random(),type=r<P.tank?'tank':r<P.tank+P.zip?'zip':'bot',T=NJ_BOTS[type],c=center(),a=Math.random()*Math.PI*2;
+    G.bots.push({type,hp:T.hp,x:c.x+Math.cos(a)*U*0.6,y:c.y+Math.sin(a)*U*0.6,r:U*0.5*T.size,spd:U*P.speed*T.spd,pop:0,wx:0,wy:0,wt:0,flip:false})}
+  function knock(b,coinChance){b.dead=true;poof(b.x,b.y);tone([[520,0,.06],[260,.05,.1]],'square',0.05);if(Math.random()<coinChance)G.coinsOn.push({x:b.x,y:b.y,t:0})}
+  function hurt(b){if(G.tib.hurt>0||G.invis>0||G.state!=='play')return;G.hearts--;G.tib.hurt=1.6;G.shake=0.35;knock(b,0);sfx.no();try{navigator.vibrate&&navigator.vibrate(60)}catch(e){}drawHud();
+    txt('Ouch!',G.tib.x,G.tib.y-U,'#ff6b6b');if(G.hearts<=0)over()}
+  function portalDown(){const p=G.portal;p.alive=false;G.state='open';G.shake=0.6;const c=center();sparks(G.sparks,c.x,c.y,'#ff4fd8',30,U*7);sparks(G.sparks,c.x,c.y,'#ffffff',16,U*5);
+    tone([[300,0,.15],[200,.1,.2],[600,.25,.12],[900,.35,.3]],'sawtooth',0.07);say('Portal down! Go through a side portal!');txt('PORTAL DOWN!',c.x,c.y-U*1.6,'#7ff6ff');
+    for(const b of G.bots)b.sleep=true;drawHud();drawBar()}
+  function finish(){G.state='done';sfx.up();const D=njData();
+    if(L>=NJ_LEVELS){D.won=(D.won||0)+1;D.best=NJ_LEVELS;save();say('You beat all ten levels! The ninjas saved the day!');
+      setTimeout(()=>{if(S.alive())popup('🏆','You beat all 10 levels!',`${esc(me.name)} and the ninja team saved the day from the robots!`,'Play again',()=>playNinja())},500);return}
+    D.best=Math.max(D.best||1,L+1);save();const heal=Math.min(NJ_HEARTS,G.hearts+2);
+    say(`Level ${L} done!`);
+    setTimeout(()=>{if(S.alive())popup('🌀',`Level ${L} done!`,`You get 2 hearts back. Next up: level ${L+1}. The robots get faster!`,`Level ${L+1} ▶`,()=>njStart(L+1,{hearts:heal,coins:G.coins}))},400)}
+  function over(){G.state='over';G.robo=njNinja(me.color,Math.round(U*1.6),true);poof(G.tib.x,G.tib.y,true);tone([[400,0,.2],[300,.18,.2],[200,.36,.4]],'square',0.06);
+    say(`Oh no! The robots turned ${me.name} into a robot!`);
+    setTimeout(()=>{if(S.alive())popup('🤖',`${esc(me.name)} turned into a robot!`,'The robots got all 10 hearts. Try this level again!',`Try level ${L} again`,()=>njStart(L))},1600)}
+  drawHud();drawBar();
+  let hudT=0;
+  S.loop(dt=>{
+    if(!$('#overlay').hidden&&G.state==='play')return; // paused while a popup is up (like the star timer)
+    const W=S.W,H=S.H,c=ctx,T=G.tib;G.t+=dt;
+    // ----- update -----
+    if(G.state==='play'||G.state==='open'){
+      const maxV=U*(G.fast>0?11:6.5),dx=T.ax-T.x,dy=T.ay-T.y,d=Math.hypot(dx,dy);
+      if(d>0.5){const m=Math.min(d,maxV*dt);T.x+=dx/d*m;T.y+=dy/d*m;if(Math.abs(dx)>2)T.flip=dx<0}
+      if(G.fast>0){T.trail.push({x:T.x,y:T.y});if(T.trail.length>4)T.trail.shift()}else T.trail.length=0;
+      T.hurt=Math.max(0,T.hurt-dt);for(const k of ['fast','invis','team'])if(G[k]>0){G[k]=Math.max(0,G[k]-dt);if(!G[k]&&k==='team'){for(const m of G.mates)poof(m.x,m.y);G.mates=[]}}
+      // coins appear on the floor, never right on top of you
+      G.coinT-=dt;if(G.coinT<=0&&G.coinsOn.length<6){G.coinT=1.4;for(let k=0;k<10;k++){const x=U+Math.random()*(W-2*U),y=U*1.2+Math.random()*(H-2.2*U),c0=center();
+        if(Math.hypot(x-c0.x,y-c0.y)>U*2&&Math.hypot(x-T.x,y-T.y)>U*2){G.coinsOn.push({x,y,t:0});break}}}
+      for(const co of G.coinsOn){co.t+=dt;if(Math.hypot(co.x-T.x,co.y-T.y)<U*0.75){co.got=true;G.coins++;tone([[1050,0,.05],[1400,.05,.09]],'square',0.035)}}
+      G.coinsOn=G.coinsOn.filter(o=>!o.got);
+      // the middle portal keeps sending robots out
+      const p=G.portal;p.flash=Math.max(0,p.flash-dt);
+      if(p.alive){p.spawn-=dt;if(p.spawn<=0&&G.bots.length<P.maxBots){spawnBot();p.spawn=P.spawnEvery*(0.7+Math.random()*0.6)}}
+      for(const b of G.bots){b.pop=Math.min(1,b.pop+dt*3);if(b.sleep)continue;
+        let tx=T.x,ty=T.y;
+        if(G.invis>0){b.wt-=dt;if(b.wt<=0){b.wt=1+Math.random()*1.5;b.wx=U+Math.random()*(W-2*U);b.wy=U+Math.random()*(H-2*U)}tx=b.wx;ty=b.wy}
+        const ex=tx-b.x,ey=ty-b.y,ed=Math.hypot(ex,ey)||1,v=b.spd*(G.invis>0?0.5:1)*b.pop;b.x+=ex/ed*v*dt;b.y+=ey/ed*v*dt;if(Math.abs(ex)>2)b.flip=ex<0;
+        if(Math.hypot(b.x-T.x,b.y-T.y)<(b.r+U*0.42)*0.8)hurt(b)}
+      for(let i=0;i<G.bots.length;i++)for(let j=i+1;j<G.bots.length;j++){const a=G.bots[i],b=G.bots[j],ox=b.x-a.x,oy=b.y-a.y,od=Math.hypot(ox,oy)||1,min=(a.r+b.r)*0.85;
+        if(od<min){const push=(min-od)/2;a.x-=ox/od*push;a.y-=oy/od*push;b.x+=ox/od*push;b.y+=oy/od*push}}
+      // ninja stars: thrown on their own at whatever is closest (the portal counts a little closer, so you can aim at it by walking near)
+      if(G.ammo>0){G.throwT-=dt;if(G.throwT<=0){let best=null,bd=1e9;
+          for(const b of G.bots){if(b.sleep||b.dead)continue;const dd=Math.hypot(b.x-T.x,b.y-T.y);if(dd<bd){bd=dd;best=b}}
+          if(p.alive){const c0=center(),dd=Math.hypot(c0.x-T.x,c0.y-T.y)*0.6;if(dd<bd){bd=dd;best='portal'}}
+          if(best){const tx=best==='portal'?center().x:best.x,ty=best==='portal'?center().y:best.y,a=Math.atan2(ty-T.y,tx-T.x),sp=U*13;
+            G.shots.push({x:T.x,y:T.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,rot:0,life:1.2,target:best});G.ammo--;G.throwT=0.38;slNoise(0.07,0.25,3500)}else G.throwT=0.2}}
+      for(const s of G.shots){s.x+=s.vx*dt;s.y+=s.vy*dt;s.rot+=dt*20;s.life-=dt;
+        if(p.alive){const c0=center();if(Math.hypot(s.x-c0.x,s.y-c0.y)<U*1.2){s.life=0;p.hp--;p.flash=0.25;sparks(G.sparks,s.x,s.y,'#ff4fd8',10,U*4);tone([[200,0,.08],[150,.06,.1]],'sawtooth',0.06);
+          txt(p.hp>0?`${p.hp} more!`:'',c0.x,c0.y-U*1.6,'#ff9ff3');drawHud();if(p.hp<=0)portalDown();continue}}
+        for(const b of G.bots){if(b.dead||b.sleep)continue;if(Math.hypot(s.x-b.x,s.y-b.y)<b.r){s.life=0;b.hp--;if(b.hp<=0)knock(b,0.35);else{sparks(G.sparks,b.x,b.y,'#fff',6,U*3);tone([[300,0,.05]],'square',0.04)}break}}
+        if(s.x<0||s.y<0||s.x>W||s.y>H)s.life=0}
+      G.shots=G.shots.filter(s=>s.life>0);
+      // Drock and Kuko run to the nearest robot and knock it out
+      for(const m of G.mates){let best=null,bd=1e9;for(const b of G.bots){if(b.dead||b.sleep)continue;const dd=Math.hypot(b.x-m.x,b.y-m.y);if(dd<bd){bd=dd;best=b}}
+        const tx=best?best.x:T.x+(m.i?U*1.2:-U*1.2),ty=best?best.y:T.y,ex=tx-m.x,ey=ty-m.y,ed=Math.hypot(ex,ey)||1,v=U*7.5;
+        if(ed>4){const mv=Math.min(ed,v*dt);m.x+=ex/ed*mv;m.y+=ey/ed*mv;m.flip=ex<0}
+        if(best&&bd<best.r+U*0.4){knock(best,0.5);txt('Hi-yah!',m.x,m.y-U,mates[m.i].color)}}
+      G.bots=G.bots.filter(b=>!b.dead);
+      // side portals open once the middle one is down
+      if(G.state==='open')for(const sp of sides())if(Math.hypot(sp.x-T.x,sp.y-T.y)<U*1.0){finish();break}
+    }
+    // ----- draw -----
+    c.save();if(G.shake>0){G.shake-=dt;c.translate((Math.random()-.5)*14*G.shake,(Math.random()-.5)*14*G.shake)}
+    c.drawImage(bg,0,0,W,H);
+    const sd=sides(),open=G.state==='open'||G.state==='done';
+    for(const sp of sd){const img=open?SP.side:SP.sideOff,sz=img.width*(open?1+Math.sin(G.t*4)*0.06:0.85);
+      c.save();c.translate(sp.x,sp.y);c.rotate(open?-G.t*3:0);c.globalAlpha=open?1:0.45;c.drawImage(img,-sz/2,-sz/2,sz,sz);c.restore()}
+    if(open){c.globalAlpha=0.6+Math.sin(G.t*6)*0.4;c.fillStyle='#7ff6ff';c.font=`700 ${Math.round(U*0.45)}px Fredoka,system-ui`;c.textAlign='center';
+      c.fillText('◀ GO!',sd[0].x+U*0.3,sd[0].y-U*1.4);c.fillText('GO! ▶',sd[1].x-U*0.3,sd[1].y-U*1.4);c.globalAlpha=1}
+    const cc=center();
+    if(G.portal.alive){const img=SP.portal,sz=img.width*(1+Math.sin(G.t*3)*0.05+(G.portal.flash>0?0.15:0));c.save();c.translate(cc.x,cc.y);c.rotate(G.t*2);c.drawImage(img,-sz/2,-sz/2,sz,sz);c.restore();
+      const w=U*2.2;c.fillStyle='rgba(0,0,0,.45)';c.fillRect(cc.x-w/2,cc.y+U*1.65,w,U*0.22);c.fillStyle='#ff4fd8';c.fillRect(cc.x-w/2,cc.y+U*1.65,w*G.portal.hp/NJ_PORTAL_HP,U*0.22)}
+    else{c.globalAlpha=0.35;c.drawImage(SP.sideOff,cc.x-U,cc.y-U,U*2,U*2);c.globalAlpha=1}
+    for(const co of G.coinsOn){const sq=Math.abs(Math.cos(G.t*3+co.x)),w=SP.coin.width;c.drawImage(SP.coin,co.x-w*sq/2,co.y-w/2+Math.sin(G.t*4+co.y)*2,w*Math.max(0.15,sq),w)}
+    // everyone sorted top to bottom so the closer ones overlap properly
+    const actors=G.bots.map(b=>({y:b.y,b}));for(const m of G.mates)actors.push({y:m.y,m});if(G.state!=='over')actors.push({y:T.y,me:1});actors.sort((a,b)=>a.y-b.y);
+    for(const a of actors){
+      if(a.b){const b=a.b,img=(b.sleep?SP.sleep:SP.bots)[b.type],sz=img.width*b.pop,bob=b.sleep?0:Math.sin(G.t*10+b.x)*U*0.04;
+        c.save();c.translate(b.x,b.y-sz*0.12+bob);if(b.flip)c.scale(-1,1);if(G.invis>0&&!b.sleep)c.globalAlpha=0.85;c.drawImage(img,-sz/2,-sz/2,sz,sz);c.restore();
+        if(b.sleep){c.fillStyle='#cfd6e6';c.font=`700 ${Math.round(U*0.35)}px Fredoka,system-ui`;c.textAlign='center';c.fillText('z',b.x+U*0.4,b.y-U*0.8-((G.t*20+b.x)%20))}}
+      else if(a.m){const m=a.m,img=SP.mates[m.i],sz=img.width;c.save();c.translate(m.x,m.y-sz*0.15+Math.sin(G.t*14)*U*0.05);if(m.flip)c.scale(-1,1);c.drawImage(img,-sz/2,-sz/2,sz,sz);c.restore()}
+      else{const img=SP.me,sz=img.width;
+        for(let k=0;k<T.trail.length;k++){const p=T.trail[k];c.globalAlpha=0.12*(k+1);c.drawImage(img,p.x-sz/2,p.y-sz*0.65,sz,sz)}
+        c.globalAlpha=G.invis>0?0.3:(T.hurt>0&&Math.floor(G.t*12)%2)?0.35:1;
+        c.save();c.translate(T.x,T.y-sz*0.15+Math.sin(G.t*8)*U*0.03);if(T.flip)c.scale(-1,1);c.drawImage(img,-sz/2,-sz/2,sz,sz);c.restore();c.globalAlpha=1;
+        if(G.fast>0){c.strokeStyle='rgba(255,210,63,.8)';c.lineWidth=3;for(let k=0;k<3;k++){const y=T.y-U*0.3+k*U*0.3,dir=T.flip?1:-1;c.beginPath();c.moveTo(T.x+dir*U*0.6,y);c.lineTo(T.x+dir*U*(1+k*0.2),y);c.stroke()}}}}
+    if(G.state==='over'&&G.robo){const sz=G.robo.width;c.drawImage(G.robo,T.x-sz/2,T.y-sz*0.65,sz,sz)}
+    for(const s of G.shots){const w=SP.shur.width;c.save();c.translate(s.x,s.y);c.rotate(s.rot);c.drawImage(SP.shur,-w/2,-w/2);c.restore()}
+    for(const pf of G.poofs){pf.life-=dt*2;pf.r+=U*2.2*dt*pf.big;c.globalAlpha=Math.max(0,pf.life)*0.8;c.fillStyle='#d9dee8';
+      for(let k=0;k<5;k++){const a=k*1.26+pf.x;c.beginPath();c.arc(pf.x+Math.cos(a)*pf.r*0.6,pf.y+Math.sin(a)*pf.r*0.6,pf.r*0.55,0,7);c.fill()}}
+    c.globalAlpha=1;G.poofs=G.poofs.filter(p=>p.life>0);
+    drawSparks(c,G.sparks,dt,0);
+    c.textAlign='center';c.font=`700 ${Math.round(U*0.5)}px Fredoka,system-ui`;c.lineWidth=4;c.strokeStyle='rgba(0,0,0,.55)';
+    for(const t of G.texts){t.life-=dt;t.y-=U*0.8*dt;if(!t.t)continue;c.globalAlpha=Math.max(0,Math.min(1,t.life*1.5));c.strokeText(t.t,t.x,t.y);c.fillStyle=t.c;c.fillText(t.t,t.x,t.y)}
+    c.globalAlpha=1;G.texts=G.texts.filter(t=>t.life>0);
+    if(G.t<3&&G.state==='play'){c.globalAlpha=Math.min(1,3-G.t);c.fillStyle='rgba(13,20,50,.8)';const tw=Math.min(W-30,U*9);c.fillRect(W/2-tw/2,H*0.08,tw,U*0.9);
+      c.fillStyle='#fff';c.font=`700 ${Math.round(U*0.42)}px Fredoka,system-ui`;c.fillText(`Level ${L}: shut down the portal!`,W/2,H*0.08+U*0.6,tw-20);c.globalAlpha=1}
+    c.restore();
+    hudT-=dt;if(hudT<=0){hudT=0.15;drawHud();drawBar()}
+  });
+}
+
+/* =========================================================
    HOME, STICKERS, GROWN-UPS
    ========================================================= */
 function home(){
@@ -2684,7 +2980,7 @@ function grownups(){
       <button class="pbtn" id="fs">Full screen: ${K.full===false?'Off':'On'}</button></div>
     <div class="prow" id="vrow" style="flex-wrap:wrap"><span>Voice</span><span class="ctl" style="flex-wrap:wrap"><button class="pbtn" id="vonoff" style="${voiceOn()?'background:var(--ink);color:#fff':''}">${voiceOn()?'On':'Off'}</button><select id="vsel" style="font:inherit;font-size:17px;padding:8px;border-radius:12px;border:2px solid var(--sky-2);max-width:16em"></select>
       <button class="pm" id="vslow" aria-label="Slower">🐢</button><button class="pm" id="vfast" aria-label="Faster">🐇</button><button class="pbtn" id="vtest">▶ Test</button></span></div>
-    ${K.mode!=='little'?`<div class="prow" style="flex-wrap:wrap"><span>Play games cost stars <small style="color:var(--muted)">(Fruit Pop, Bubble Pop, Dino Dash, Tower Builder, Brick Builder, Fishing Trip, Fruit Slice, Movies & Shows)</small></span><span class="ctl"><button class="pbtn" id="gateT">${K.gate===false?'Off':'On'}</button></span></div>
+    ${K.mode!=='little'?`<div class="prow" style="flex-wrap:wrap"><span>Play games cost stars <small style="color:var(--muted)">(Fruit Pop, Bubble Pop, Dino Dash, Tower Builder, Brick Builder, Fishing Trip, Fruit Slice, Ninja Portal, Movies & Shows)</small></span><span class="ctl"><button class="pbtn" id="gateT">${K.gate===false?'Off':'On'}</button></span></div>
     ${K.gate!==false?`<div class="prow" style="flex-wrap:wrap"><span>Each star buys</span><span class="ctl">${[1,2,3,5].map(m=>`<button class="pbtn" data-mps="${m}" style="${minsPerStar()===m?'background:var(--ink);color:#fff':''}">${m} min</button>`).join('')}</span></div>
     <div class="prow" style="flex-wrap:wrap"><span>Stars to spend: <b>${K.wallet}</b> · Play time left: <b>${fmtSec(K.playSec||0)}</b></span><span class="ctl"><button class="pbtn" id="give5">+5 stars</button><button class="pbtn" id="time5">+5 min</button><button class="pbtn" id="time0">Clear time</button></span></div>`:''}`:''}
     ${tvGrownups()}
@@ -2715,7 +3011,7 @@ function grownups(){
 }
 
 /* ---------- navigation (plain #names so the back button works) ---------- */
-const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),tv:gated('tv',()=>{TV.stack=[];playTv()}),adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
+const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),ninja:gated('ninja',playNinja),tv:gated('tv',()=>{TV.stack=[];playTv()}),adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
 function go(name){if(location.hash.slice(1)!==name)location.hash=name;else show()}
 function show(){loopToken++;const r=location.hash.slice(1);resetArm=false;$('#timeChip').hidden=true;updateStars();$('#overlay').hidden=true;popQ.length=0;try{if(window.SQAndroid)SQAndroid.stop();else if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}
   view.scrollTop=0;(ROUTES[r]||home)()}
