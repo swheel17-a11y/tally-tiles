@@ -217,6 +217,22 @@ button:disabled{opacity:.35;cursor:default}
 .sqmore{font-size:11px;color:var(--mist);font-family:var(--f-mono)}
 
 
+/* cats */
+.ctboard{--n:7;display:grid;width:100%;max-width:min(100%,calc(100dvh - 340px));min-width:240px;align-self:center;border:3px solid #0b1022;border-radius:12px;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.ctc{aspect-ratio:1/1;padding:0;border:1.5px solid;display:grid;place-items:center;font-size:calc(min(488px,100vw - 32px)/var(--n)*.56);line-height:1;color:#16203f;position:relative}
+.ctc i{font-style:normal;font-weight:800;opacity:.55;font-size:.75em}
+.ctc i.auto{opacity:.4;font-size:.9em}
+.ctc.bad{box-shadow:inset 0 0 0 3px #d92b31}
+.ctc.hl{animation:ctpulse .9s ease-in-out 3}
+@keyframes ctpulse{50%{box-shadow:inset 0 0 0 4px #ffffff;filter:brightness(1.15)}}
+.ctc.win{animation:ctjump .6s ease both}
+@keyframes ctjump{40%{transform:translateY(-22%) scale(1.15)}}
+.ctsizes{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;background:var(--board);border:1px solid var(--board-line);border-radius:12px;padding:4px}
+.ctsizes button{padding:7px 2px;border-radius:9px;font-weight:700;color:var(--mist);font-size:13px;line-height:1.15}
+.ctsizes small{display:block;font-size:10px;font-weight:500;opacity:.8}
+.ctsizes button[aria-pressed="true"]{background:var(--tile);color:var(--tile-ink)}
+#ctAuto[aria-pressed="false"]{color:var(--mist)}
+
 /* yard */
 .ycard{background:var(--board);border:1px solid var(--board-line);border-radius:18px;padding:12px 14px}
 .ycash{font-family:var(--f-mono);font-size:40px;line-height:1.1;color:var(--brass);font-variant-numeric:tabular-nums;text-shadow:0 0 18px rgba(242,182,74,.3)}
@@ -285,6 +301,7 @@ td.h{padding-top:14px;font-size:11px;letter-spacing:.12em;text-transform:upperca
     <button role="tab" id="tab-solitaire" aria-selected="false" data-mode="solitaire">Solitaire</button>
     <button role="tab" id="tab-sand" aria-selected="false" data-mode="sand">Sand</button>
     <button role="tab" id="tab-yard" aria-selected="false" data-mode="yard">Yard</button>
+    <button role="tab" id="tab-cats" aria-selected="false" data-mode="cats">Cats</button>
   </div>
   <div class="stage" id="stage"></div>
   <div class="controls" id="controls"></div>
@@ -320,7 +337,7 @@ const addPts=p=>{S.dayPts+=p;save();};
 /* ---------- clocks: one per tab, paused while you're on another tab ---------- */
 const R=26,C=2*Math.PI*R,LIMIT=30;
 const mkClock=()=>({elapsed:0,since:null,running:false,timed:false,onEnd:null});
-const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock(),sand:mkClock(),yard:mkClock()};
+const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock(),sand:mkClock(),yard:mkClock(),cats:mkClock()};
 const el=c=>c.elapsed+(c.since?(performance.now()-c.since)/1000:0);
 let looping=false;
 function clockHTML(){return `<div class="clock" id="clock"><svg viewBox="0 0 64 64"><circle class="track" cx="32" cy="32" r="${R}" fill="none" stroke-width="6"/><circle class="arc" id="arc" cx="32" cy="32" r="${R}" fill="none" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg><div class="t" id="clockT"></div></div>`}
@@ -1459,8 +1476,133 @@ function yardUpdate(structure){
 }
 
 /* ---------- tabs: each keeps its own round ---------- */
+/* ==========================================================
+   CATS: one cat in every row, column and colour area; cats never touch (not even corners)
+   ========================================================== */
+const CATS_KEY='tally-tiles-cats-v1';
+const CT_COL=['#f2a3a3','#f5c88a','#ece27f','#b5dd98','#94d4c8','#9cc2ef','#c0aef0','#efaed6','#d8c29c','#b9c6d8','#a6e2b4'];
+const CT_SIZES=[[5,'Easy'],[6,'Easy+'],[7,'Medium'],[8,'Hard'],[9,'Expert']];
+let CT=null;
+function ctRng(seed){let a=seed>>>0;return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function ctShuf(a,R){for(let i=a.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+// every solution (up to `limit`) as an array: column of the cat in each row
+function ctSolve(n,reg,limit){const out=[],colU=new Uint8Array(n),regU=new Uint8Array(n),p=[];
+  const go=r=>{if(r===n){out.push(p.slice());return out.length>=limit}
+    for(let c=0;c<n;c++){const g=reg[r*n+c];if(colU[c]||regU[g]||(r&&Math.abs(c-p[r-1])<=1))continue;
+      colU[c]=1;regU[g]=1;p[r]=c;if(go(r+1))return true;colU[c]=0;regU[g]=0}return false};
+  go(0);return out}
+function ctConnected(n,reg,g,seed){const want=reg.filter(x=>x===g).length,seen=new Set([seed]),q=[seed];
+  for(let k=0;k<q.length;k++){const i=q[k],r=Math.floor(i/n),c=i%n;for(const [dr,dc] of [[1,0],[-1,0],[0,1],[0,-1]]){const rr=r+dr,cc=c+dc,j=rr*n+cc;
+    if(rr<0||cc<0||rr>=n||cc>=n||seen.has(j)||reg[j]!==g)continue;seen.add(j);q.push(j)}}return seen.size===want}
+function ctGenerate(n,seed){
+  const R=ctRng(seed);
+  for(let attempt=0;attempt<400;attempt++){
+    // 1. a secret answer: one cat per row and column, none touching
+    const p=[],used=new Array(n).fill(false);
+    const place=r=>{if(r===n)return true;for(const c of ctShuf([...Array(n).keys()],R)){if(used[c]||(r&&Math.abs(c-p[r-1])<=1))continue;used[c]=true;p[r]=c;if(place(r+1))return true;used[c]=false}return false};
+    if(!place(0))continue;
+    // 2. grow a colour area out from each cat
+    const reg=new Array(n*n).fill(-1);p.forEach((c,r)=>reg[r*n+c]=r);let left=n*n-n;
+    while(left>0){const g=Math.floor(R()*n),opts=[];
+      for(let i=0;i<n*n;i++){if(reg[i]!==g)continue;const r=Math.floor(i/n),c=i%n;
+        for(const [dr,dc] of [[1,0],[-1,0],[0,1],[0,-1]]){const rr=r+dr,cc=c+dc;if(rr>=0&&cc>=0&&rr<n&&cc<n&&reg[rr*n+cc]===-1)opts.push(rr*n+cc)}}
+      if(opts.length){reg[opts[Math.floor(R()*opts.length)]]=g;left--}}
+    // 3. nudge area borders until the secret answer is the only answer
+    const seedOf=g=>g*n+p[g];
+    for(let it=0;it<300;it++){
+      const sols=ctSolve(n,reg,2);if(sols.length===1)return{n,reg,sol:sols[0]};
+      const alt=sols.find(s=>s.some((c,r)=>c!==p[r]));const rows=ctShuf([...Array(n).keys()].filter(r=>alt[r]!==p[r]),R);let moved=false;
+      for(const r of rows){const cell=r*n+alt[r],g=reg[cell],rr=r,cc=alt[r];
+        const nb=ctShuf([[1,0],[-1,0],[0,1],[0,-1]].map(([a,b])=>[rr+a,cc+b]).filter(([a,b])=>a>=0&&b>=0&&a<n&&b<n).map(([a,b])=>reg[a*n+b]).filter(h=>h!==g),R);
+        for(const h of nb){reg[cell]=h;if(ctConnected(n,reg,g,seedOf(g))){moved=true;break}reg[cell]=g}
+        if(moved)break}
+      if(!moved)break}
+  }
+  return null;
+}
+const ctDayKey=()=>{const d=new Date();return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`};
+const ctDaySeed=k=>[...k].reduce((h,ch)=>Math.imul(h^ch.charCodeAt(0),16777619)>>>0,2166136261);
+function ctLoad(){try{CT=JSON.parse(localStorage.getItem(CATS_KEY)||'null')}catch(e){CT=null}
+  CT=Object.assign({size:7,autoX:true,best:{},solved:0,streak:0,lastDaily:'',dailyDone:'',p:null},CT||{})}
+function ctSave(){try{localStorage.setItem(CATS_KEY,JSON.stringify(CT))}catch(e){}}
+function ctNew(daily){
+  const n=daily?8:CT.size,key=ctDayKey(),seed=daily?ctDaySeed(key):(Math.random()*4294967296)>>>0;
+  let g=ctGenerate(n,seed);if(!g)g=ctGenerate(n,seed+1);
+  ctMsg='';ctHintCell=-1;CT.p={n,reg:g.reg,sol:g.sol,marks:new Array(n*n).fill(0),ms:0,done:false,hints:0,daily:daily?key:'',undo:[]};
+  ctSave();renderCats(true);
+}
+const ctCats=P=>P.marks.map((m,i)=>m===2?i:-1).filter(i=>i>=0);
+function ctCheck(P){ // which cats break a rule, and which empty squares are ruled out by the cats placed
+  const n=P.n,cats=ctCats(P),bad=new Set(),blocked=new Set();
+  for(let a=0;a<cats.length;a++)for(let b=a+1;b<cats.length;b++){const i=cats[a],j=cats[b],ri=Math.floor(i/n),ci=i%n,rj=Math.floor(j/n),cj=j%n;
+    if(ri===rj||ci===cj||P.reg[i]===P.reg[j]||(Math.abs(ri-rj)<=1&&Math.abs(ci-cj)<=1)){bad.add(i);bad.add(j)}}
+  for(const i of cats){const ri=Math.floor(i/n),ci=i%n;for(let j=0;j<n*n;j++){if(j===i)continue;const rj=Math.floor(j/n),cj=j%n;
+    if(ri===rj||ci===cj||P.reg[i]===P.reg[j]||(Math.abs(ri-rj)<=1&&Math.abs(ci-cj)<=1))blocked.add(j)}}
+  return{cats,bad,blocked,won:cats.length===n&&!bad.size};
+}
+const ctTime=ms=>{const s=Math.floor(ms/1000);return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`};
+let ctTick=0,ctLast=0,ctMsg='',ctMsgT=0,ctHintCell=-1;
+function ctSet(i,v){const P=CT.p;if(P.done||P.marks[i]===v)return;P.undo.push(P.marks.slice());if(P.undo.length>200)P.undo.shift();P.marks[i]=v;ctAfter()}
+function ctAfter(){const P=CT.p,st=ctCheck(P);ctHintCell=-1;
+  if(st.won&&!P.done){P.done=true;CT.solved++;const k=String(P.n),prev=CT.best[k];if(!P.hints&&(!prev||P.ms<prev))CT.best[k]=P.ms;
+    if(P.daily){const y=new Date();y.setDate(y.getDate()-1);const yk=`${y.getFullYear()}-${y.getMonth()+1}-${y.getDate()}`;CT.streak=CT.lastDaily===yk?CT.streak+1:CT.lastDaily===P.daily?CT.streak:1;CT.lastDaily=P.daily}
+    addPts(Math.max(1,P.n*2-P.hints*2));buzz([20,40,20])}
+  ctSave();renderCats(false)}
+function ctHint(){const P=CT.p;if(P.done)return;const n=P.n,solSet=new Set(P.sol.map((c,r)=>r*n+c));
+  const wrong=ctCats(P).find(i=>!solSet.has(i));if(wrong!=null){ctHintCell=wrong;ctMsg='This cat is in the wrong spot.';ctMsgT=Date.now();renderCats(false);return}
+  const wrongX=[...solSet].find(i=>P.marks[i]===1);if(wrongX!=null){ctHintCell=wrongX;ctMsg='A cat belongs under this X.';ctMsgT=Date.now();renderCats(false);return}
+  const next=[...solSet].find(i=>P.marks[i]!==2);if(next==null)return;P.hints++;ctMsg='Here’s one.';ctMsgT=Date.now();ctSet(next,2);ctHintCell=next;renderCats(false)}
+function renderCats(full){
+  if(!CT)ctLoad();
+  if(!CT.p)return ctNew(false);
+  const P=CT.p,n=P.n,st=ctCheck(P);
+  if(full||!$('#ctBoard')){
+    stage.innerHTML=`<div class="headline mhead">
+        <div class="mstat"><div class="eyebrow">${P.daily?'Daily':'Size'}</div><div class="mnum dim">${n}×${n}</div></div>
+        <div class="mstat"><div class="eyebrow">Time</div><div class="mnum" id="ctTime">${ctTime(P.ms)}</div></div>
+        <div class="mstat"><div class="eyebrow">Best</div><div class="mnum dim" id="ctBest">${CT.best[n]?ctTime(CT.best[n]):'—'}</div></div></div>
+      <div class="ctboard" id="ctBoard" style="grid-template-columns:repeat(${n},1fr);--n:${n}"></div>
+      <div class="hint" id="ctHintTxt"></div>`;
+    ctBind();
+  }
+  const board=$('#ctBoard');
+  board.innerHTML=P.marks.map((m,i)=>{const r=Math.floor(i/n),c=i%n,g=P.reg[i],B=(rr,cc)=>rr<0||cc<0||rr>=n||cc>=n||P.reg[rr*n+cc]!==g;
+    const cls=['ctc',m===2?'cat':'',st.bad.has(i)?'bad':'',i===ctHintCell?'hl':'',P.done&&m===2?'win':''].join(' ');
+    return `<button class="${cls}" data-i="${i}" style="background:${CT_COL[g%CT_COL.length]};border-color:${[B(r-1,c),B(r,c+1),B(r+1,c),B(r,c-1)].map(x=>x?'#0b1022':'rgba(11,16,34,.13)').join(' ')};${P.done&&m===2?`animation-delay:${(r*60)}ms`:''}" aria-label="Row ${r+1} column ${c+1}${m===2?', cat':m===1?', crossed out':''}">${m===2?'🐱':m===1?'<i>×</i>':(CT.autoX&&st.blocked.has(i)?'<i class="auto">·</i>':'')}</button>`}).join('');
+  const ht=$('#ctHintTxt');
+  ht.textContent=P.done?`Solved in ${ctTime(P.ms)}${P.hints?` with ${P.hints} hint${P.hints>1?'s':''}`:''}! ${P.daily?`Daily streak: ${CT.streak} 🔥`:''}`
+    :(Date.now()-ctMsgT<3000&&ctMsg)?ctMsg:'Tap once for ×, twice for a cat. Drag to cross out several. One cat per row, column and colour; cats never touch.';
+  $('#ctBest').textContent=CT.best[n]?ctTime(CT.best[n]):'—';
+  const today=ctDayKey(),dailyDone=CT.lastDaily===today;
+  controls.innerHTML=P.done?`<div class="row"><button class="btn primary tall" id="ctNext">Next puzzle</button>${!dailyDone?`<button class="btn tall" id="ctDaily">Daily puzzle</button>`:''}</div>
+      <div class="ctsizes">${CT_SIZES.map(([s,l])=>`<button data-s="${s}" aria-pressed="${s===CT.size}">${s}×${s}<small>${l}</small></button>`).join('')}</div>`
+    :`<div class="row"><button class="btn" id="ctUndo" ${P.undo.length?'':'disabled'}>Undo</button><button class="btn" id="ctClear" ${P.marks.some(m=>m)?'':'disabled'}>Clear</button><button class="btn" id="ctHint">Hint</button><button class="btn" id="ctAuto" aria-pressed="${CT.autoX}">Auto × ${CT.autoX?'on':'off'}</button></div>
+      <div class="ctsizes">${CT_SIZES.map(([s,l])=>`<button data-s="${s}" aria-pressed="${!P.daily&&s===n}">${s}×${s}<small>${l}</small></button>`).join('')}<button data-s="daily" aria-pressed="${!!P.daily}">Daily<small>${dailyDone?'Done ✓':'8×8'}</small></button></div>`;
+  const on=(id,f)=>{const e=$(id);if(e)e.onclick=f};
+  on('#ctNext',()=>ctNew(false));on('#ctDaily',()=>ctNew(true));
+  on('#ctUndo',()=>{if(!P.undo.length)return;P.marks=P.undo.pop();ctHintCell=-1;ctSave();renderCats(false)});
+  on('#ctClear',()=>{P.undo.push(P.marks.slice());P.marks.fill(0);ctHintCell=-1;ctSave();renderCats(false)});
+  on('#ctHint',ctHint);on('#ctAuto',()=>{CT.autoX=!CT.autoX;ctSave();renderCats(false)});
+  controls.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{if(b.dataset.s==='daily'){if(P.daily===today)return;return ctNew(true)}CT.size=+b.dataset.s;ctNew(false)});
+  if(!ctTick)ctTick=setInterval(()=>{const now=performance.now(),dt=now-(ctLast||now);ctLast=now;
+    if(S.mode!=='cats'||document.hidden||!CT.p||CT.p.done)return;CT.p.ms+=dt;const t=$('#ctTime');if(t)t.textContent=ctTime(CT.p.ms);if(Math.random()<0.1)ctSave()},500);
+}
+function ctBind(){
+  const board=$('#ctBoard');let start=-1,drag=false,dragVal=1,touched=new Set();
+  const cellAt=e=>{const el=document.elementFromPoint(e.clientX,e.clientY);const b=el&&el.closest&&el.closest('.ctc');return b&&board.contains(b)?+b.dataset.i:-1};
+  board.addEventListener('pointerdown',e=>{const i=cellAt(e);if(i<0||CT.p.done)return;e.preventDefault();start=i;drag=false;touched=new Set([i]);
+    dragVal=CT.p.marks[i]===1?0:1;try{board.setPointerCapture(e.pointerId)}catch(_){}});
+  board.addEventListener('pointermove',e=>{if(start<0)return;const i=cellAt(e);if(i<0||touched.has(i))return;
+    const P=CT.p;if(!drag){drag=true;P.undo.push(P.marks.slice());if(P.marks[start]!==2)P.marks[start]=dragVal}
+    touched.add(i);if(P.marks[i]!==2)P.marks[i]=dragVal;renderCats(false)});
+  const up=()=>{if(start<0)return;const i=start;start=-1;
+    if(drag){ctAfter();return}
+    const m=CT.p.marks[i];ctSet(i,m===0?1:m===1?2:0)};
+  board.addEventListener('pointerup',up);board.addEventListener('pointercancel',()=>{start=-1;if(drag)ctAfter()});
+}
+
 function render(){
-  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else if(S.mode==='sand')return renderSand(true);else if(S.mode==='yard')return renderYard(true);else renderCon();
+  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else if(S.mode==='sand')return renderSand(true);else if(S.mode==='yard')return renderYard(true);else if(S.mode==='cats')return renderCats(true);else renderCon();
   paintClock();
 }
 function setMode(m){
@@ -1592,7 +1734,7 @@ function drawQR(cv,text){
 }
 
 /* ---------- boot ---------- */
-const m0=['numbers','letters','conundrum','merge','solitaire','sand','yard'].includes(S.mode)?S.mode:'numbers';S.mode='';setMode(m0);
+const m0=['numbers','letters','conundrum','merge','solitaire','sand','yard','cats'].includes(S.mode)?S.mode:'numbers';S.mode='';setMode(m0);
 })();
 </script>
 
