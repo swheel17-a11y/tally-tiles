@@ -415,17 +415,9 @@ td.h{padding-top:14px;font-size:11px;letter-spacing:.12em;text-transform:upperca
     </div>
   </div>
   <div class="modes" role="tablist">
-    <button role="tab" id="tab-numbers" aria-selected="true" data-mode="numbers">Numbers</button>
-    <button role="tab" id="tab-letters" aria-selected="false" data-mode="letters">Letters</button>
-    <button role="tab" id="tab-conundrum" aria-selected="false" data-mode="conundrum">Conundrum</button>
     <button role="tab" id="tab-merge" aria-selected="false" data-mode="merge">Merge</button>
     <button role="tab" id="tab-solitaire" aria-selected="false" data-mode="solitaire">Solitaire</button>
-    <button role="tab" id="tab-sand" aria-selected="false" data-mode="sand">Sand</button>
-    <button role="tab" id="tab-yard" aria-selected="false" data-mode="yard">Yard</button>
     <button role="tab" id="tab-cats" aria-selected="false" data-mode="cats">Cats</button>
-    <button role="tab" id="tab-offcut" aria-selected="false" data-mode="offcut">Offcut</button>
-    <button role="tab" id="tab-trade" aria-selected="false" data-mode="trade">Trade</button>
-    <button role="tab" id="tab-mine" aria-selected="false" data-mode="mine">Mine</button>
   </div>
   <div class="stage" id="stage"></div>
   <div class="controls" id="controls"></div>
@@ -1541,7 +1533,7 @@ function yardTick(){
   if(dt>0){const r=totalRate();earn(r*dt);if(dt>60&&r>0)yardAway={secs:dt,amt:r*dt}}
   if(S.mode==='yard'&&$('#yardCash'))yardUpdate(false);
 }
-setInterval(yardTick,250);setInterval(yardSave,5000);
+/* Yard tab removed: its timers no longer run */
 document.addEventListener('visibilitychange',()=>{if(document.hidden)yardSave();else{yardSyncFromStorage();yardTick()}});
 const dur=s=>s>=3600?`${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}m`:`${Math.floor(s/60)}m`;
 
@@ -2324,7 +2316,7 @@ function drawQR(cv,text){
 }
 
 /* ---------- boot ---------- */
-const m0=['numbers','letters','conundrum','merge','solitaire','sand','yard','cats','offcut','trade','mine'].includes(S.mode)?S.mode:'numbers';S.mode='';setMode(m0);
+const m0=['merge','solitaire','cats'].includes(S.mode)?S.mode:'solitaire';S.mode='';setMode(m0);
 })();
 </script>
 
