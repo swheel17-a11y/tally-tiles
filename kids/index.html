@@ -2748,7 +2748,7 @@ function playNinja(){
     <div class="panel njhow"><b>How to play</b><ul>
       <li>👆 Slide your finger to move your ninja. Dodge the robots!</li>
       <li><i class="njcoin"></i> Grab coins to buy power-ups at the bottom.</li>
-      <li>✴️ Hit the <b>middle portal</b> with 5 ninja stars to shut it down.</li>
+      <li>✴️ Ninja stars hit the robots first. When no robots are out, they hit the <b>middle portal</b>. 5 hits shuts it down!</li>
       <li>🌀 Then run into a <b>side portal</b> to go to the next level. There are 10 levels!</li></ul></div></div>`;
   view.querySelectorAll('.njcard[data-i]').forEach(b=>b.onclick=e=>{
     const del=e.target.closest('[data-del]');
@@ -2811,10 +2811,10 @@ function njStart(level,carry){
     if(hud.p!==G.portal.hp){hud.p=G.portal.hp;$('#njP').textContent=G.portal.alive?G.portal.hp:'off ✓'}};
   const pBtns=[...bar.querySelectorAll('.njpw')],pState={};
   const drawBar=()=>{for(const b of pBtns){const p=NJ_POWERS.find(x=>x.id===b.dataset.p);
-      const active=p.id==='stars'?G.ammo>0:G[p.id]>0,frac=p.id==='stars'?G.ammo/8:active?G[p.id]/p.time:0,can=G.state==='play'&&!active&&G.coins>=p.cost;
+      const active=p.id==='stars'?G.ammo>0:G[p.id]>0,frac=p.id==='stars'?G.ammo/8:active?G[p.id]/p.time:0,can=(G.state==='play'||G.state==='open')&&!active&&G.coins>=p.cost;
       const key=`${can}|${active}|${Math.round(frac*20)}`;if(pState[p.id]===key)continue;pState[p.id]=key;
       b.disabled=!can;b.classList.toggle('on',active);b.querySelector('u').style.width=(active?frac*100:0)+'%'}};
-  bar.querySelectorAll('.njpw').forEach(b=>b.onclick=()=>{const p=NJ_POWERS.find(x=>x.id===b.dataset.p);if(G.state!=='play'||G.coins<p.cost)return;
+  bar.querySelectorAll('.njpw').forEach(b=>b.onclick=()=>{const p=NJ_POWERS.find(x=>x.id===b.dataset.p);if((G.state!=='play'&&G.state!=='open')||G.coins<p.cost)return;
     G.coins-=p.cost;sfx.up();say(p.say);txt(p.say,G.tib.x,G.tib.y-U,'#ffd23f');
     if(p.id==='stars')G.ammo=8;else G[p.id]=p.time;
     if(p.id==='team')G.mates=mates.map((m,i)=>({i,x:G.tib.x+(i?U:-U),y:G.tib.y,flip:i===0}));
@@ -2830,11 +2830,11 @@ function njStart(level,carry){
   function spawnBot(){const r=Math.random(),type=r<P.tank?'tank':r<P.tank+P.zip?'zip':'bot',T=NJ_BOTS[type],c=center(),a=Math.random()*Math.PI*2;
     G.bots.push({type,hp:T.hp,x:c.x+Math.cos(a)*U*0.6,y:c.y+Math.sin(a)*U*0.6,r:U*0.5*T.size,spd:U*P.speed*T.spd,pop:0,wx:0,wy:0,wt:0,flip:false})}
   function knock(b,coinChance){b.dead=true;poof(b.x,b.y);tone([[520,0,.06],[260,.05,.1]],'square',0.05);if(Math.random()<coinChance)G.coinsOn.push({x:b.x,y:b.y,t:0})}
-  function hurt(b){if(G.tib.hurt>0||G.invis>0||G.state!=='play')return;G.hearts--;G.tib.hurt=1.6;G.shake=0.35;knock(b,0);sfx.no();try{navigator.vibrate&&navigator.vibrate(60)}catch(e){}drawHud();
+  function hurt(b){if(G.tib.hurt>0||G.invis>0||(G.state!=='play'&&G.state!=='open'))return;G.hearts--;G.tib.hurt=1.6;G.shake=0.35;knock(b,0);sfx.no();try{navigator.vibrate&&navigator.vibrate(60)}catch(e){}drawHud();
     txt('Ouch!',G.tib.x,G.tib.y-U,'#ff6b6b');if(G.hearts<=0)over()}
   function portalDown(){const p=G.portal;p.alive=false;G.state='open';G.shake=0.6;const c=center();sparks(G.sparks,c.x,c.y,'#ff4fd8',30,U*7);sparks(G.sparks,c.x,c.y,'#ffffff',16,U*5);
-    tone([[300,0,.15],[200,.1,.2],[600,.25,.12],[900,.35,.3]],'sawtooth',0.07);say('Portal down! Go through a side portal!');txt('PORTAL DOWN!',c.x,c.y-U*1.6,'#7ff6ff');
-    for(const b of G.bots)b.sleep=true;drawHud();drawBar()}
+    tone([[300,0,.15],[200,.1,.2],[600,.25,.12],[900,.35,.3]],'sawtooth',0.07);say('Portal down! No more robots are coming. Go through a side portal!');txt('PORTAL DOWN!',c.x,c.y-U*1.6,'#7ff6ff');
+    drawHud();drawBar()}
   function finish(){G.state='done';sfx.up();const D=njData();
     if(L>=NJ_LEVELS){D.won=(D.won||0)+1;D.best=NJ_LEVELS;save();say('You beat all ten levels! The ninjas saved the day!');
       setTimeout(()=>{if(S.alive())popup('🏆','You beat all 10 levels!',`${esc(me.name)} and the ninja team saved the day from the robots!`,'Play again',()=>playNinja())},500);return}
@@ -2870,10 +2870,10 @@ function njStart(level,carry){
         if(Math.hypot(b.x-T.x,b.y-T.y)<(b.r+U*0.42)*0.8)hurt(b)}
       for(let i=0;i<G.bots.length;i++)for(let j=i+1;j<G.bots.length;j++){const a=G.bots[i],b=G.bots[j],ox=b.x-a.x,oy=b.y-a.y,od=Math.hypot(ox,oy)||1,min=(a.r+b.r)*0.85;
         if(od<min){const push=(min-od)/2;a.x-=ox/od*push;a.y-=oy/od*push;b.x+=ox/od*push;b.y+=oy/od*push}}
-      // ninja stars: thrown on their own at whatever is closest (the portal counts a little closer, so you can aim at it by walking near)
+      // ninja stars: thrown on their own at the closest robot; the portal only gets hit when no robots are out
       if(G.ammo>0){G.throwT-=dt;if(G.throwT<=0){let best=null,bd=1e9;
           for(const b of G.bots){if(b.sleep||b.dead)continue;const dd=Math.hypot(b.x-T.x,b.y-T.y);if(dd<bd){bd=dd;best=b}}
-          if(p.alive){const c0=center(),dd=Math.hypot(c0.x-T.x,c0.y-T.y)*0.6;if(dd<bd){bd=dd;best='portal'}}
+          if(!best&&p.alive)best='portal';
           if(best){const tx=best==='portal'?center().x:best.x,ty=best==='portal'?center().y:best.y,a=Math.atan2(ty-T.y,tx-T.x),sp=U*13;
             G.shots.push({x:T.x,y:T.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,rot:0,life:1.2,target:best});G.ammo--;G.throwT=0.38;slNoise(0.07,0.25,3500)}else G.throwT=0.2}}
       for(const s of G.shots){s.x+=s.vx*dt;s.y+=s.vy*dt;s.rot+=dt*20;s.life-=dt;
