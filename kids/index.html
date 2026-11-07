@@ -2501,7 +2501,7 @@ async function tvSeries(top){
     view.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{const it=list[+b.dataset.i];sfx.tap();if(isLittle())speakNow(it.Name);TV.stack.push({kind:'play',item:it,eps});playTv()});
   }catch(e){if(tok===loopToken)tvFail(e)}
 }
-const TV_PROFILE={MaxStreamingBitrate:8000000,MaxStaticBitrate:100000000,MusicStreamingTranscodingBitrate:192000,
+const TV_PROFILE={MaxStreamingBitrate:4000000,MaxStaticBitrate:100000000,MusicStreamingTranscodingBitrate:192000,
   DirectPlayProfiles:[{Container:'mp4,m4v',Type:'Video',VideoCodec:'h264',AudioCodec:'aac,mp3'},{Container:'webm',Type:'Video',VideoCodec:'vp8,vp9',AudioCodec:'vorbis,opus'}],
   TranscodingProfiles:[{Container:'ts',Type:'Video',AudioCodec:'aac',VideoCodec:'h264',Context:'Streaming',Protocol:'hls',MaxAudioChannels:'2',MinSegments:1,BreakOnNonKeyFrames:true}],
   ContainerProfiles:[],CodecProfiles:[],SubtitleProfiles:[{Format:'vtt',Method:'External'}]};
@@ -2543,7 +2543,11 @@ async function tvPlay(top){
   const eps=top.eps,ix=eps?eps.findIndex(e=>e.Id===it.Id):-1,nextEp=ix>=0?eps[ix+1]:null;
   const nb=$('#tvNext');if(nextEp){nb.onclick=()=>{stop();TV.kill=null;sfx.tap();TV.stack[TV.stack.length-1]={kind:'play',item:nextEp,eps};playTv()}}
   v.addEventListener('ended',()=>{if(!stopped){stopped=true;report('/Stopped')}clearInterval(iv);showCtl();if(nextEp){nb.hidden=false;speakNow('Want to watch the next one?')}else{nb.hidden=true}});
-  v.addEventListener('playing',()=>{over.hidden=true});v.addEventListener('waiting',()=>{over.hidden=false});
+  let stallT=0;const unstall=()=>{clearTimeout(stallT);over.hidden=true;over.innerHTML='<div class="tvspin"></div>'};
+  v.addEventListener('playing',unstall);
+  v.addEventListener('waiting',()=>{over.hidden=false;clearTimeout(stallT);stallT=setTimeout(()=>{if(stopped||!v.isConnected)return;
+    over.innerHTML='<button class="tvbig" id="tvGo" aria-label="Keep watching">↻</button><p style="margin:10px 0 0">Tap to keep watching</p>';over.style.flexDirection='column';
+    $('#tvGo').onclick=()=>{TV.stack[TV.stack.length-1].resumeAt=v.currentTime;if(TV.kill)TV.kill();playTv()}},15000)});
   try{
     const info=await jf(`/Items/${it.Id}/PlaybackInfo?UserId=${J.userId}`,{method:'POST',body:{DeviceProfile:TV_PROFILE,UserId:J.userId,MaxStreamingBitrate:TV_PROFILE.MaxStreamingBitrate,AutoOpenLiveStream:true,IsPlayback:true,EnableDirectPlay:true,EnableDirectStream:true,EnableTranscoding:true,AllowVideoStreamCopy:true,AllowAudioStreamCopy:true}});
     if(tok!==loopToken||stopped)return;
@@ -2553,12 +2557,12 @@ async function tvPlay(top){
     else if(ms.TranscodingUrl){method='Transcode';src=J.url+ms.TranscodingUrl;if(!/api_key=/i.test(src))src+=(src.includes('?')?'&':'?')+'api_key='+J.token}
     else throw new Error('cannot play');
     sess={ms:ms.Id,ps:info.PlaySessionId,method};
-    const pos=it.UserData&&it.UserData.PlaybackPositionTicks?it.UserData.PlaybackPositionTicks/1e7:0,start=pos>20?pos-3:0;
+    const pos=top.resumeAt!=null?top.resumeAt+3:it.UserData&&it.UserData.PlaybackPositionTicks?it.UserData.PlaybackPositionTicks/1e7:0,start=pos>20?pos-3:0;top.resumeAt=null;
     const begin=()=>{v.play().catch(()=>{over.hidden=false;over.innerHTML='<button class="tvbig" id="tvGo">▶</button>';$('#tvGo').onclick=()=>{over.innerHTML='<div class="tvspin"></div>';v.play().catch(()=>{})}});report('')};
     if(/\.m3u8/i.test(src)){
       let useHls=false;try{await loadHls();useHls=window.Hls&&Hls.isSupported()}catch(e){}
       if(tok!==loopToken||stopped)return;
-      if(useHls){hls=new Hls({startPosition:start||-1,maxBufferLength:30});hls.loadSource(src);hls.attachMedia(v);hls.on(Hls.Events.MANIFEST_PARSED,begin);
+      if(useHls){hls=new Hls({startPosition:start||-1,maxBufferLength:30,maxMaxBufferLength:60,backBufferLength:20,maxBufferSize:40*1000*1000,enableWorker:true});hls.loadSource(src);hls.attachMedia(v);hls.on(Hls.Events.MANIFEST_PARSED,begin);
         hls.on(Hls.Events.ERROR,(ev,d)=>{if(d.fatal){if(d.type===Hls.ErrorTypes.NETWORK_ERROR)hls.startLoad();else if(d.type===Hls.ErrorTypes.MEDIA_ERROR)hls.recoverMediaError();else tvPlayFail(over)}})}
       else{v.src=src;v.addEventListener('loadedmetadata',()=>{if(start)v.currentTime=start;begin()},{once:true})}
     }else{v.src=src;v.addEventListener('loadedmetadata',()=>{if(start)v.currentTime=start;begin()},{once:true})}
