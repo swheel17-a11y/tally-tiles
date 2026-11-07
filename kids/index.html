@@ -2286,7 +2286,7 @@ function playFish(){
     if(R.mood==='angry'){R.tension+=0.4;tone([[160,0,.08]],'sawtooth',0.06);
       if(R.tension>=1){lose('snap');return}
       G.msg='Stop! Wait for it to calm down!';G.msgT=1.2;return}
-    R.p=Math.min(1,R.p+0.052-R.diff*0.006);R.pop=1;tone([[700+R.p*500,0,.04]],'square',0.025);
+    R.p=Math.min(1,R.p+0.054-R.diff*0.004);R.pop=1;tone([[700+R.p*500,0,.04]],'square',0.025);
     if(R.p>=1)catchIt(R.o,false)}
   function catchIt(o,instant){const f=SP.fish[o.i],key=F.spot+':'+o.i,B=F.book,cm=Math.round(f[5]+Math.random()*Math.random()*(f[6]-f[5]));
     const old=B[key],isNew=!old,rec=old&&cm>old.best;B[key]={n:(old?old.n:0)+1,best:Math.max(cm,old?old.best:0)};
