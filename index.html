@@ -303,6 +303,41 @@ button:disabled{opacity:.35;cursor:default}
 
 .sdwarn{font-size:12.5px;line-height:1.35;color:#ffb35c;background:rgba(255,138,31,.1);border:1px solid rgba(255,138,31,.35);border-radius:10px;padding:7px 9px}
 
+/* trade */
+.trdrill{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;background:var(--tile);color:var(--tile-ink);border-radius:16px;padding:16px 18px}
+.trdrill b{font-family:var(--f-display);font-size:24px}.trdrill small{font-size:14px;opacity:.75}
+.trtopics{display:flex;flex-direction:column;gap:6px}
+.trtopic{display:grid;grid-template-columns:1fr 90px 44px;gap:10px;align-items:center;text-align:left;background:var(--board);border:1px solid var(--board-line);border-radius:12px;padding:11px 12px;font-size:15px}
+.trtopic i{height:8px;border-radius:4px;background:var(--ground);overflow:hidden;display:block}.trtopic i u{display:block;height:100%;background:var(--brass)}
+.trtopic small{font-family:var(--f-mono);font-size:12px;color:var(--mist);text-align:right}
+.trq{display:flex;flex-direction:column;gap:12px}
+.trtext{font-family:var(--f-display);font-weight:700;font-size:22px;line-height:1.25}
+.tropts{display:flex;flex-direction:column;gap:8px}
+.tropts button{text-align:left;background:var(--board);border:1.5px solid var(--board-line);border-radius:12px;padding:13px 14px;font-size:16px;line-height:1.3}
+.tropts button.ok{border-color:#3fbf7f;background:rgba(63,191,127,.15)}.tropts button.no{border-color:#e05a5a;background:rgba(224,90,90,.15)}
+.trwhy{border-radius:14px;padding:12px 14px;background:var(--board);border:1px solid var(--board-line)}
+.trwhy.ok{border-color:#3fbf7f}.trwhy.no{border-color:#e05a5a}.trwhy b{font-size:16px}.trwhy p{margin:6px 0;font-size:15px;line-height:1.4}.trwhy small{font-size:12px;color:var(--mist)}
+.trrecall{background:var(--board);border:1px solid var(--brass);border-radius:12px;padding:14px;font-size:17px}
+.trform{display:flex;flex-direction:column;gap:10px;background:var(--board);border:1px solid var(--board-line);border-radius:14px;padding:12px}
+.trform label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mist)}
+.trform textarea{font:inherit;font-size:16px;color:inherit;background:var(--ground);border:1px solid var(--board-line);border-radius:10px;padding:9px;resize:vertical}
+.trflag{position:relative;background:var(--board);border:1px solid var(--board-line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.trflag b{font-size:14px;padding-right:62px}.trflag small{font-size:12px;color:var(--mist)}.trflag p{margin:2px 0 0;font-size:13px}
+.trflag button{position:absolute;top:8px;right:8px;font-size:12px;padding:4px 8px;border-radius:8px;background:var(--ground)}
+
+/* mine */
+.minewrap{position:relative;flex:1;min-height:380px;border-radius:16px;overflow:hidden;background:#120c08}
+.minewrap canvas{position:absolute;left:0;top:0;width:100%;display:block;touch-action:none}
+.minepad{display:flex;align-items:center;justify-content:space-between;gap:12px;touch-action:none;user-select:none;-webkit-user-select:none}
+.dpad{display:grid;grid-template-columns:repeat(3,56px);grid-template-rows:repeat(3,48px);gap:4px}
+.dpad button{border-radius:12px;background:var(--board);border:1px solid var(--board-line);font-size:20px;color:inherit;touch-action:none}
+.dpad button.on{background:var(--tile);color:var(--tile-ink)}
+.dpad [data-dir=up]{grid-column:2;grid-row:1}.dpad [data-dir=left]{grid-column:1;grid-row:2}.dpad [data-dir=right]{grid-column:3;grid-row:2}.dpad [data-dir=down]{grid-column:2;grid-row:3}
+.minebtns{display:flex;flex-direction:column;align-items:center;gap:8px}
+.bonk{width:104px;height:104px;border-radius:50%;background:var(--tile);color:var(--tile-ink);font-size:34px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;touch-action:none}
+.bonk b{font-size:15px}
+.minebtns .btn{padding:6px 10px;font-size:13px}
+
 /* cats */
 .ctboard{--n:7;display:grid;width:100%;max-width:min(100%,calc(100dvh - 340px));min-width:240px;align-self:center;border:3px solid #0b1022;border-radius:12px;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 .ctc{aspect-ratio:1/1;padding:0;border:1.5px solid;display:grid;place-items:center;font-size:calc(min(488px,100vw - 32px)/var(--n)*.56);line-height:1;color:#16203f;position:relative}
@@ -389,6 +424,8 @@ td.h{padding-top:14px;font-size:11px;letter-spacing:.12em;text-transform:upperca
     <button role="tab" id="tab-yard" aria-selected="false" data-mode="yard">Yard</button>
     <button role="tab" id="tab-cats" aria-selected="false" data-mode="cats">Cats</button>
     <button role="tab" id="tab-offcut" aria-selected="false" data-mode="offcut">Offcut</button>
+    <button role="tab" id="tab-trade" aria-selected="false" data-mode="trade">Trade</button>
+    <button role="tab" id="tab-mine" aria-selected="false" data-mode="mine">Mine</button>
   </div>
   <div class="stage" id="stage"></div>
   <div class="controls" id="controls"></div>
@@ -424,7 +461,7 @@ const addPts=p=>{S.dayPts+=p;save();};
 /* ---------- clocks: one per tab, paused while you're on another tab ---------- */
 const R=26,C=2*Math.PI*R,LIMIT=30;
 const mkClock=()=>({elapsed:0,since:null,running:false,timed:false,onEnd:null});
-const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock(),sand:mkClock(),yard:mkClock(),cats:mkClock(),offcut:mkClock()};
+const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock(),sand:mkClock(),yard:mkClock(),cats:mkClock(),offcut:mkClock(),trade:mkClock(),mine:mkClock()};
 const el=c=>c.elapsed+(c.since?(performance.now()-c.since)/1000:0);
 let looping=false;
 function clockHTML(){return `<div class="clock" id="clock"><svg viewBox="0 0 64 64"><circle class="track" cx="32" cy="32" r="${R}" fill="none" stroke-width="6"/><circle class="arc" id="arc" cx="32" cy="32" r="${R}" fill="none" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg><div class="t" id="clockT"></div></div>`}
@@ -1849,8 +1886,313 @@ function renderOffcut(){
   $('#ofNew').onclick=()=>ofNew(false);$('#ofDaily').onclick=()=>ofNew(true);ofModeWire();
 }
 
+/* Trade question bank: [id, topic, question, correct answer, [wrong answers], why, source] */
+const TR_TOPICS={frame:'Framing',take:'Takeoff math',side:'Siding & trim',deck:'Decks',roof:'Roofing',ewp:'Engineered lumber',plan:'Plan reading',look:'Where to look'};
+const TR_BANK=[
+['f1','frame','Precut stud for an 8′ wall?','92⅝″',['92¼″','96″','93″'],'92⅝ plus three 1½″ plates (4½″) puts the top of the wall at 97⅛″. That extra inch-ish leaves room for ½″ ceiling drywall so 4×8 wall sheets still fit underneath.','Standard precut sizes'],
+['f2','frame','Precut stud for a 9′ wall?','104⅝″',['104¼″','108″','105⅛″'],'Each precut is 12″ longer than the one below it: 92⅝ → 104⅝ → 116⅝. Add 4½″ of plates and a 9′ wall tops out at 109⅛″.','Standard precut sizes'],
+['f3','frame','Precut stud for a 10′ wall?','116⅝″',['117⅛″','120″','116¼″'],'Same pattern: 92⅝ + 12 + 12 = 116⅝. One number and one rule (+12″ per foot) covers all three.','Standard precut sizes'],
+['f4','frame','92⅝″ studs, one bottom plate, double top plate. How tall is the framed wall?','97⅛″',['96″','95⅝″','98⅝″'],'Three plates × 1½″ = 4½″. 92⅝ + 4½ = 97⅛″.','Plate math'],
+['f5','frame','Actual size of a 2×6?','1½″ × 5½″',['2″ × 6″','1¾″ × 5¾″','1½″ × 5¾″'],'Up through 2×6, the wide face is ½″ under nominal (3½, 5½). From 2×8 up it is ¾″ under (7¼, 9¼, 11¼).','Dimensional lumber sizes'],
+['f6','frame','Actual depth of a 2×10?','9¼″',['9½″','9¾″','10″'],'2×8 = 7¼, 2×10 = 9¼, 2×12 = 11¼. Above 2×6 it is always ¾″ short of nominal.','Dimensional lumber sizes'],
+['f7','frame','Which stud holds up the end of a header?','Jack (trimmer) stud',['King stud','Cripple stud','Corner stud'],'The jack sits under the header and carries its load down. The king runs full height right beside it and ties the header and plates together.','Wall framing terms'],
+['f8','frame','The short studs above a header or below a window sill are called…','Cripples',['Jacks','Kings','Blocking'],'Cripples keep the 16″ layout going above and below an opening so sheathing and drywall have something to land on.','Wall framing terms'],
+['f9','frame','Why a double top plate?','It ties walls together and spreads loads that don’t land on a stud',['It makes the wall taller for precuts','It replaces the header','Code requires it on interior walls only'],'The top plates lap at corners and intersections to lock walls together, and the second plate lets joists or rafters bear between studs.','Wall framing basics'],
+['f10','frame','What decides a header size in the code tables?','Opening width, building width, snow load and what’s above it',['Only the opening width','Only the wall height','The sheathing thickness'],'Bearing headers carry roof, ceiling and sometimes floor loads. The tables size them by span, building width (perpendicular to the ridge), ground snow load and the floors above.','IRC R602.7'],
+['t1','take','Studs for a 24′ wall at 16″ on center, no openings?','19',['18','24','16'],'Spaces = 24 × 12 ÷ 16 = 18. Add one to close the end: 19. Shortcut: feet × ¾ + 1.','Layout math'],
+['t2','take','Joists at 16″ OC across a 20′ run?','16',['15','20','14'],'20 × ¾ = 15 spaces, +1 = 16 joists (before doubles, rims and extras).','Layout math'],
+['t3','take','Joists at 12″ OC across a 20′ run?','21',['20','16','24'],'At 12″ OC it is one per foot plus one to close the end.','Layout math'],
+['t4','take','Plate lumber for 40′ of wall (single bottom, double top)?','120 LF',['80 LF','40 LF','160 LF'],'Three plates × wall length. Quick check for any wall takeoff.','Takeoff rule of thumb'],
+['t5','take','How many square feet does one 4×8 sheet cover?','32',['36','24','48'],'4 × 8 = 32 sf. Wall or roof area ÷ 32 = sheets before waste and openings.','Sheet goods'],
+['t6','take','A 40′ × 9′ wall needs how many 4×8 sheets (no openings, no waste)?','12',['11','10','14'],'40 × 9 = 360 sf ÷ 32 = 11.25, so 12 sheets. Always round up.','Sheet goods'],
+['t7','take','One roofing “square” is…','100 sq ft',['10 × 10 shingles','1 bundle','144 sq ft'],'Roofing is bought and bid by the square: 100 sf of roof surface.','Roofing units'],
+['t8','take','Typical bundles of 3-tab shingles per square?','3',['4','2','5'],'Most 3-tab shingles run 3 bundles per square. Some heavy architectural shingles are 4, so always check the wrapper.','Manufacturer packaging'],
+['t9','take','Board feet in one 2×6×12?','12',['6','24','72'],'Thickness × width × length(ft) ÷ 12 = 2 × 6 × 12 ÷ 12 = 12 BF.','Board foot formula'],
+['t10','take','A 6/12 roof pitch means…','6″ of rise for every 12″ of run',['6′ tall by 12′ wide','6° slope','Half the rafters are 12′'],'Pitch is rise per 12″ of horizontal run.','Roof pitch basics'],
+['t11','take','Roof area multiplier for a 6/12 pitch is about…','1.12',['1.06','1.25','1.5'],'√(12² + 6²) ÷ 12 ≈ 1.118. Footprint × 1.12 ≈ actual roof surface.','Pitch factor math'],
+['t12','take','Roof area multiplier for a 12/12 pitch is about…','1.41',['1.12','1.25','2.0'],'√(12² + 12²) ÷ 12 = √2 ≈ 1.414. A 45° roof has about 41% more surface than its footprint.','Pitch factor math'],
+['s1','side','LP SmartSide with 4/4 trim: what Z-bar do you use in your area?','1¼″ Z-bar',['¾″ Z-bar','2″ Z-bar','No Z-bar with 4/4'],'Z-bar gets sized to the trim thickness. 4/4 trim is about 1″ thick, so a 1¼″ Z laps over it.','Your local practice'],
+['s2','side','Can a vertical LP SmartSide panel run from the first floor up past the second floor line?','No: break at the floor with a flashed horizontal joint',['Yes, if it’s a single piece','Yes, with extra nails','Only on gable ends'],'LP says vertical pieces and battens can’t bridge floors. Make a horizontal joint between floors and flash it with sloped Z-flashing.','LP Tech Note 028'],
+['s3','side','Minimum gap at a horizontal (Z-flashed) joint in LP vertical siding?','⅜″',['1/16″','⅛″','¾″'],'LP calls for at least ⅜″ at the horizontal joint so water can drain out over the Z-flashing.','LP Tech Note 028'],
+['s4','side','Minimum gap at the vertical joints between LP vertical siding panels?','3/16″',['None, butt them tight','⅜″','½″'],'LP calls for at least 3/16″ at vertical joints. Battens cover them.','LP Tech Note 028'],
+['s5','side','LP siding meets brick or stone. What goes in between?','A ⅜″ gap with sealant (and backer rod if needed)',['Butt it tight','Caulk only, no gap','A metal J-channel'],'Masonry and wood siding move differently. LP wants a ⅜″ space, sealed.','LP Tech Note 028'],
+['s6','side','What has to happen to a field cut on LP SmartSide?','Prime and paint it',['Nothing, it’s pre-treated','Seal with silicone only','Sand it smooth'],'Cut ends are unprotected. LP says to prime and paint all field cuts and exposed ends.','LP install instructions'],
+['s7','side','Nailing on LP vertical siding panels?','Max 6″ on center around the edges, ⅜″ from edges',['12″ OC everywhere','Every 24″','Only at the studs'],'LP’s vertical siding note calls for perimeter nails no more than 6″ apart, kept within ⅜″ of edges and ends.','LP Tech Note 028'],
+['s8','side','What goes behind LP vertical siding?','At least 7/16″ structural sheathing plus a water-resistive barrier',['Straight to the studs','Foam board only','Drywall'],'LP’s vertical application note requires a wood structural panel (7/16″ minimum) and a properly installed WRB.','LP Tech Note 028'],
+['d1','deck','In your market, how do deck joists attach at the house?','Joist hangers off the ledger',['Toenailed onto the ledger','Sitting on top of the ledger','Bolted through the rim'],'Hangers carry the joist ends at the ledger, and the other end runs to a double treated beam.','Your local practice'],
+['d2','deck','Why set deck posts in a post base like the ABA instead of right on the concrete?','It holds the post 1″ off the concrete so the end grain doesn’t rot',['It makes the post taller','So you can skip the footing','It’s only for looks'],'Simpson’s ABA/ABU bases give a 1″ standoff so water doesn’t wick into the post end, and they keep the post from sliding off the pier.','Simpson ABA/ABU product data'],
+['d3','deck','What does the “Z” mean in a Simpson part like ABA66Z?','ZMAX galvanized coating',['Zinc-free','Size 6×6, Z-shaped','Ziplock anchor'],'Z = ZMAX, Simpson’s heavier galvanized coating. Use it (or stainless) with treated lumber.','Simpson naming'],
+['d4','deck','What does the “R” in ABA66RZ mean?','Rough (full-size) 6×6 lumber',['Retrofit','Rust-resistant','Right-hand'],'R models fit rough-sawn full-dimension posts (6″) instead of surfaced 5½″ posts.','Simpson naming'],
+['d5','deck','Why heavier-galvanized or stainless hardware on treated lumber?','Modern treatments are copper-based and corrode plain steel faster',['Treated wood is softer','Code bans nails in treated wood','It looks better'],'Copper-rich preservatives eat light galvanizing. Match the hardware coating to the treatment.','Connector manufacturer guidance'],
+['d6','deck','Local deck practice for the outer sides of the joist frame?','Double rim boards',['Single rim, no blocking','No rim, open joist ends','Steel angle'],'That’s how decks get built in your area: hangers to a double treated beam, with doubled rims on the sides.','Your local practice'],
+['r1','roof','At the eaves, does the underlayment go over or under the drip edge?','Over the drip edge',['Under the drip edge','Either way','No drip edge at eaves'],'Water runs down the underlayment and out over the drip edge. At the eaves, underlayment laps on top.','IRC R905.2.8.5'],
+['r2','roof','At the rakes, does the underlayment go over or under the drip edge?','Under the drip edge',['Over the drip edge','Either way','No drip edge at rakes'],'On the rakes the metal laps over the underlayment to keep wind-driven water from getting behind it.','IRC R905.2.8.5'],
+['r3','roof','How far does drip edge extend back onto the roof deck (minimum)?','2″',['½″','1″','4″'],'Code calls for at least 2″ back onto the deck and ¼″ below the sheathing edge.','IRC R905.2.8.5'],
+['r4','roof','Minimum overlap where two pieces of drip edge meet?','2″',['½″','6″','No overlap, butt them'],'Pieces lap at least 2″, fastened no more than 12″ apart.','IRC R905.2.8.5'],
+['r5','roof','What is a starter strip for?','Seals down the first course and covers the gaps under it',['It’s the ridge cap','It replaces drip edge','It holds the underlayment'],'Without starter, the first course’s cutouts and joints would sit right over bare underlayment with no sealant strip under the tabs.','Shingle manufacturer instructions'],
+['e1','ewp','Thickness of one ply of LVL?','1¾″',['1½″','2″','1¼″'],'LVL plies are 1¾″. Two plies = 3½″ (fits a 2×4 wall), three = 5¼″ (fits a 2×6 wall).','LVL product guides'],
+['e2','ewp','A 3-ply LVL beam is how thick?','5¼″',['4½″','5½″','6″'],'3 × 1¾″ = 5¼″, which lines up with a 2×6 wall (5½″) for sheathing.','LVL product guides'],
+['e3','ewp','Can you notch or cut the flange of an I-joist?','Never',['Up to ¼ of the flange','Only near the ends','If you add a nail plate'],'The flanges do the bending work. Holes go in the web only, sized and located per the manufacturer’s chart.','I-joist manufacturer guides'],
+['e4','ewp','What are squash blocks for on an I-joist floor?','Carrying point loads past the I-joist down to the support below',['Stopping squeaks','Fire blocking','Holding the subfloor flat'],'Blocks set beside the I-joist under a post or bearing wall take the load so the thin web doesn’t crush.','I-joist manufacturer guides'],
+['e5','ewp','Where do you check a hole you want to cut in an I-joist web?','The manufacturer’s hole chart for that joist series',['IRC stud notching table','Anywhere in the middle third is fine','The truss drawings'],'Allowed hole size and location depend on the joist depth, series and span. The manufacturer publishes the chart.','I-joist manufacturer guides'],
+['p1','plan','A window callout of 3050 means…','3′0″ wide × 5′0″ tall',['30″ × 50″','5′0″ wide × 3′0″ tall','Model number only'],'Width first, then height, in feet and inches: 30 = 3′0″, 50 = 5′0″.','Plan conventions'],
+['p2','plan','A 2868 door is…','2′8″ wide × 6′8″ tall',['28″ × 68″ rough opening','6′8″ wide × 2′8″ tall','2′6″ × 8′6″'],'Same width-then-height code: 28 = 2′8″, 68 = 6′8″ (standard door height).','Plan conventions'],
+['p3','plan','A drawing scale of ¼″ = 1′-0″ is a ratio of…','1:48',['1:96','1:4','1:12'],'One foot (12″) drawn as ¼″: 12 ÷ ¼ = 48. ⅛″ scale is 1:96.','Plan conventions'],
+['p4','plan','Dashed lines on a floor plan usually show…','Things above or hidden, like beams, soffits or upper cabinets',['Exterior walls','Electrical only','Demolition only'],'Solid lines are cut through at the plan height. Dashed means it’s overhead or out of view.','Plan conventions'],
+['p5','plan','A detail bubble reading 3 over A5.1 means…','Detail 3 on sheet A5.1',['3 inches on page 5','Section A, view 5','Revision 3'],'Top number is the detail, bottom is the sheet it lives on.','Plan conventions'],
+['p6','plan','“16″ O.C.” on a framing plan means…','16 inches on center, center to center of each member',['16 inches of clear space','Oak/cedar','16 per course'],'Measured from the center (or same edge) of one member to the next.','Plan conventions'],
+['l1','look','Where do you find header sizes for a bearing wall under the code?','IRC Table R602.7(1) and its siblings',['LP install guide','The shingle wrapper','IRC Chapter 9'],'R602.7 (wall construction, Chapter 6) holds the header tables, including how many jack studs each one needs.','IRC Chapter 6'],
+['l2','look','Where do you find deck ledger, joist, beam and post rules?','IRC Section R507 (and AWC’s DCA 6 guide)',['IRC R905','Chapter 11 energy code','The lumber tag'],'R507 covers decks. The American Wood Council’s DCA 6 is a free prescriptive guide built on it.','IRC R507 / AWC DCA 6'],
+['l3','look','Where do you check LP SmartSide gap, nailing and flashing details?','LP’s installation instructions and technical notes',['IRC R602','The paint can','The plan’s door schedule'],'Siding warranties depend on following the manufacturer’s install instructions, which can be stricter than code.','lpcorp.com'],
+['l4','look','Where do you check drip edge and underlayment order?','IRC R905 (roof coverings), plus the shingle maker’s instructions',['IRC R507','LP tech notes','Truss drawings'],'R905.2.8.5 covers drip edge for asphalt shingles. Manufacturer instructions can add stricter rules.','IRC Chapter 9'],
+['l5','look','Which code edition applies on a job?','Whatever that city or county has adopted, plus its amendments',['Always the newest IRC','Always the 2012 IRC','Whatever the plans say, no exceptions'],'Codes are adopted locally, often years behind the newest edition, with local amendments. Check the jurisdiction’s building department page.','Local adoption'],
+['l6','look','Where do you check allowed holes in an engineered I-joist?','The joist manufacturer’s literature',['IRC R602.6 stud notching','The truss plant','Nowhere, holes are never allowed'],'Each I-joist maker publishes hole charts for its own series.','Manufacturer guides'],
+];
+
+/* ==========================================================
+   TRADE: build the building-practices brain. Daily Drill (5 a day), spaced repetition
+   (misses come back sooner), a "why" on every answer, your coworker's tips as cards,
+   and a "this is wrong" flag on everything.
+   ========================================================== */
+const TR_KEY='tally-tiles-trade-v1',TR_GAPS=[0,1,3,7,16,35]; // days until a card comes back, by box
+let TR=null,trRun=null;
+const trDay=()=>{const d=new Date();return Math.floor((d.getTime()-d.getTimezoneOffset()*60000)/86400000)};
+function trLoad(){try{TR=JSON.parse(localStorage.getItem(TR_KEY)||'null')}catch(e){TR=null}
+  TR=Object.assign({cards:{},tips:[],flags:[],streak:0,lastDay:0,doneToday:0,dayOf:0,seen:0,right:0},TR||{})}
+function trSave(){try{localStorage.setItem(TR_KEY,JSON.stringify(TR))}catch(e){}}
+function trAll(){return TR_BANK.map(q=>({id:q[0],topic:q[1],q:q[2],a:q[3],wrong:q[4],why:q[5],src:q[6]}))
+  .concat(TR.tips.map(t=>({id:t.id,topic:'tips',q:t.q,a:t.a,why:t.why||'',src:'Coworker’s Corner',recall:1})))}
+const trCard=id=>TR.cards[id]||(TR.cards[id]={box:0,due:0,seen:0,miss:0});
+function trPick(n,topic){const today=trDay(),all=trAll().filter(q=>!topic||q.topic===topic);
+  const due=all.filter(q=>TR.cards[q.id]&&TR.cards[q.id].due<=today).sort((a,b)=>TR.cards[a.id].box-TR.cards[b.id].box||Math.random()-0.5);
+  const fresh=shuffleArr(all.filter(q=>!TR.cards[q.id]));
+  const out=due.slice(0,n);let newCap=topic?n:3;for(const q of fresh){if(out.length>=n||newCap<=0)break;out.push(q);newCap--}
+  if(out.length<n){const later=all.filter(q=>!out.includes(q)).sort((a,b)=>(TR.cards[a.id]?TR.cards[a.id].due:0)-(TR.cards[b.id]?TR.cards[b.id].due:0));out.push(...later.slice(0,n-out.length))}
+  return shuffleArr(out)}
+function shuffleArr(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function trGrade(q,ok){const c=trCard(q.id),today=trDay();c.seen++;TR.seen++;
+  if(ok){c.box=Math.min(5,c.box+1);TR.right++}else{c.box=Math.max(0,c.box-2);c.miss++}
+  c.due=today+(ok?TR_GAPS[c.box]:0);if(!ok)c.due=today+1;trSave()}
+function trStats(){const all=trAll(),today=trDay();let mastered=0,due=0,started=0;
+  for(const q of all){const c=TR.cards[q.id];if(!c)continue;started++;if(c.box>=4)mastered++;if(c.due<=today)due++}
+  return{total:all.length,mastered,due,started}}
+function renderTrade(){if(!TR)trLoad();if(trRun)return trQuestion();
+  const s=trStats(),today=trDay(),doneToday=TR.dayOf===today?TR.doneToday:0;
+  const topicRows=Object.entries(TR_TOPICS).map(([k,name])=>{const qs=trAll().filter(q=>q.topic===k);const m=qs.filter(q=>TR.cards[q.id]&&TR.cards[q.id].box>=4).length;
+    return `<button class="trtopic" data-t="${k}"><span>${name}</span><i><u style="width:${qs.length?m/qs.length*100:0}%"></u></i><small>${m}/${qs.length}</small></button>`}).join('');
+  stage.innerHTML=`<div class="headline mhead"><div class="mstat"><div class="eyebrow">Streak</div><div class="mnum">${TR.streak}🔥</div></div>
+      <div class="mstat"><div class="eyebrow">Mastered</div><div class="mnum dim">${s.mastered}<small>/${s.total}</small></div></div>
+      <div class="mstat"><div class="eyebrow">Due</div><div class="mnum dim">${s.due}</div></div></div>
+    <button class="trdrill" id="trDaily"><b>${doneToday>=5?'Daily Drill done ✓':'Daily Drill'}</b><small>${doneToday>=5?'Go again for extra reps':`5 quick questions · ${Math.max(0,5-doneToday)} left today`}</small></button>
+    <div class="eyebrow" style="margin-top:6px">Practice a topic</div><div class="trtopics">${topicRows}
+      ${TR.tips.length?`<button class="trtopic" data-t="tips"><span>Coworker’s Corner</span><i><u style="width:0"></u></i><small>${TR.tips.length}</small></button>`:''}</div>`;
+  controls.innerHTML=`<div class="row"><button class="btn" id="trTip">＋ Add a tip</button><button class="btn" id="trFlags">⚑ Flagged (${TR.flags.length})</button></div>`;
+  $('#trDaily').onclick=()=>{trRun={qs:trPick(5),i:0,ok:0,daily:true};trQuestion()};
+  stage.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{const t=b.dataset.t,qs=trPick(Math.min(8,trAll().filter(q=>q.topic===t).length),t);if(qs.length){trRun={qs,i:0,ok:0,topic:t};trQuestion()}});
+  $('#trTip').onclick=trTipForm;$('#trFlags').onclick=trFlagList;
+}
+function trQuestion(){const R=trRun,q=R.qs[R.i];
+  if(!q){return trSummary()}
+  const opts=q.recall?null:shuffleArr([q.a,...q.wrong]);
+  stage.innerHTML=`<div class="trq"><div class="eyebrow">${q.topic==='tips'?'Coworker’s Corner':TR_TOPICS[q.topic]} · ${R.i+1} of ${R.qs.length}</div>
+      <div class="trtext">${q.q}</div>
+      ${opts?`<div class="tropts">${opts.map((o,i)=>`<button data-o="${i}">${o}</button>`).join('')}</div>`:`<button class="btn primary tall" id="trShow">Show answer</button>`}
+      <div id="trAfter"></div></div>`;
+  controls.innerHTML=`<div class="row"><button class="btn" id="trQuit">End</button></div>`;
+  $('#trQuit').onclick=()=>{trRun=null;renderTrade()};
+  const after=(ok,picked)=>{trGrade(q,ok);if(ok)R.ok++;
+    $('#trAfter').innerHTML=`<div class="trwhy ${ok?'ok':'no'}"><b>${ok?'Right.':`Answer: ${q.a}`}</b>${q.why?`<p>${q.why}</p>`:''}<small>Source: ${q.src}</small></div>`;
+    controls.innerHTML=`<div class="row"><button class="btn" id="trFlag">⚑ This is wrong</button><button class="btn primary tall" id="trNext">${R.i+1<R.qs.length?'Next':'Finish'}</button></div>`;
+    $('#trNext').onclick=()=>{R.i++;trQuestion()};$('#trFlag').onclick=()=>trFlagForm(q);
+    try{navigator.vibrate&&navigator.vibrate(ok?15:[10,40,10])}catch(e){}};
+  if(opts)stage.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{if(stage.querySelector('.tropts.done'))return;stage.querySelector('.tropts').classList.add('done');
+    const pick=opts[+b.dataset.o],ok=pick===q.a;b.classList.add(ok?'ok':'no');if(!ok)stage.querySelectorAll('[data-o]').forEach(x=>{if(opts[+x.dataset.o]===q.a)x.classList.add('ok')});after(ok,pick)});
+  else $('#trShow').onclick=()=>{$('#trShow').outerHTML=`<div class="trrecall">${q.a}</div><div class="row"><button class="btn" id="trMiss">I missed it</button><button class="btn primary" id="trGot">I knew it</button></div>`;
+    $('#trGot').onclick=()=>{stage.querySelector('.trrecall').nextElementSibling.remove();after(true)};$('#trMiss').onclick=()=>{stage.querySelector('.trrecall').nextElementSibling.remove();after(false)}};
+}
+function trSummary(){const R=trRun;trRun=null;const today=trDay();
+  if(R.daily){if(TR.dayOf!==today){TR.streak=TR.lastDay===today-1?TR.streak+1:TR.lastDay===today?TR.streak:1;TR.lastDay=today;TR.dayOf=today;TR.doneToday=0}TR.doneToday+=R.qs.length;trSave();addPts(R.ok*2)}
+  stage.innerHTML=`<div class="trq"><div class="eyebrow">${R.daily?'Daily Drill':'Practice'} done</div><div class="trtext">${R.ok} of ${R.qs.length} right</div>
+    <p class="hint">${R.ok===R.qs.length?'Clean sweep. Those move further out on your schedule.':'Anything you missed comes back tomorrow, then spaced further out once you get it.'}</p></div>`;
+  controls.innerHTML=`<div class="row"><button class="btn primary tall" id="trHome">Done</button></div>`;$('#trHome').onclick=()=>renderTrade()}
+function trFlagForm(q){stage.insertAdjacentHTML('beforeend',`<div class="trform" id="trFF"><b>What’s wrong with this one?</b><textarea id="trFN" rows="3" placeholder="e.g. “Around here we use 2″ Z-bar on 5/4 trim”"></textarea><div class="row"><button class="btn" id="trFC">Cancel</button><button class="btn primary" id="trFS">Save flag</button></div></div>`);
+  $('#trFC').onclick=()=>$('#trFF').remove();$('#trFS').onclick=()=>{TR.flags.push({id:q.id,q:q.q,a:q.a,note:$('#trFN').value.trim(),at:Date.now()});trSave();$('#trFF').outerHTML='<div class="hint">Flagged. Share the list from ⚑ Flagged on the Trade home.</div>'}}
+function trFlagList(){stage.innerHTML=`<div class="trq"><div class="eyebrow">Flagged questions</div>${TR.flags.length?TR.flags.map((f,i)=>`<div class="trflag"><b>${f.q}</b><small>Answer given: ${f.a}</small>${f.note?`<p>“${f.note}”</p>`:''}<button data-x="${i}">Remove</button></div>`).join(''):'<p class="hint">Nothing flagged yet. Tap “⚑ This is wrong” after any answer that doesn’t match how it’s done here.</p>'}</div>`;
+  controls.innerHTML=`<div class="row"><button class="btn" id="trBack">Back</button>${TR.flags.length?'<button class="btn primary" id="trShare">Share list</button>':''}</div>`;
+  $('#trBack').onclick=()=>renderTrade();
+  stage.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{TR.flags.splice(+b.dataset.x,1);trSave();trFlagList()});
+  const sh=$('#trShare');if(sh)sh.onclick=async()=>{const txt='Trade questions flagged as wrong:\n\n'+TR.flags.map(f=>`• ${f.q}\n  Answer given: ${f.a}${f.note?`\n  Note: ${f.note}`:''}`).join('\n\n');
+    try{if(navigator.share){await navigator.share({title:'Flagged trade questions',text:txt});return}}catch(e){if(e&&e.name==='AbortError')return}
+    try{await navigator.clipboard.writeText(txt);sh.textContent='Copied ✓'}catch(e){}}}
+function trTipForm(){stage.innerHTML=`<div class="trq"><div class="eyebrow">Coworker’s Corner</div><div class="trtext" style="font-size:18px">Turn a tip into a question you’ll get quizzed on.</div>
+    <div class="trform"><label>Question<textarea id="tq" rows="2" placeholder="e.g. Beam bearing on a 2-story: how many jack studs?"></textarea></label>
+    <label>Answer<textarea id="ta" rows="2" placeholder="e.g. Add a ply. Check the header table’s jack stud column."></textarea></label>
+    <label>Why (optional)<textarea id="tw" rows="2" placeholder="So it actually sticks"></textarea></label></div>
+    ${TR.tips.length?`<div class="eyebrow" style="margin-top:10px">Your tips (${TR.tips.length})</div>${TR.tips.map((t,i)=>`<div class="trflag"><b>${t.q}</b><small>${t.a}</small><button data-d="${i}">Delete</button></div>`).join('')}`:''}</div>`;
+  controls.innerHTML=`<div class="row"><button class="btn" id="tBack">Back</button><button class="btn primary tall" id="tSave">Save tip</button></div>`;
+  $('#tBack').onclick=()=>renderTrade();
+  stage.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{const t=TR.tips.splice(+b.dataset.d,1)[0];if(t)delete TR.cards[t.id];trSave();trTipForm()});
+  $('#tSave').onclick=()=>{const q=$('#tq').value.trim(),a=$('#ta').value.trim();if(!q||!a){($('#tq').value.trim()?$('#ta'):$('#tq')).focus();return}
+    TR.tips.push({id:'tip'+Date.now(),q,a,why:$('#tw').value.trim()});trSave();trTipForm()}}
+
+/* ==========================================================
+   MINE · TUNNEL RUN: dig through the dirt, grab gems, and clear out the critters.
+   Grubbers (green) only travel through tunnels; Chewers (orange) bore through dirt.
+   Bonk them with the shovel, or dig out under a rock and drop it on them.
+   ========================================================== */
+const MN_KEY='tally-tiles-mine-v1',MN_COLS=11,MN_ROWS=15; // row 0 is the surface
+const MN_GEM=[['#4fd1ff',100],['#58e07a',150],['#ff4f9a',250],['#ffd23f',350],['#b07bff',500]];
+let MN=null,MNS=null,mnTok=0,mnHold=null;
+function mnLoad(){try{MNS=JSON.parse(localStorage.getItem(MN_KEY)||'null')}catch(e){}MNS=Object.assign({best:0,bestLv:1},MNS||{})}
+function mnSave(){try{localStorage.setItem(MN_KEY,JSON.stringify(MNS))}catch(e){}}
+const mnIdx=(x,y)=>y*MN_COLS+x,mnIn=(x,y)=>x>=0&&y>=0&&x<MN_COLS&&y<MN_ROWS;
+function mnLevel(lv,keep){
+  const g=new Uint8Array(MN_COLS*MN_ROWS); // 0 dirt, 1 tunnel
+  for(let x=0;x<MN_COLS;x++)g[mnIdx(x,0)]=1; // the surface is open air
+  const mid=Math.floor(MN_COLS/2);for(let y=1;y<=2;y++)g[mnIdx(mid,y)]=1; // a short starter shaft
+  const crit=[],rocks=[],gems=[],taken=new Set();
+  const nG=2+Math.floor(lv/2),nC=lv>=2?Math.floor(lv/2):0;
+  for(let k=0;k<nG+nC;k++){ // each critter starts in its own little pocket
+    for(let t=0;t<80;t++){const y=4+Math.floor(Math.random()*(MN_ROWS-5)),x=1+Math.floor(Math.random()*(MN_COLS-4)),horiz=Math.random()<0.6;
+      const cells=horiz?[[x,y],[x+1,y],[x+2,y]]:[[x,y],[x,y+1],[x,y+2]].filter(([a,b])=>b<MN_ROWS);
+      if(cells.some(([a,b])=>taken.has(mnIdx(a,b))||Math.abs(a-mid)<2&&b<6))continue;
+      cells.forEach(([a,b])=>{g[mnIdx(a,b)]=1;taken.add(mnIdx(a,b))});
+      const [cx,cy]=cells[1]||cells[0];crit.push({type:k<nG?'grub':'chew',x:cx,y:cy,tx:cx,ty:cy,hp:k<nG?1:2,stun:0,face:1,ph:Math.random()*6});break}}
+  for(let k=0;k<4+Math.min(4,Math.floor(lv/2));k++)for(let t=0;t<60;t++){const x=Math.floor(Math.random()*MN_COLS),y=3+Math.floor(Math.random()*(MN_ROWS-6));
+    if(g[mnIdx(x,y)]||g[mnIdx(x,y+1)]||taken.has(mnIdx(x,y))||rocks.some(r=>r.x===x&&Math.abs(r.y-y)<2))continue;rocks.push({x,y,fy:y,st:'still',t:0});taken.add(mnIdx(x,y));break}
+  for(let k=0;k<9;k++)for(let t=0;t<60;t++){const x=Math.floor(Math.random()*MN_COLS),y=2+Math.floor(Math.random()*(MN_ROWS-2));
+    if(g[mnIdx(x,y)]||taken.has(mnIdx(x,y)))continue;const tier=Math.min(4,Math.floor((y-2)/(MN_ROWS-2)*4+Math.random()*1.4));gems.push({x,y,tier});taken.add(mnIdx(x,y));break}
+  MN={lv,g,crit,rocks,gems,me:{x:mid,y:0,tx:mid,ty:0,face:1,fx:1,fy:0,swing:0,cool:0,hurt:2},score:keep?keep.score:0,lives:keep?keep.lives:3,
+    state:'play',t:0,fx:[],texts:[],dist:null,distT:0,banner:2.2}}
+// distance map through tunnels from the miner, so grubbers can find him
+function mnBFS(){const d=new Int16Array(MN_COLS*MN_ROWS).fill(-1),q=[],s=mnIdx(Math.round(MN.me.x),Math.round(MN.me.y));d[s]=0;q.push(s);
+  for(let k=0;k<q.length;k++){const i=q[k],x=i%MN_COLS,y=(i/MN_COLS)|0;for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy;if(!mnIn(nx,ny))continue;const j=mnIdx(nx,ny);
+    if(d[j]>=0||!MN.g[j]||mnRockAt(nx,ny))continue;d[j]=d[i]+1;q.push(j)}}return d}
+const mnRockAt=(x,y)=>MN.rocks.find(r=>r.st!=='gone'&&r.x===x&&Math.round(r.fy)===y);
+function mnStep(e,speed,dt){const dx=e.tx-e.x,dy=e.ty-e.y,d=Math.hypot(dx,dy);if(d<1e-6){e.x=e.tx;e.y=e.ty;return true}
+  const m=Math.min(d,speed*dt);e.x+=dx/d*m;e.y+=dy/d*m;return m>=d-1e-6}
+function mnHurt(why){const me=MN.me;if(me.hurt>0||MN.state!=='play')return;MN.lives--;me.hurt=2.2;mnText(why,me.x,me.y-0.6,'#ff8a8a');try{navigator.vibrate&&navigator.vibrate([30,40,30])}catch(e){}
+  for(let k=0;k<14;k++)MN.fx.push(mnSpark(me.x,me.y,'#ffd23f'));
+  if(MN.lives<=0){MN.state='over';MN.t=0;if(MN.score>MNS.best)MNS.best=MN.score;MNS.bestLv=Math.max(MNS.bestLv,MN.lv);mnSave();addPts(Math.max(1,Math.round(MN.score/200)));return}
+  const mid=Math.floor(MN_COLS/2);Object.assign(me,{x:mid,y:0,tx:mid,ty:0});}
+function mnSpark(x,y,c){const a=Math.random()*7,v=1.5+Math.random()*3;return{x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-1,life:0.8,c}}
+function mnText(t,x,y,c){MN.texts.push({t,x,y,c,life:1.3})}
+function mnKill(c,how){c.dead=true;const pts=how==='rock'?500:200;MN.score+=pts;mnText(`+${pts}`,c.x,c.y-0.4,'#ffe066');for(let k=0;k<12;k++)MN.fx.push(mnSpark(c.x,c.y,c.type==='grub'?'#7ee08a':'#ffb35c'))}
+function mnBonk(){const me=MN.me;if(MN.state!=='play'||me.cool>0)return;me.swing=0.25;me.cool=0.32;
+  let hit=null,bd=9;for(const c of MN.crit){if(c.dead)continue;const ax=c.x-me.x,ay=c.y-me.y,along=ax*me.fx+ay*me.fy,side=Math.abs(ax*me.fy-ay*me.fx),d=Math.hypot(ax,ay);
+    if((along>-0.2&&along<1.35&&side<0.6)||d<0.55){if(d<bd){bd=d;hit=c}}}
+  if(hit){hit.hp--;if(hit.hp<=0)mnKill(hit,'bonk');else{hit.stun=1.6;mnText('Bonk!',hit.x,hit.y-0.5,'#fff')}try{navigator.vibrate&&navigator.vibrate(18)}catch(e){}}}
+function renderMine(full){if(!MNS)mnLoad();if(!MN)mnLevel(1);if(/[?&]bot\b/.test(location.search)){window.__mn=()=>MN;window.__mnRock=()=>MN.rocks}
+  if(full||!$('#mineCv')){
+    stage.innerHTML=`<div class="minewrap" id="mineWrap"><canvas id="mineCv" aria-label="Tunnel Run: dig, grab gems, clear the critters"></canvas></div>`;
+    controls.innerHTML=`<div class="minepad"><div class="dpad">${['up','left','right','down'].map(d=>`<button data-dir="${d}" aria-label="${d}">${{up:'▲',left:'◀',right:'▶',down:'▼'}[d]}</button>`).join('')}</div>
+      <div class="minebtns"><button id="mnBonk" class="bonk">🪓<b>Bonk</b></button><button id="mnNew" class="btn">New game</button></div></div>`;
+    const dirs={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
+    controls.querySelectorAll('[data-dir]').forEach(b=>{const on=e=>{e.preventDefault();mnHold=dirs[b.dataset.dir];b.classList.add('on');try{b.setPointerCapture(e.pointerId)}catch(_){}},
+      off=()=>{if(mnHold===dirs[b.dataset.dir])mnHold=null;b.classList.remove('on')};b.onpointerdown=on;b.onpointerup=off;b.onpointercancel=off;b.onlostpointercapture=off});
+    const bk=$('#mnBonk');bk.onpointerdown=e=>{e.preventDefault();mnBonk()};
+    $('#mnNew').onclick=()=>{mnLevel(1);renderMine(true)};
+    $('#mineCv').onpointerdown=()=>{if(MN.state==='over'&&MN.t>0.8){mnLevel(1);renderMine(true)}};
+    try{if(!renderMine.ro)renderMine.ro=new ResizeObserver(()=>mnFit());renderMine.ro.disconnect();renderMine.ro.observe($('#mineWrap'))}catch(e){}
+    mnFit()}
+  mnRun()}
+function mnFit(){const cv=$('#mineCv'),w=$('#mineWrap');if(!cv||!w)return;const r=w.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1);
+  cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);cv.style.height=r.height+'px';cv.getContext('2d').setTransform(dpr,0,0,dpr,0,0);mnFit.W=r.width;mnFit.H=r.height}
+function mnRun(){const tok=++mnTok;let last=performance.now();
+  const f=now=>{if(tok!==mnTok||S.mode!=='mine'||!$('#mineCv'))return;const dt=Math.min(0.05,(now-last)/1000);last=now;if(!document.hidden){mnUpdate(dt);mnDraw()}requestAnimationFrame(f)};
+  requestAnimationFrame(f)}
+function mnUpdate(dt){const G=MN,me=G.me;G.t+=dt;G.banner=Math.max(0,G.banner-dt);
+  for(const p of G.fx){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=6*dt;p.life-=dt}G.fx=G.fx.filter(p=>p.life>0);
+  for(const t of G.texts){t.life-=dt;t.y-=0.6*dt}G.texts=G.texts.filter(t=>t.life>0);
+  if(G.state==='clear'){if(G.t>1.8){mnLevel(G.lv+1,{score:G.score,lives:G.lives})}return}
+  if(G.state!=='play')return;
+  me.hurt=Math.max(0,me.hurt-dt);me.cool=Math.max(0,me.cool-dt);me.swing=Math.max(0,me.swing-dt);
+  // the miner: hold a direction; turns happen at cell centers, reversing is instant
+  const atC=Math.abs(me.x-me.tx)<1e-3&&Math.abs(me.y-me.ty)<1e-3;
+  if(mnHold){const [hx,hy]=mnHold;
+    const mdx=Math.sign(me.tx-me.x),mdy=Math.sign(me.ty-me.y);
+    if(!atC&&((hx&&hx===-mdx)||(hy&&hy===-mdy))){me.tx-=mdx;me.ty-=mdy;me.fx=hx;me.fy=hy;if(hx)me.face=hx}
+    if(atC){const nx=me.tx+hx,ny=me.ty+hy;if(mnIn(nx,ny)&&!mnRockAt(nx,ny)){me.tx=nx;me.ty=ny}me.fx=hx;me.fy=hy;if(hx)me.face=hx}}
+  const into=G.g[mnIdx(me.tx,me.ty)];
+  if(mnStep(me,into?4.2:2.6,dt)&&!into){G.g[mnIdx(me.tx,me.ty)]=1}
+  if(!into&&Math.hypot(me.tx-me.x,me.ty-me.y)<0.5)G.g[mnIdx(me.tx,me.ty)]=1;
+  if(!atC&&Math.random()<dt*12&&!into)G.fx.push({x:me.x+me.fx*0.35,y:me.y+me.fy*0.35,vx:(Math.random()-.5)*2,vy:-Math.random()*2,life:0.4,c:'#8a5a32'});
+  for(const gm of G.gems)if(!gm.got&&G.g[mnIdx(gm.x,gm.y)]&&Math.hypot(gm.x-me.x,gm.y-me.y)<0.6){gm.got=true;const v=MN_GEM[gm.tier][1];G.score+=v;mnText(`+${v}`,gm.x,gm.y-0.3,MN_GEM[gm.tier][0]);
+    for(let k=0;k<10;k++)G.fx.push(mnSpark(gm.x,gm.y,MN_GEM[gm.tier][0]))}
+  // rocks: once the cell under one is dug and you're out from under it, it wobbles, then drops
+  for(const r of G.rocks){if(r.st==='gone')continue;
+    if(r.st==='still'){const below=r.y+1;if(below<MN_ROWS&&G.g[mnIdx(r.x,below)]&&!mnRockAt(r.x,below)&&!(Math.round(me.x)===r.x&&Math.round(me.y)===below&&atC&&mnHold==null)){r.st='wobble';r.t=0}}
+    else if(r.st==='wobble'){r.t+=dt;if(r.t>0.75){r.st='fall';r.vy=0}}
+    else if(r.st==='fall'){r.vy=Math.min(9,r.vy+22*dt);r.fy+=r.vy*dt;const ny=Math.floor(r.fy)+1;
+      for(const c of G.crit)if(!c.dead&&Math.abs(c.x-r.x)<0.6&&c.y>r.fy-0.2&&c.y<r.fy+1.1)mnKill(c,'rock');
+      if(Math.abs(me.x-r.x)<0.6&&me.y>r.fy-0.1&&me.y<r.fy+0.9)mnHurt('Look out!');
+      if(ny>=MN_ROWS||!G.g[mnIdx(r.x,ny)]||G.rocks.some(o=>o!==r&&o.st!=='gone'&&o.x===r.x&&Math.round(o.fy)===ny)){r.st='gone';const yy=Math.min(MN_ROWS-1,Math.floor(r.fy));
+        for(let k=0;k<14;k++)G.fx.push(mnSpark(r.x,yy,'#9aa3ad'));try{navigator.vibrate&&navigator.vibrate(25)}catch(e){}}}}
+  // critters
+  G.distT-=dt;if(G.distT<=0||!G.dist){G.dist=mnBFS();G.distT=0.25}
+  const spd=1+G.lv*0.07;
+  for(const c of G.crit){if(c.dead)continue;c.ph+=dt;if(c.stun>0){c.stun-=dt;continue}
+    const cAt=Math.abs(c.x-c.tx)<1e-3&&Math.abs(c.y-c.ty)<1e-3;
+    if(cAt){let best=null,bv=1e9;const opts=[[1,0],[-1,0],[0,1],[0,-1]].map(([dx,dy])=>[c.tx+dx,c.ty+dy]).filter(([x,y])=>mnIn(x,y)&&y>0&&!mnRockAt(x,y));
+      if(c.type==='grub'){for(const [x,y] of opts){if(!G.g[mnIdx(x,y)])continue;const d=G.dist[mnIdx(x,y)];const v=d>=0?d:500+Math.random()*50;if(v<bv){bv=v;best=[x,y]}}}
+      else{for(const [x,y] of opts){const v=Math.hypot(x-me.x,y-me.y)+(G.g[mnIdx(x,y)]?0:0.4)+Math.random()*0.3;if(v<bv){bv=v;best=[x,y]}}}
+      if(best){c.tx=best[0];c.ty=best[1];if(best[0]!==c.x)c.face=best[0]>c.x?1:-1}}
+    const into2=G.g[mnIdx(c.tx,c.ty)];const v=(c.type==='grub'?2.4:into2?2.2:1.0)*spd;
+    if(mnStep(c,v,dt)&&!into2)G.g[mnIdx(c.tx,c.ty)]=1;
+    if(Math.hypot(c.x-me.x,c.y-me.y)<0.62)mnHurt('Ouch!')}
+  G.crit=G.crit.filter(c=>!c.dead||false);
+  if(!G.crit.some(c=>!c.dead)&&G.state==='play'){G.state='clear';G.t=0;G.score+=G.lv*250;mnText(`Level ${G.lv} clear! +${G.lv*250}`,MN_COLS/2,MN_ROWS/2,'#ffe066');MNS.bestLv=Math.max(MNS.bestLv,G.lv+1);mnSave()}}
+function mnDraw(){const cv=$('#mineCv');if(!cv)return;const c=cv.getContext('2d'),W=mnFit.W,H=mnFit.H,G=MN;if(!W)return;
+  const top=34,cs=Math.min(W/MN_COLS,(H-top)/MN_ROWS),ox=(W-cs*MN_COLS)/2,oy=top+(H-top-cs*MN_ROWS)/2;const X=x=>ox+x*cs+cs/2,Y=y=>oy+y*cs+cs/2;
+  c.fillStyle='#120c08';c.fillRect(0,0,W,H);
+  const sky=c.createLinearGradient(0,oy,0,oy+cs);sky.addColorStop(0,'#5fa8e8');sky.addColorStop(1,'#a8d8ff');c.fillStyle=sky;c.fillRect(ox,oy,cs*MN_COLS,cs);
+  c.fillStyle='#4f9a45';c.fillRect(ox,oy+cs-5,cs*MN_COLS,5);
+  const layer=['#9a6a3c','#8a5a32','#7a4d2a','#6b4226','#5a3720','#4a2d1a'];
+  for(let y=1;y<MN_ROWS;y++)for(let x=0;x<MN_COLS;x++){const px=ox+x*cs,py=oy+y*cs;
+    if(G.g[mnIdx(x,y)]){c.fillStyle='#1c120b';c.fillRect(px,py,cs+0.5,cs+0.5);continue}
+    c.fillStyle=layer[Math.min(layer.length-1,Math.floor((y-1)/(MN_ROWS-1)*layer.length))];c.fillRect(px,py,cs+0.5,cs+0.5);
+    c.fillStyle='rgba(0,0,0,.14)';c.beginPath();c.arc(px+cs*0.3,py+cs*0.35,cs*0.06,0,7);c.arc(px+cs*0.72,py+cs*0.68,cs*0.05,0,7);c.fill()}
+  for(const gm of G.gems){if(gm.got)continue;const cx=X(gm.x),cy=Y(gm.y),r=cs*0.3,col=MN_GEM[gm.tier][0];
+    c.fillStyle=col;c.beginPath();c.moveTo(cx,cy-r);c.lineTo(cx+r*0.85,cy-r*0.2);c.lineTo(cx+r*0.55,cy+r*0.9);c.lineTo(cx-r*0.55,cy+r*0.9);c.lineTo(cx-r*0.85,cy-r*0.2);c.closePath();c.fill();
+    c.fillStyle='rgba(255,255,255,.55)';c.beginPath();c.moveTo(cx,cy-r);c.lineTo(cx+r*0.3,cy-r*0.2);c.lineTo(cx-r*0.3,cy-r*0.2);c.closePath();c.fill()}
+  for(const r of G.rocks){if(r.st==='gone')continue;const wob=r.st==='wobble'?Math.sin(G.t*40)*cs*0.05:0,cx=X(r.x)+wob,cy=oy+r.fy*cs+cs/2,s=cs*0.42;
+    c.fillStyle='#8e96a3';c.strokeStyle='#5d6470';c.lineWidth=2;c.beginPath();c.moveTo(cx-s,cy+s*0.7);c.lineTo(cx-s*0.75,cy-s*0.6);c.lineTo(cx+s*0.2,cy-s*0.85);c.lineTo(cx+s,cy-s*0.2);c.lineTo(cx+s*0.8,cy+s*0.75);c.closePath();c.fill();c.stroke();
+    c.fillStyle='rgba(255,255,255,.18)';c.beginPath();c.arc(cx-s*0.3,cy-s*0.25,s*0.22,0,7);c.fill()}
+  // critters (original designs)
+  for(const k of G.crit){if(k.dead)continue;const cx=X(k.x),cy=Y(k.y)+Math.sin(k.ph*8)*cs*0.03,s=cs*0.36;c.save();c.translate(cx,cy);c.scale(k.face,1);
+    if(k.type==='grub'){c.fillStyle='#5cc46a';c.beginPath();c.ellipse(0,0,s,s*0.75,0,0,7);c.fill();c.fillStyle='#3f9a4a';for(let i=-1;i<=1;i++){c.beginPath();c.ellipse(i*s*0.45,s*0.15,s*0.18,s*0.5,0,0,7);c.fill()}
+      c.strokeStyle='#2c6e34';c.lineWidth=2;c.beginPath();c.moveTo(s*0.6,-s*0.5);c.lineTo(s*0.9,-s*1.0);c.moveTo(s*0.35,-s*0.6);c.lineTo(s*0.45,-s*1.1);c.stroke()}
+    else{c.fillStyle='#f08a2a';c.beginPath();c.ellipse(0,0,s*1.05,s*0.8,0,0,7);c.fill();c.strokeStyle='#8a4a14';c.lineWidth=2;c.beginPath();c.moveTo(0,-s*0.8);c.lineTo(0,s*0.8);c.stroke();
+      c.fillStyle='#3a2210';c.beginPath();c.moveTo(s*0.95,-s*0.25);c.lineTo(s*1.45,-s*0.05);c.lineTo(s*0.95,s*0.1);c.closePath();c.fill();c.beginPath();c.moveTo(s*0.95,s*0.05);c.lineTo(s*1.4,s*0.3);c.lineTo(s*0.9,s*0.35);c.closePath();c.fill()}
+    c.fillStyle='#fff';c.beginPath();c.arc(s*0.55,-s*0.2,s*0.22,0,7);c.fill();c.fillStyle='#111';c.beginPath();c.arc(s*0.62,-s*0.18,s*0.11,0,7);c.fill();
+    c.restore();if(k.stun>0){c.fillStyle='#ffe066';c.font=`${Math.round(cs*0.35)}px sans-serif`;c.textAlign='center';c.fillText('✦ ✦',cx,cy-cs*0.45)}}
+  // the miner (same little miner as the mockup)
+  const me=G.me;if(G.state!=='over'&&!(me.hurt>0&&Math.floor(G.t*10)%2)){const cx=X(me.x),cy=Y(me.y),s=cs*0.36;
+    const lamp=c.createRadialGradient(cx,cy,2,cx,cy,cs*1.6);lamp.addColorStop(0,'rgba(255,233,168,.28)');lamp.addColorStop(1,'rgba(255,233,168,0)');c.fillStyle=lamp;c.fillRect(cx-cs*1.6,cy-cs*1.6,cs*3.2,cs*3.2);
+    c.save();c.translate(cx,cy);c.scale(me.face,1);
+    c.fillStyle='#2f6fe0';c.beginPath();c.roundRect(-s*0.75,s*0.05,s*1.5,s*0.95,s*0.3);c.fill();
+    c.fillStyle='#ffd9b3';c.beginPath();c.arc(0,-s*0.25,s*0.62,0,7);c.fill();
+    c.fillStyle='#f2b705';c.beginPath();c.moveTo(-s*0.72,-s*0.3);c.quadraticCurveTo(0,-s*1.35,s*0.72,-s*0.3);c.closePath();c.fill();c.fillStyle='#fff6c8';c.beginPath();c.arc(s*0.1,-s*0.72,s*0.17,0,7);c.fill();
+    c.fillStyle='#222';c.beginPath();c.arc(s*0.1,-s*0.18,s*0.09,0,7);c.arc(s*0.38,-s*0.18,s*0.09,0,7);c.fill();
+    const sw=me.swing>0?(1-me.swing/0.25)*1.6-0.6:-0.6;c.save();c.translate(s*0.55,s*0.2);c.rotate(sw);c.strokeStyle='#7a4a26';c.lineWidth=Math.max(2,cs*0.07);c.beginPath();c.moveTo(0,0);c.lineTo(s*0.9,-s*0.6);c.stroke();
+      c.fillStyle='#9aa3ad';c.beginPath();c.ellipse(s*1.0,-s*0.68,s*0.28,s*0.18,-0.6,0,7);c.fill();c.restore();
+    c.restore()}
+  for(const p of G.fx){c.globalAlpha=Math.max(0,p.life/0.8);c.fillStyle=p.c;c.fillRect(X(p.x)-2,Y(p.y)-2,4,4)}c.globalAlpha=1;
+  c.textAlign='center';for(const t of G.texts){c.globalAlpha=Math.min(1,t.life*1.5);c.font=`800 ${Math.round(cs*0.42)}px ${getComputedStyle(document.body).fontFamily}`;c.lineWidth=4;c.strokeStyle='rgba(0,0,0,.6)';
+    c.strokeText(t.t,X(t.x),Y(t.y));c.fillStyle=t.c;c.fillText(t.t,X(t.x),Y(t.y))}c.globalAlpha=1;
+  // hud
+  const fam=getComputedStyle(document.body).fontFamily;
+  c.textAlign='center';c.fillStyle='#ffd23f';c.font=`800 18px ${fam}`;c.fillText(G.score,W/2,23);
+  c.textAlign='right';c.font=`15px ${fam}`;c.fillStyle='#ff6b6b';c.fillText('♥'.repeat(Math.max(0,G.lives)),W-10,22);
+  const left=G.crit.filter(k=>!k.dead).length;c.fillStyle='#b8c2dc';c.font=`13px ${fam}`;c.textAlign='left';c.fillText(`Level ${G.lv} · ${left} critter${left===1?'':'s'} left`,10,22);
+  if(G.banner>0&&G.state==='play'){c.globalAlpha=Math.min(1,G.banner);c.fillStyle='rgba(0,0,0,.6)';c.fillRect(W/2-130,H*0.42-24,260,40);c.fillStyle='#fff';c.font=`800 18px ${fam}`;c.textAlign='center';
+    c.fillText(G.lv===1?'Dig! Bonk the critters!':`Level ${G.lv}`,W/2,H*0.42+3);c.globalAlpha=1}
+  if(G.state==='over'){c.fillStyle='rgba(5,8,22,.78)';c.fillRect(0,0,W,H);c.textAlign='center';c.fillStyle='#ffe066';c.font=`800 28px ${fam}`;c.fillText('Out of lives',W/2,H*0.4);
+    c.fillStyle='#fff';c.font=`800 42px ${fam}`;c.fillText(G.score,W/2,H*0.4+50);c.fillStyle='#cfd8f5';c.font=`600 16px ${fam}`;c.fillText(`Best ${MNS.best} · reached level ${G.lv}`,W/2,H*0.4+82);
+    if(G.t>0.8)c.fillText('Tap to dig again',W/2,H*0.4+116)}}
+
 function render(){
-  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else if(S.mode==='sand')return renderSand(true);else if(S.mode==='yard')return renderYard(true);else if(S.mode==='cats')return renderCats(true);else if(S.mode==='offcut')return renderOffcut();else renderCon();
+  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else if(S.mode==='sand')return renderSand(true);else if(S.mode==='yard')return renderYard(true);else if(S.mode==='cats')return renderCats(true);else if(S.mode==='offcut')return renderOffcut();else if(S.mode==='trade')return renderTrade();else if(S.mode==='mine')return renderMine(true);else renderCon();
   paintClock();
 }
 function setMode(m){
@@ -1982,7 +2324,7 @@ function drawQR(cv,text){
 }
 
 /* ---------- boot ---------- */
-const m0=['numbers','letters','conundrum','merge','solitaire','sand','yard','cats','offcut'].includes(S.mode)?S.mode:'numbers';S.mode='';setMode(m0);
+const m0=['numbers','letters','conundrum','merge','solitaire','sand','yard','cats','offcut','trade','mine'].includes(S.mode)?S.mode:'numbers';S.mode='';setMode(m0);
 })();
 </script>
 
