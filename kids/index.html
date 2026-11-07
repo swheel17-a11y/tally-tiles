@@ -2501,7 +2501,7 @@ async function tvSeries(top){
     view.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{const it=list[+b.dataset.i];sfx.tap();if(isLittle())speakNow(it.Name);TV.stack.push({kind:'play',item:it,eps});playTv()});
   }catch(e){if(tok===loopToken)tvFail(e)}
 }
-const TV_PROFILE={MaxStreamingBitrate:4000000,MaxStaticBitrate:100000000,MusicStreamingTranscodingBitrate:192000,
+const TV_PROFILE={MaxStreamingBitrate:20000000,MaxStaticBitrate:100000000,MusicStreamingTranscodingBitrate:192000,
   DirectPlayProfiles:[{Container:'mp4,m4v',Type:'Video',VideoCodec:'h264',AudioCodec:'aac,mp3'},{Container:'webm',Type:'Video',VideoCodec:'vp8,vp9',AudioCodec:'vorbis,opus'}],
   TranscodingProfiles:[{Container:'ts',Type:'Video',AudioCodec:'aac',VideoCodec:'h264',Context:'Streaming',Protocol:'hls',MaxAudioChannels:'2',MinSegments:1,BreakOnNonKeyFrames:true}],
   ContainerProfiles:[],CodecProfiles:[],SubtitleProfiles:[{Format:'vtt',Method:'External'}]};
@@ -2542,13 +2542,18 @@ async function tvPlay(top){
   // the next episode, if there is one
   const eps=top.eps,ix=eps?eps.findIndex(e=>e.Id===it.Id):-1,nextEp=ix>=0?eps[ix+1]:null;
   const nb=$('#tvNext');if(nextEp){nb.onclick=()=>{stop();TV.kill=null;sfx.tap();TV.stack[TV.stack.length-1]={kind:'play',item:nextEp,eps};playTv()}}
-  v.addEventListener('ended',()=>{if(!stopped){stopped=true;report('/Stopped')}clearInterval(iv);showCtl();if(nextEp){nb.hidden=false;speakNow('Want to watch the next one?')}else{nb.hidden=true}});
-  let stallT=0;const unstall=()=>{clearTimeout(stallT);over.hidden=true;over.innerHTML='<div class="tvspin"></div>'};
+  v.addEventListener('ended',()=>{if(K.tvLast&&K.tvLast.id===it.Id){K.tvLast=null;save()}if(!stopped){stopped=true;report('/Stopped')}clearInterval(iv);showCtl();if(nextEp){nb.hidden=false;speakNow('Want to watch the next one?')}else{nb.hidden=true}});
+  let stallT=0,lastGood=0;v.addEventListener('timeupdate',()=>{if(v.currentTime>1&&!v.seeking){lastGood=v.currentTime;if(Math.floor(v.currentTime)%10===0){K.tvLast={id:it.Id,t:lastGood,at:Date.now()};save()}}});
+  const unstall=()=>{clearTimeout(stallT);over.hidden=true;over.innerHTML='<div class="tvspin"></div>'};
   v.addEventListener('playing',unstall);
   v.addEventListener('waiting',()=>{over.hidden=false;clearTimeout(stallT);stallT=setTimeout(()=>{if(stopped||!v.isConnected)return;
     over.innerHTML='<button class="tvbig" id="tvGo" aria-label="Keep watching">↻</button><p style="margin:10px 0 0">Tap to keep watching</p>';over.style.flexDirection='column';
-    $('#tvGo').onclick=()=>{TV.stack[TV.stack.length-1].resumeAt=v.currentTime;if(TV.kill)TV.kill();playTv()}},15000)});
+    $('#tvGo').onclick=()=>{TV.stack[TV.stack.length-1].resumeAt=Math.max(lastGood,v.currentTime||0);if(TV.kill)TV.kill();playTv()}},25000)});
   try{
+    if(top.resumeAt==null){let fresh=null;try{fresh=await jf(`/Users/${J.userId}/Items/${it.Id}`)}catch(e){}
+      const srv=fresh&&fresh.UserData&&fresh.UserData.PlaybackPositionTicks?fresh.UserData.PlaybackPositionTicks/1e7:0,loc=K.tvLast&&K.tvLast.id===it.Id?K.tvLast.t:0;
+      if(fresh&&fresh.UserData&&fresh.UserData.Played&&!loc){top.resumeAt=null}else if(Math.max(srv,loc)>20)top.resumeAt=Math.max(srv,loc)-3}
+    if(tok!==loopToken||stopped)return;
     const info=await jf(`/Items/${it.Id}/PlaybackInfo?UserId=${J.userId}`,{method:'POST',body:{DeviceProfile:TV_PROFILE,UserId:J.userId,MaxStreamingBitrate:TV_PROFILE.MaxStreamingBitrate,AutoOpenLiveStream:true,IsPlayback:true,EnableDirectPlay:true,EnableDirectStream:true,EnableTranscoding:true,AllowVideoStreamCopy:true,AllowAudioStreamCopy:true}});
     if(tok!==loopToken||stopped)return;
     const ms=(info.MediaSources||[])[0];if(!ms)throw new Error('no media');
@@ -2557,7 +2562,7 @@ async function tvPlay(top){
     else if(ms.TranscodingUrl){method='Transcode';src=J.url+ms.TranscodingUrl;if(!/api_key=/i.test(src))src+=(src.includes('?')?'&':'?')+'api_key='+J.token}
     else throw new Error('cannot play');
     sess={ms:ms.Id,ps:info.PlaySessionId,method};
-    const pos=top.resumeAt!=null?top.resumeAt+3:it.UserData&&it.UserData.PlaybackPositionTicks?it.UserData.PlaybackPositionTicks/1e7:0,start=pos>20?pos-3:0;top.resumeAt=null;
+    const pos=top.resumeAt!=null?top.resumeAt+3:it.UserData&&it.UserData.PlaybackPositionTicks?it.UserData.PlaybackPositionTicks/1e7:0,start=pos>20?pos-3:0;top.resumeAt=null;v.dataset.start=Math.round(start);
     const begin=()=>{v.play().catch(()=>{over.hidden=false;over.innerHTML='<button class="tvbig" id="tvGo">▶</button>';$('#tvGo').onclick=()=>{over.innerHTML='<div class="tvspin"></div>';v.play().catch(()=>{})}});report('')};
     if(/\.m3u8/i.test(src)){
       let useHls=false;try{await loadHls();useHls=window.Hls&&Hls.isSupported()}catch(e){}
