@@ -338,6 +338,30 @@ button:disabled{opacity:.35;cursor:default}
 .bonk b{font-size:15px}
 .minebtns .btn{padding:6px 10px;font-size:13px}
 
+/* sudoku */
+.sugrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));aspect-ratio:1/1;width:100%;max-width:min(100%,calc(100dvh - 380px));min-width:260px;align-self:center;border:3px solid #0b1022;border-radius:10px;overflow:hidden;background:#0b1022;gap:3px}
+.subox{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:1px;background:#8a95b0;min-width:0;min-height:0}
+.suc{min-width:0;min-height:0;padding:0;background:#e9eef8;color:#2f5fd0;font-family:var(--f-display);font-weight:600;font-size:calc(min(488px,100vw - 32px)/9*.56);line-height:1;display:grid;place-items:center;position:relative}
+.suc.giv{color:#121a33;font-weight:800}
+.suc.rel{background:#d7e0f2}.suc.same{background:#b9cdf5}.suc.sel{background:#f6d778}
+.suc.bad{color:#d92b31;background:#fbd9d9}.suc.sel.bad{background:#f6c0a0}
+.suc.win{animation:suwin .5s ease both}@keyframes suwin{50%{background:#c9f0d6;transform:scale(1.06)}}
+.sun{position:absolute;inset:2px;display:grid;grid-template-columns:repeat(3,1fr);font-size:calc(min(488px,100vw - 32px)/9*.22);color:#5b6475;font-weight:600}
+.sun i{font-style:normal;display:grid;place-items:center}
+.supad{display:grid;grid-template-columns:repeat(9,1fr);gap:4px}
+.supad button{height:52px;border-radius:10px;background:var(--tile);color:var(--tile-ink);font-family:var(--f-display);font-weight:800;font-size:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.supad small{font-size:9px;font-weight:600;opacity:.6;height:10px}
+.supad button:disabled{opacity:.25}
+.sutools{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.sutools button{height:50px;border-radius:10px;background:var(--board);border:1px solid var(--board-line);font-size:19px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}
+.sutools small{font-size:10.5px;color:var(--mist)}
+.sutools button[aria-pressed="true"]{background:var(--tile);color:var(--tile-ink)}.sutools button[aria-pressed="true"] small{color:inherit}
+.sutools button:disabled{opacity:.4}
+.sulv{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--board);border:1px solid var(--board-line);border-radius:12px;padding:4px}
+.sulv button{padding:8px 2px;border-radius:9px;font-weight:700;color:var(--mist);font-size:14px;line-height:1.15}
+.sulv small{display:block;font-size:10px;font-weight:500;opacity:.8}
+.sulv button[aria-pressed="true"]{background:var(--tile);color:var(--tile-ink)}
+
 /* cats */
 .ctboard{--n:7;display:grid;width:100%;max-width:min(100%,calc(100dvh - 340px));min-width:240px;align-self:center;border:3px solid #0b1022;border-radius:12px;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 .ctc{aspect-ratio:1/1;padding:0;border:1.5px solid;display:grid;place-items:center;font-size:calc(min(488px,100vw - 32px)/var(--n)*.56);line-height:1;color:#16203f;position:relative}
@@ -418,6 +442,7 @@ td.h{padding-top:14px;font-size:11px;letter-spacing:.12em;text-transform:upperca
     <button role="tab" id="tab-merge" aria-selected="false" data-mode="merge">Merge</button>
     <button role="tab" id="tab-solitaire" aria-selected="false" data-mode="solitaire">Solitaire</button>
     <button role="tab" id="tab-cats" aria-selected="false" data-mode="cats">Cats</button>
+    <button role="tab" id="tab-sudoku" aria-selected="false" data-mode="sudoku">Sudoku</button>
   </div>
   <div class="stage" id="stage"></div>
   <div class="controls" id="controls"></div>
@@ -453,7 +478,7 @@ const addPts=p=>{S.dayPts+=p;save();};
 /* ---------- clocks: one per tab, paused while you're on another tab ---------- */
 const R=26,C=2*Math.PI*R,LIMIT=30;
 const mkClock=()=>({elapsed:0,since:null,running:false,timed:false,onEnd:null});
-const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock(),sand:mkClock(),yard:mkClock(),cats:mkClock(),offcut:mkClock(),trade:mkClock(),mine:mkClock()};
+const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock(),sand:mkClock(),yard:mkClock(),cats:mkClock(),offcut:mkClock(),trade:mkClock(),mine:mkClock(),sudoku:mkClock()};
 const el=c=>c.elapsed+(c.since?(performance.now()-c.since)/1000:0);
 let looping=false;
 function clockHTML(){return `<div class="clock" id="clock"><svg viewBox="0 0 64 64"><circle class="track" cx="32" cy="32" r="${R}" fill="none" stroke-width="6"/><circle class="arc" id="arc" cx="32" cy="32" r="${R}" fill="none" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg><div class="t" id="clockT"></div></div>`}
@@ -2183,8 +2208,99 @@ function mnDraw(){const cv=$('#mineCv');if(!cv)return;const c=cv.getContext('2d'
     c.fillStyle='#fff';c.font=`800 42px ${fam}`;c.fillText(G.score,W/2,H*0.4+50);c.fillStyle='#cfd8f5';c.font=`600 16px ${fam}`;c.fillText(`Best ${MNS.best} · reached level ${G.lv}`,W/2,H*0.4+82);
     if(G.t>0.8)c.fillText('Tap to dig again',W/2,H*0.4+116)}}
 
+/* ==========================================================
+   SUDOKU: every puzzle has exactly one answer. Easy and Medium are solvable with singles only;
+   Hard and Expert need more digging. Pencil notes clean themselves up.
+   ========================================================== */
+const SU_KEY='tally-tiles-sudoku-v1';
+const SU_LV={easy:{name:'Easy',clues:40,singles:true},medium:{name:'Medium',clues:32,singles:true},hard:{name:'Hard',clues:27,singles:false},expert:{name:'Expert',clues:23,singles:false}};
+let SU=null,suSel=-1,suNotes=false,suTick=0,suLast=0;
+const suRow=i=>(i/9)|0,suCol=i=>i%9,suBox=i=>(((i/27)|0)*3)+(((i%9)/3)|0);
+const SU_PEERS=Array.from({length:81},(_,i)=>{const s=new Set();for(let j=0;j<81;j++)if(j!==i&&(suRow(j)===suRow(i)||suCol(j)===suCol(i)||suBox(j)===suBox(i)))s.add(j);return [...s]});
+// fast solver: counts solutions up to `limit`, fills `out` with the first one
+function suSolve(g,limit,out){const b=g.slice();let n=0;
+  const cand=i=>{let m=0x3fe;for(const p of SU_PEERS[i])if(b[p])m&=~(1<<b[p]);return m};
+  const go=()=>{let best=-1,bm=0,bc=10;for(let i=0;i<81;i++)if(!b[i]){const m=cand(i);let c=0;for(let v=m;v;v&=v-1)c++;if(c<bc){bc=c;best=i;bm=m;if(c<=1)break}}
+    if(best<0){n++;if(out&&n===1)for(let i=0;i<81;i++)out[i]=b[i];return n>=limit}
+    if(!bc)return false;for(let d=1;d<=9;d++)if(bm&(1<<d)){b[best]=d;if(go())return true}b[best]=0;return false};
+  go();return n}
+// can it be finished with naked and hidden singles alone? (that's what makes Easy/Medium feel fair)
+function suSinglesOnly(g){const b=g.slice();let moved=true;
+  const cand=i=>{let m=0x3fe;for(const p of SU_PEERS[i])if(b[p])m&=~(1<<b[p]);return m};
+  const units=[];for(let r=0;r<9;r++)units.push([...Array(9)].map((_,c)=>r*9+c));for(let c=0;c<9;c++)units.push([...Array(9)].map((_,r)=>r*9+c));
+  for(let k=0;k<9;k++){const br=((k/3)|0)*3,bc=(k%3)*3,u=[];for(let r=0;r<3;r++)for(let c=0;c<3;c++)u.push((br+r)*9+bc+c);units.push(u)}
+  while(moved){moved=false;
+    for(let i=0;i<81;i++)if(!b[i]){const m=cand(i);if(m&&!(m&(m-1))){b[i]=Math.log2(m);moved=true}}
+    for(const u of units)for(let d=1;d<=9;d++){if(u.some(i=>b[i]===d))continue;const spots=u.filter(i=>!b[i]&&cand(i)&(1<<d));if(spots.length===1){b[spots[0]]=d;moved=true}}}
+  return b.every(v=>v)}
+function suGenerate(lv,seed){const L=SU_LV[lv],R=seed!=null?ctRng(seed):Math.random,sh=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+  for(let tries=0;tries<30;tries++){
+    const sol=new Array(81).fill(0);
+    const fill=i=>{if(i===81)return true;if(sol[i])return fill(i+1);const used=new Set(SU_PEERS[i].map(p=>sol[p]));for(const d of sh([1,2,3,4,5,6,7,8,9]))if(!used.has(d)){sol[i]=d;if(fill(i+1))return true}sol[i]=0;return false};
+    fill(0);
+    const g=sol.slice();let clues=81;
+    for(const i of sh([...Array(41).keys()])){if(clues<=L.clues)break;const j=80-i,keep=[g[i],g[j]];g[i]=0;g[j]=0;
+      if(suSolve(g,2)!==1||(L.singles&&!suSinglesOnly(g))){g[i]=keep[0];g[j]=keep[1];continue}clues-=i===j?1:2}
+    const singles=suSinglesOnly(g);
+    if(L.singles?singles:(clues<=L.clues+3&&!singles))return{g,sol,clues}
+    if(tries>=29)return{g,sol,clues}}
+}
+function suLoad(){try{SU=JSON.parse(localStorage.getItem(SU_KEY)||'null')}catch(e){SU=null}SU=Object.assign({lv:'medium',showErr:true,best:{},solved:0,daily:{},p:null},SU||{})}
+function suSave(){try{localStorage.setItem(SU_KEY,JSON.stringify(SU))}catch(e){}}
+function suNew(lv,daily){const key=ctDayKey(),G=suGenerate(daily?'hard':lv,daily?ctDaySeed('sudoku'+key):null);
+  SU.p={lv:daily?'hard':lv,g:G.g,sol:G.sol,v:G.g.slice(),notes:new Array(81).fill(0),ms:0,done:false,hints:0,mist:0,undo:[],daily:daily?key:''};
+  if(!daily)SU.lv=lv;suSel=-1;suSave();renderSudoku()}
+function suPlace(i,d){const P=SU.p;if(P.done||P.g[i])return;P.undo.push([P.v.slice(),P.notes.slice()]);if(P.undo.length>300)P.undo.shift();
+  if(suNotes&&d){if(P.v[i])return suDraw();P.notes[i]^=(1<<d)}
+  else{P.v[i]=P.v[i]===d?0:d;P.notes[i]=0;if(P.v[i]){for(const p of SU_PEERS[i])P.notes[p]&=~(1<<d);if(P.v[i]!==P.sol[i])P.mist++}}
+  if(P.v.every((x,k)=>x===P.sol[k])){P.done=true;SU.solved++;const k=P.daily?'daily':P.lv;if(!P.hints&&(!SU.best[k]||P.ms<SU.best[k]))SU.best[k]=P.ms;if(P.daily)SU.daily[P.daily]=P.ms;
+    addPts({easy:4,medium:6,hard:9,expert:12}[P.lv]-Math.min(3,P.hints));try{navigator.vibrate&&navigator.vibrate([20,40,20])}catch(e){}}
+  suSave();suDraw()}
+function renderSudoku(){if(!SU)suLoad();if(!SU.p)return suNew(SU.lv,false);
+  stage.innerHTML=`<div class="headline mhead"><div class="mstat"><div class="eyebrow">${SU.p.daily?'Daily':SU_LV[SU.p.lv].name}</div><div class="mnum dim" id="suMist">${SU.p.mist} ✗</div></div>
+      <div class="mstat"><div class="eyebrow">Time</div><div class="mnum" id="suTime">${ctTime(SU.p.ms)}</div></div>
+      <div class="mstat"><div class="eyebrow">Best</div><div class="mnum dim" id="suBest">–</div></div></div>
+    <div class="sugrid" id="suGrid">${[...Array(9)].map((_,k)=>`<div class="subox">${[...Array(9)].map((_,j)=>{const i=(((k/3)|0)*3+((j/3)|0))*9+(k%3)*3+(j%3);return `<button class="suc" data-i="${i}"></button>`}).join('')}</div>`).join('')}</div>
+    <div class="hint" id="suMsg"></div>`;
+  $('#suGrid').onclick=e=>{const b=e.target.closest('.suc');if(!b)return;suSel=+b.dataset.i;suDraw()};
+  if(!suTick)suTick=setInterval(()=>{const now=performance.now(),dt=now-(suLast||now);suLast=now;if(S.mode!=='sudoku'||document.hidden||!SU.p||SU.p.done)return;SU.p.ms+=dt;const t=$('#suTime');if(t)t.textContent=ctTime(SU.p.ms);if(Math.random()<0.1)suSave()},500);
+  suDraw()}
+function suDraw(){const P=SU.p,grid=$('#suGrid');if(!grid)return;const sv=suSel>=0?P.v[suSel]:0;
+  const counts=new Array(10).fill(0);P.v.forEach((x,k)=>{if(x&&x===P.sol[k])counts[x]++});
+  grid.querySelectorAll('.suc').forEach(b=>{const i=+b.dataset.i,v=P.v[i],given=!!P.g[i],wrong=v&&SU.showErr&&v!==P.sol[i];
+    const rel=suSel>=0&&(suRow(i)===suRow(suSel)||suCol(i)===suCol(suSel)||suBox(i)===suBox(suSel));
+    b.className='suc'+(given?' giv':'')+(i===suSel?' sel':rel?' rel':'')+(v&&sv&&v===sv&&i!==suSel?' same':'')+(wrong?' bad':'')+(P.done?' win':'');
+    if(P.done)b.style.animationDelay=((suRow(i)+suCol(i))*30)+'ms';
+    b.innerHTML=v?v:P.notes[i]?`<span class="sun">${[1,2,3,4,5,6,7,8,9].map(d=>`<i>${P.notes[i]&(1<<d)?d:''}</i>`).join('')}</span>`:''});
+  $('#suMist').textContent=`${P.mist} ✗`;const bk=P.daily?'daily':P.lv;$('#suBest').textContent=SU.best[bk]?ctTime(SU.best[bk]):'–';
+  $('#suMsg').textContent=P.done?`Solved in ${ctTime(P.ms)}${P.hints?` with ${P.hints} hint${P.hints>1?'s':''}`:''}!`:suNotes?'Notes on: numbers you tap go in as pencil marks.':'Tap a square, then a number.';
+  const today=ctDayKey();
+  controls.innerHTML=P.done?`<div class="row"><button class="btn primary tall" id="suAgain">New ${SU_LV[SU.lv].name}</button>${SU.daily[today]==null?'<button class="btn tall" id="suDaily">Daily puzzle</button>':''}</div>
+      <div class="sulv">${Object.entries(SU_LV).map(([k,L])=>`<button data-lv="${k}" aria-pressed="${k===SU.lv}">${L.name}</button>`).join('')}</div>`
+    :`<div class="supad">${[1,2,3,4,5,6,7,8,9].map(d=>`<button data-d="${d}" ${counts[d]>=9?'disabled':''}>${d}<small>${9-counts[d]||''}</small></button>`).join('')}</div>
+      <div class="sutools"><button id="suUndo" ${P.undo.length?'':'disabled'}>↶<small>Undo</small></button><button id="suErase">⌫<small>Erase</small></button>
+        <button id="suNote" aria-pressed="${suNotes}">✎<small>Notes ${suNotes?'on':'off'}</small></button><button id="suHint">💡<small>Hint</small></button><button id="suMenu">☰<small>Puzzles</small></button></div>`;
+  const on=(id,f)=>{const e=$(id);if(e)e.onclick=f};
+  controls.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{if(suSel<0)return;suPlace(suSel,+b.dataset.d)});
+  on('#suUndo',()=>{const u=P.undo.pop();if(!u)return;P.v=u[0];P.notes=u[1];suSave();suDraw()});
+  on('#suErase',()=>{if(suSel<0||P.g[suSel])return;P.undo.push([P.v.slice(),P.notes.slice()]);P.v[suSel]=0;P.notes[suSel]=0;suSave();suDraw()});
+  on('#suNote',()=>{suNotes=!suNotes;suDraw()});
+  on('#suHint',()=>{let i=suSel>=0&&!P.g[suSel]&&P.v[suSel]!==P.sol[suSel]?suSel:-1;
+    if(i<0){const wrong=P.v.findIndex((x,k)=>x&&x!==P.sol[k]);if(wrong>=0)i=wrong;else{const empty=[...Array(81).keys()].filter(k=>!P.v[k]);
+      empty.sort((a,b)=>{const c=k=>{let m=0x3fe;for(const p of SU_PEERS[k])if(P.v[p])m&=~(1<<P.v[p]);let n=0;for(let x=m;x;x&=x-1)n++;return n};return c(a)-c(b)});i=empty[0]}}
+    if(i==null||i<0)return;P.hints++;suSel=i;const was=suNotes;suNotes=false;P.v[i]=0;suPlace(i,P.sol[i]);suNotes=was});
+  on('#suMenu',suMenu);on('#suAgain',()=>suNew(SU.lv,false));on('#suDaily',()=>suNew('hard',true));
+  controls.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>suNew(b.dataset.lv,false));
+}
+function suMenu(){const today=ctDayKey();
+  controls.innerHTML=`<div class="sulv">${Object.entries(SU_LV).map(([k,L])=>`<button data-lv="${k}" aria-pressed="${k===SU.lv&&!SU.p.daily}">${L.name}<small>${SU.best[k]?'best '+ctTime(SU.best[k]):'new'}</small></button>`).join('')}</div>
+    <div class="row"><button class="btn" id="suDaily" ${SU.daily[today]!=null?'disabled':''}>${SU.daily[today]!=null?'Daily done ✓ '+ctTime(SU.daily[today]):'Daily puzzle'}</button>
+      <button class="btn" id="suErr" aria-pressed="${SU.showErr}">Mistakes in red: ${SU.showErr?'on':'off'}</button><button class="btn" id="suBack">Back</button></div>`;
+  controls.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>suNew(b.dataset.lv,false));
+  $('#suDaily').onclick=()=>suNew('hard',true);$('#suErr').onclick=()=>{SU.showErr=!SU.showErr;suSave();suDraw();suMenu()};$('#suBack').onclick=()=>suDraw()}
+
 function render(){
-  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else if(S.mode==='sand')return renderSand(true);else if(S.mode==='yard')return renderYard(true);else if(S.mode==='cats')return renderCats(true);else if(S.mode==='offcut')return renderOffcut();else if(S.mode==='trade')return renderTrade();else if(S.mode==='mine')return renderMine(true);else renderCon();
+  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else if(S.mode==='sand')return renderSand(true);else if(S.mode==='yard')return renderYard(true);else if(S.mode==='cats')return renderCats(true);else if(S.mode==='offcut')return renderOffcut();else if(S.mode==='trade')return renderTrade();else if(S.mode==='mine')return renderMine(true);else if(S.mode==='sudoku')return renderSudoku();else renderCon();
   paintClock();
 }
 function setMode(m){
@@ -2316,7 +2432,7 @@ function drawQR(cv,text){
 }
 
 /* ---------- boot ---------- */
-const m0=['merge','solitaire','cats'].includes(S.mode)?S.mode:'solitaire';S.mode='';setMode(m0);
+const m0=['merge','solitaire','cats','sudoku'].includes(S.mode)?S.mode:'solitaire';S.mode='';setMode(m0);
 })();
 </script>
 
