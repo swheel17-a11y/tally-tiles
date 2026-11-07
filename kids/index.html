@@ -476,6 +476,15 @@ button:disabled{opacity:.4;cursor:default}
 .tvplay{flex:1;display:flex;flex-direction:column;gap:10px;min-height:0}
 .tvvwrap{position:relative;flex:1;min-height:240px;background:#000;border-radius:20px;overflow:hidden}
 .tvvwrap video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;background:#000}
+.tvctl{position:absolute;left:0;right:0;bottom:0;padding:16px 14px 12px;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.78));transition:opacity .3s;display:flex;flex-direction:column;gap:12px;z-index:2}
+.tvctl.hide{opacity:0;pointer-events:none}
+.tvseek{position:relative;height:10px;border-radius:5px;background:rgba(255,255,255,.3);margin:6px 4px;touch-action:none}
+.tvseek::after{content:'';position:absolute;left:-6px;right:-6px;top:-16px;bottom:-16px}
+.tvseek i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--sun);border-radius:5px}
+.tvbtns{display:flex;align-items:center;justify-content:center;gap:14px;color:#fff}
+.tvbtns button{min-width:86px;height:58px;border-radius:18px;background:rgba(255,255,255,.2);color:#fff;font-size:20px;font-weight:700}
+.tvbtns .pp{min-width:72px;width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.92);color:#1d2b4f;font-size:30px}
+.tvbtns span{font-family:var(--f-body);font-variant-numeric:tabular-nums;font-size:15px;min-width:58px;text-align:center;opacity:.9}
 .tvover{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;pointer-events:none;color:#fff;text-align:center;padding:20px;font-family:var(--f-display);font-size:22px}
 .tvover[hidden]{display:none}
 .tvover button{pointer-events:auto}
@@ -2403,7 +2412,7 @@ function playFish(){
    ========================================================= */
 const JF_DEFAULT='https://media.casadesnowfox.com';
 const HLS_URL='https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js';
-const TV={stack:[]};
+const TV={stack:[],kill:null};window.__tvKill=()=>{if(TV.kill)TV.kill()};
 const jfDev=()=>{if(!K.jfDev){K.jfDev='sq-'+Math.random().toString(36).slice(2,10);save()}return K.jfDev};
 const jfHdr=tok=>`MediaBrowser Client="Star Quest", Device="Kids Tablet", DeviceId="${jfDev()}", Version="1.0.0"${tok?`, Token="${tok}"`:''}`;
 function jfUrl(u){u=(u||'').trim().replace(/\/+$/,'').replace(/\/web(\/.*)?$/i,'');if(u&&!/^https?:\/\//i.test(u))u='https://'+u;return u}
@@ -2442,7 +2451,7 @@ function playTv(){
 }
 function tvOpen(item){sfx.tap();if(isLittle())speakNow(item.Name);
   TV.stack.push(item.Type==='Series'?{kind:'series',id:item.Id,name:item.Name}:{kind:'play',item});playTv()}
-function tvBack(){TV.stack.pop();sfx.tap();playTv()}
+function tvBack(){if(TV.kill)TV.kill();TV.stack.pop();sfx.tap();playTv()}
 function tvLoading(msg){view.innerHTML=`<div class="tvmsg"><div class="tvspin"></div><p>${msg||'Loading…'}</p></div>`}
 function tvFail(e){
   if(e&&e.auth){K.jf.token=null;save()}
@@ -2499,20 +2508,41 @@ const TV_PROFILE={MaxStreamingBitrate:8000000,MaxStaticBitrate:100000000,MusicSt
 async function tvPlay(top){
   const it=top.item,tok=loopToken,J=K.jf;
   setHeader(it.Type==='Episode'&&it.SeriesName?it.SeriesName:it.Name,it.Type==='Episode'?`S${it.ParentIndexNumber||1} E${it.IndexNumber||'?'} · ${it.Name}`:'');
-  view.innerHTML=`<div class="tvplay"><div class="tvvwrap"><video id="tvv" controls playsinline controlslist="nofullscreen nodownload noremoteplayback" disablepictureinpicture preload="auto"></video><div class="tvover" id="tvover"><div class="tvspin"></div></div></div>
+  view.innerHTML=`<div class="tvplay"><div class="tvvwrap" id="tvwrap"><video id="tvv" playsinline webkit-playsinline disablepictureinpicture disableremoteplayback preload="auto"></video><div class="tvover" id="tvover"><div class="tvspin"></div></div>
+      <div class="tvctl" id="tvctl"><div class="tvseek" id="tvseek"><i id="tvfill"></i></div>
+        <div class="tvbtns"><span id="tvtime">0:00</span><button id="tvRw" aria-label="Back 10 seconds">⏪ 10</button><button id="tvPP" class="pp" aria-label="Play or pause">▶</button><button id="tvFf" aria-label="Forward 10 seconds">10 ⏩</button><span id="tvdur">0:00</span></div></div></div>
     <div class="row"><button class="pbtn" id="tvBack">◀ Back</button><button class="pbtn go" id="tvNext" hidden>Next episode ▶</button></div></div>`;
   $('#tvBack').onclick=tvBack;
-  const v=$('#tvv'),over=$('#tvover');let hls=null,iv=0,sess=null,stopped=false;
+  const v=$('#tvv'),over=$('#tvover');let hls=null,iv=0,sess=null,stopped=false,hideT=0;
+  // if anything ever pushes the video itself full screen, pull it back (the app stays full screen)
+  const fsGuard=()=>{const fe=document.fullscreenElement||document.webkitFullscreenElement;if(fe===v){try{(document.exitFullscreen||document.webkitExitFullscreen).call(document)}catch(e){}}};
+  document.addEventListener('fullscreenchange',fsGuard);document.addEventListener('webkitfullscreenchange',fsGuard);
+  v.addEventListener('webkitbeginfullscreen',()=>{try{v.webkitExitFullscreen()}catch(e){}});
+  // our own controls: big buttons, a tap-to-jump bar, hide while playing
+  const ctl=$('#tvctl'),pp=$('#tvPP'),fill=$('#tvfill'),seek=$('#tvseek'),tfmt=x=>{x=Math.max(0,Math.floor(x||0));const h=Math.floor(x/3600),m=Math.floor(x%3600/60),s2=x%60;return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(s2).padStart(2,'0')};
+  const showCtl=()=>{if(!v.isConnected)return;ctl.classList.remove('hide');clearTimeout(hideT);if(!v.paused)hideT=setTimeout(()=>ctl.classList.add('hide'),3500)};
+  const tEl=$('#tvtime'),dEl=$('#tvdur');const sync=()=>{if(!v.isConnected)return;pp.textContent=v.paused?'▶':'⏸';const d=v.duration||0;fill.style.width=(d&&isFinite(d)?v.currentTime/d*100:0)+'%';tEl.textContent=tfmt(v.currentTime);dEl.textContent=d&&isFinite(d)?tfmt(d):'–'};
+  ['timeupdate','play','pause','durationchange','loadedmetadata'].forEach(ev=>v.addEventListener(ev,sync));
+  v.addEventListener('play',showCtl);v.addEventListener('pause',showCtl);
+  $('#tvwrap').addEventListener('click',e=>{if(e.target.closest('.tvctl,.tvover button'))return;if(ctl.classList.contains('hide'))showCtl();else if(!v.paused){clearTimeout(hideT);ctl.classList.add('hide')}});
+  pp.onclick=()=>{v.paused?v.play().catch(()=>{}):v.pause();showCtl()};
+  $('#tvRw').onclick=()=>{v.currentTime=Math.max(0,v.currentTime-10);showCtl()};
+  $('#tvFf').onclick=()=>{if(v.duration)v.currentTime=Math.min(v.duration-1,v.currentTime+10);showCtl()};
+  const seekTo=e=>{const r=seek.getBoundingClientRect(),d=v.duration;if(!d||!isFinite(d))return;v.currentTime=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*d;sync();showCtl()};
+  seek.addEventListener('pointerdown',e=>{seekTo(e);try{seek.setPointerCapture(e.pointerId)}catch(_){}seek.onpointermove=seekTo});
+  seek.addEventListener('pointerup',()=>{seek.onpointermove=null});seek.addEventListener('pointercancel',()=>{seek.onpointermove=null});
   const ticks=()=>Math.round((v.currentTime||0)*1e7);
   const report=(what,extra)=>{if(!sess)return Promise.resolve();return jf('/Sessions/Playing'+what,{method:'POST',keepalive:what==='/Stopped',body:Object.assign({ItemId:it.Id,MediaSourceId:sess.ms,PlaySessionId:sess.ps,PositionTicks:ticks(),CanSeek:true,PlayMethod:sess.method,IsPaused:v.paused},extra||{})}).catch(()=>{})};
-  const stop=()=>{if(stopped)return;stopped=true;clearInterval(iv);report('/Stopped');try{hls&&hls.destroy()}catch(e){}try{v.pause();v.removeAttribute('src');v.load()}catch(e){}
-    window.removeEventListener('pagehide',stop)};
+  const stop=()=>{if(stopped&&!v.isConnected)return;if(!stopped){stopped=true;report('/Stopped')}clearInterval(iv);clearTimeout(hideT);
+    try{hls&&hls.destroy()}catch(e){}hls=null;try{v.pause();v.removeAttribute('src');v.load()}catch(e){}try{v.remove()}catch(e){}
+    window.removeEventListener('pagehide',stop);document.removeEventListener('fullscreenchange',fsGuard);document.removeEventListener('webkitfullscreenchange',fsGuard);if(TV.kill===stop)TV.kill=null};
+  TV.kill=stop;
   window.addEventListener('pagehide',stop);
   let n10=0;iv=setInterval(()=>{if(tok!==loopToken||!document.body.contains(v)){stop();return}if(++n10%10===0&&!v.paused)report('/Progress')},1000);
   // the next episode, if there is one
   const eps=top.eps,ix=eps?eps.findIndex(e=>e.Id===it.Id):-1,nextEp=ix>=0?eps[ix+1]:null;
-  const nb=$('#tvNext');if(nextEp){nb.onclick=()=>{stop();sfx.tap();TV.stack[TV.stack.length-1]={kind:'play',item:nextEp,eps};playTv()}}
-  v.addEventListener('ended',()=>{report('/Stopped');stopped=true;clearInterval(iv);if(nextEp){nb.hidden=false;speakNow('Want to watch the next one?')}else{nb.hidden=true}});
+  const nb=$('#tvNext');if(nextEp){nb.onclick=()=>{stop();TV.kill=null;sfx.tap();TV.stack[TV.stack.length-1]={kind:'play',item:nextEp,eps};playTv()}}
+  v.addEventListener('ended',()=>{if(!stopped){stopped=true;report('/Stopped')}clearInterval(iv);showCtl();if(nextEp){nb.hidden=false;speakNow('Want to watch the next one?')}else{nb.hidden=true}});
   v.addEventListener('playing',()=>{over.hidden=true});v.addEventListener('waiting',()=>{over.hidden=false});
   try{
     const info=await jf(`/Items/${it.Id}/PlaybackInfo?UserId=${J.userId}`,{method:'POST',body:{DeviceProfile:TV_PROFILE,UserId:J.userId,MaxStreamingBitrate:TV_PROFILE.MaxStreamingBitrate,AutoOpenLiveStream:true,IsPlayback:true,EnableDirectPlay:true,EnableDirectStream:true,EnableTranscoding:true,AllowVideoStreamCopy:true,AllowAudioStreamCopy:true}});
@@ -3023,7 +3053,7 @@ function grownups(){
 /* ---------- navigation (plain #names so the back button works) ---------- */
 const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),ninja:gated('ninja',playNinja),tv:gated('tv',()=>{TV.stack=[];playTv()}),adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
 function go(name){if(location.hash.slice(1)!==name)location.hash=name;else show()}
-function show(){loopToken++;const r=location.hash.slice(1);resetArm=false;$('#timeChip').hidden=true;updateStars();$('#overlay').hidden=true;popQ.length=0;try{if(window.SQAndroid)SQAndroid.stop();else if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}
+function show(){if(window.__tvKill)window.__tvKill();loopToken++;const r=location.hash.slice(1);resetArm=false;$('#timeChip').hidden=true;updateStars();$('#overlay').hidden=true;popQ.length=0;try{if(window.SQAndroid)SQAndroid.stop();else if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}
   view.scrollTop=0;(ROUTES[r]||home)()}
 window.addEventListener('hashchange',show);
 $('#homeBtn').onclick=()=>{sfx.tap();go('home')};
