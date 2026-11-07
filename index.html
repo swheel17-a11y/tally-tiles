@@ -303,12 +303,6 @@ button:disabled{opacity:.35;cursor:default}
 
 .sdwarn{font-size:12.5px;line-height:1.35;color:#ffb35c;background:rgba(255,138,31,.1);border:1px solid rgba(255,138,31,.35);border-radius:10px;padding:7px 9px}
 
-/* drift */
-.driftwrap{position:relative;flex:1;min-height:360px;border-radius:16px;overflow:hidden;background:#070b22}
-.driftwrap canvas{position:absolute;left:0;top:0;width:100%;display:block;touch-action:manipulation}
-.drbest{display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--mist)}
-.drbest b{color:var(--brass);font-family:var(--f-mono);font-size:20px;margin-left:8px}
-
 /* cats */
 .ctboard{--n:7;display:grid;width:100%;max-width:min(100%,calc(100dvh - 340px));min-width:240px;align-self:center;border:3px solid #0b1022;border-radius:12px;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 .ctc{aspect-ratio:1/1;padding:0;border:1.5px solid;display:grid;place-items:center;font-size:calc(min(488px,100vw - 32px)/var(--n)*.56);line-height:1;color:#16203f;position:relative}
@@ -395,7 +389,6 @@ td.h{padding-top:14px;font-size:11px;letter-spacing:.12em;text-transform:upperca
     <button role="tab" id="tab-yard" aria-selected="false" data-mode="yard">Yard</button>
     <button role="tab" id="tab-cats" aria-selected="false" data-mode="cats">Cats</button>
     <button role="tab" id="tab-offcut" aria-selected="false" data-mode="offcut">Offcut</button>
-    <button role="tab" id="tab-drift" aria-selected="false" data-mode="drift">Drift</button>
   </div>
   <div class="stage" id="stage"></div>
   <div class="controls" id="controls"></div>
@@ -431,7 +424,7 @@ const addPts=p=>{S.dayPts+=p;save();};
 /* ---------- clocks: one per tab, paused while you're on another tab ---------- */
 const R=26,C=2*Math.PI*R,LIMIT=30;
 const mkClock=()=>({elapsed:0,since:null,running:false,timed:false,onEnd:null});
-const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock(),sand:mkClock(),yard:mkClock(),cats:mkClock(),offcut:mkClock(),drift:mkClock()};
+const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock(),sand:mkClock(),yard:mkClock(),cats:mkClock(),offcut:mkClock()};
 const el=c=>c.elapsed+(c.since?(performance.now()-c.since)/1000:0);
 let looping=false;
 function clockHTML(){return `<div class="clock" id="clock"><svg viewBox="0 0 64 64"><circle class="track" cx="32" cy="32" r="${R}" fill="none" stroke-width="6"/><circle class="arc" id="arc" cx="32" cy="32" r="${R}" fill="none" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg><div class="t" id="clockT"></div></div>`}
@@ -1856,115 +1849,8 @@ function renderOffcut(){
   $('#ofNew').onclick=()=>ofNew(false);$('#ofDaily').onclick=()=>ofNew(true);ofModeWire();
 }
 
-/* ==========================================================
-   DRIFT: lanterns float up the river. Tap two that add up to the number on your boat.
-   Five lights; each lantern that drifts away dims one. Starts slow, speeds up gently.
-   ========================================================== */
-const DRIFT_KEY='tally-tiles-drift-v1',DR_COL=['#ffb347','#ff7eb6','#7ff6ff','#b6ff7f','#ffe066','#c3a6ff'];
-let DR=null,DRS=null,drTok=0,drGlow=null;
-function drLoad(){try{DRS=JSON.parse(localStorage.getItem(DRIFT_KEY)||'null')}catch(e){}DRS=Object.assign({best:0,games:0},DRS||{})}
-function drSaveS(){try{localStorage.setItem(DRIFT_KEY,JSON.stringify(DRS))}catch(e){}}
-function drNew(){DR={state:'play',t:0,score:0,caught:0,target:10,light:5,L:[],sparks:[],texts:[],sel:null,spawnT:0.2,combo:0,comboT:0,next:6,id:0,flash:0,stars:null}}
-const drMax=()=>Math.min(18,9+Math.floor(DR.caught/12)*2);
-function drPickValue(){const T=DR.target,mx=Math.min(drMax(),T-1),live=DR.L.filter(l=>l.st==='ok');
-  const lonely=live.filter(l=>{const want=T-l.n;return want>=1&&want<=drMax()&&!live.some(o=>o!==l&&o.n===want)});
-  if(lonely.length&&Math.random()<0.6){const l=lonely[Math.floor(Math.random()*lonely.length)];return T-l.n}
-  return 1+Math.floor(Math.random()*mx)}
-function drSpawn(W,H){const r=Math.max(22,Math.min(W,H)*0.058);let x=0;
-  for(let k=0;k<12;k++){x=r+Math.random()*(W-2*r);if(!DR.L.some(l=>Math.abs(l.x-x)<r*2.2&&l.y>H*0.7))break}
-  DR.L.push({id:++DR.id,x,y:H+r,r,n:drPickValue(),col:DR_COL[Math.floor(Math.random()*DR_COL.length)],ph:Math.random()*6,st:'ok',t:0,
-    v:H*(0.055+0.0035*Math.min(DR.caught,70))*(0.85+Math.random()*0.3)})}
-function drNewTarget(){const mx=drMax(),lo=Math.max(8,DR.target-3),hi=Math.min(mx+Math.floor(mx/2),DR.target+5);let t=DR.target;
-  for(let k=0;k<10&&t===DR.target;k++)t=lo+Math.floor(Math.random()*(hi-lo+1));DR.target=t;DR.next=DR.caught+5+Math.floor(Math.random()*3);
-  DR.texts.push({t:`New number: ${t}`,x:0,y:0,boat:1,life:1.8,c:'#ffe066'});DR.flash=0.6}
-function renderDrift(full){
-  if(!DRS)drLoad();if(!DR)drNew();if(/[?&]bot\b/.test(location.search))window.__dr=()=>DR;
-  if(full||!$('#driftCv')){
-    stage.innerHTML=`<div class="driftwrap" id="driftWrap"><canvas id="driftCv" aria-label="Lanterns on a river. Tap two that add up to the boat's number."></canvas></div>`;
-    controls.innerHTML=`<div class="row"><button class="btn" id="drNew">New game</button><div class="drbest">Best <b>${DRS.best}</b></div></div>`;
-    $('#drNew').onclick=()=>{drNew();renderDrift(true)};
-    const cv=$('#driftCv'),wrap=$('#driftWrap');
-    cv.onpointerdown=e=>{e.preventDefault();const r=cv.getBoundingClientRect();drTap(e.clientX-r.left,e.clientY-r.top)};
-    try{if(!renderDrift.ro)renderDrift.ro=new ResizeObserver(()=>drFit());renderDrift.ro.disconnect();renderDrift.ro.observe(wrap)}catch(e){}
-    drFit();
-  }
-  drRun();
-}
-function drFit(){const cv=$('#driftCv'),wrap=$('#driftWrap');if(!cv||!wrap)return;const r=wrap.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1);
-  cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);cv.style.height=r.height+'px';cv.getContext('2d').setTransform(dpr,0,0,dpr,0,0);drFit.W=r.width;drFit.H=r.height;
-  DR.stars=null;drGlow=null}
-function drTap(x,y){
-  if(DR.state==='over'){if(DR.t>0.8){drNew();renderDrift(true)}return}
-  let hit=null,bd=1e9;for(const l of DR.L){if(l.st!=='ok')continue;const d=Math.hypot(l.x-x,l.y-y);if(d<l.r*1.35&&d<bd){bd=d;hit=l}}
-  if(!hit){DR.sel=null;return}
-  if(!DR.sel||DR.sel===hit){DR.sel=DR.sel===hit?null:hit;try{navigator.vibrate&&navigator.vibrate(6)}catch(e){}return}
-  const a=DR.sel,b=hit;DR.sel=null;
-  if(a.n+b.n===DR.target){
-    DR.combo=DR.comboT>0?DR.combo+1:0;DR.comboT=3;const pts=DR.target*(1+DR.combo);DR.score+=pts;DR.caught+=1;
-    for(const l of [a,b]){l.st='pop';l.t=0;for(let k=0;k<14;k++){const an=Math.random()*7,v=60+Math.random()*160;DR.sparks.push({x:l.x,y:l.y,vx:Math.cos(an)*v,vy:Math.sin(an)*v,life:1,c:l.col})}}
-    DR.texts.push({t:DR.combo?`+${pts}  chain ×${DR.combo+1}`:`+${pts}`,x:(a.x+b.x)/2,y:(a.y+b.y)/2,life:1.2,c:DR.combo?'#ffe066':'#ffffff'});
-    try{navigator.vibrate&&navigator.vibrate(18)}catch(e){}
-    if(DR.caught>=DR.next)drNewTarget();
-  }else{for(const l of [a,b]){l.st='bad';l.t=0}DR.combo=0;DR.comboT=0;DR.texts.push({t:`${a.n} + ${b.n} = ${a.n+b.n}`,x:(a.x+b.x)/2,y:(a.y+b.y)/2,life:1.1,c:'#ff8a8a'});
-    try{navigator.vibrate&&navigator.vibrate([10,40,10])}catch(e){}}
-}
-function drRun(){const tok=++drTok;let last=performance.now();
-  const step=now=>{if(tok!==drTok||S.mode!=='drift'||!$('#driftCv'))return;if(document.hidden){last=now;requestAnimationFrame(step);return}
-    const dt=Math.min(0.05,(now-last)/1000);last=now;drStep(dt);drDraw();requestAnimationFrame(step)};
-  requestAnimationFrame(step)}
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.mode==='drift'&&$('#driftCv'))drRun()});
-function drStep(dt){const W=drFit.W,H=drFit.H;if(!W)return;DR.t+=dt;
-  if(DR.state==='play'){
-    DR.comboT=Math.max(0,DR.comboT-dt);DR.flash=Math.max(0,DR.flash-dt);
-    DR.spawnT-=dt;const cap=Math.min(12,6+Math.floor(DR.caught/8));
-    if(DR.spawnT<=0&&DR.L.filter(l=>l.st==='ok').length<cap){drSpawn(W,H);DR.spawnT=Math.max(0.75,1.7-DR.caught*0.012)*(0.8+Math.random()*0.4)}
-    for(const l of DR.L){l.t+=dt;if(l.st==='ok'||l.st==='bad'){l.y-=l.v*dt;l.x+=Math.sin(DR.t*0.9+l.ph)*8*dt;if(l.st==='bad'&&l.t>0.45)l.st='ok'}
-      if(l.st!=='pop'&&l.y<-l.r){l.st='gone';if(DR.sel===l)DR.sel=null;DR.light--;DR.combo=0;DR.texts.push({t:'a light drifts away',x:W/2,y:40,life:1.4,c:'#9fb0d9'});
-        if(DR.light<=0)drOver()}}
-    DR.L=DR.L.filter(l=>l.st!=='gone'&&!(l.st==='pop'&&l.t>0.35));
-  }
-  for(const s of DR.sparks){s.x+=s.vx*dt;s.y+=s.vy*dt;s.vy+=40*dt;s.life-=dt*1.3}DR.sparks=DR.sparks.filter(s=>s.life>0);
-  for(const t of DR.texts){t.life-=dt;t.y-=24*dt}DR.texts=DR.texts.filter(t=>t.life>0)}
-function drOver(){DR.state='over';DR.t=0;DR.sel=null;DRS.games++;const rec=DR.score>DRS.best;if(rec)DRS.best=DR.score;DR.rec=rec;drSaveS();
-  addPts(Math.max(1,Math.round(DR.score/40)));const b=document.querySelector('.drbest b');if(b)b.textContent=DRS.best}
-function drDraw(){const cv=$('#driftCv');if(!cv)return;const c=cv.getContext('2d'),W=drFit.W,H=drFit.H;if(!W)return;
-  const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#070b22');g.addColorStop(0.6,'#0f1a40');g.addColorStop(1,'#16285a');c.fillStyle=g;c.fillRect(0,0,W,H);
-  if(!DR.stars)DR.stars=Array.from({length:40},()=>({x:Math.random()*W,y:Math.random()*H*0.5,r:Math.random()*1.3+0.3,p:Math.random()*6}));
-  for(const s of DR.stars){c.globalAlpha=0.35+0.35*Math.sin(DR.t*1.5+s.p);c.fillStyle='#fff';c.beginPath();c.arc(s.x,s.y,s.r,0,7);c.fill()}c.globalAlpha=1;
-  c.strokeStyle='rgba(160,190,255,.08)';c.lineWidth=2;for(let k=0;k<7;k++){const y=H*0.35+k*H*0.09,o=(DR.t*18+k*40)%60;c.beginPath();for(let x=-60+o;x<W;x+=60){c.moveTo(x,y);c.lineTo(x+26,y)}c.stroke()}
-  if(!drGlow){drGlow={};for(const col of DR_COL){const s=document.createElement('canvas');s.width=s.height=128;const q=s.getContext('2d'),rg=q.createRadialGradient(64,64,4,64,64,64);
-    rg.addColorStop(0,col);rg.addColorStop(0.35,col+'88');rg.addColorStop(1,col+'00');q.fillStyle=rg;q.fillRect(0,0,128,128);drGlow[col]=s}}
-  // boat
-  const bx=W/2,by=H-34,bw=Math.min(160,W*0.42);
-  c.fillStyle='#3a2a1a';c.beginPath();c.moveTo(bx-bw/2,by);c.lineTo(bx+bw/2,by);c.lineTo(bx+bw/2-22,by+22);c.lineTo(bx-bw/2+22,by+22);c.closePath();c.fill();
-  c.fillStyle=DR.flash>0?'#ffe066':'#f2e6c8';c.beginPath();c.moveTo(bx,by-74);c.lineTo(bx+bw*0.32,by-8);c.lineTo(bx-bw*0.32,by-8);c.closePath();c.fill();
-  c.fillStyle='#1d2433';c.font=`800 30px ${getComputedStyle(document.body).fontFamily}`;c.textAlign='center';c.textBaseline='middle';c.fillText(DR.target,bx,by-30);
-  // lanterns
-  for(const l of DR.L){const pop=l.st==='pop',k=pop?1+l.t*3:1,a=pop?Math.max(0,1-l.t/0.35):1,r=l.r*k,bob=Math.sin(DR.t*2+l.ph)*2;
-    c.globalAlpha=a*(0.55+0.15*Math.sin(DR.t*3+l.ph));c.drawImage(drGlow[l.col],l.x-r*2.2,l.y+bob-r*2.2,r*4.4,r*4.4);c.globalAlpha=a;
-    c.fillStyle=l.st==='bad'?'#ff5a5a':l.col;c.beginPath();c.moveTo(l.x-r*0.75,l.y+bob-r*0.85);c.quadraticCurveTo(l.x-r*1.05,l.y+bob,l.x-r*0.75,l.y+bob+r*0.85);
-    c.lineTo(l.x+r*0.75,l.y+bob+r*0.85);c.quadraticCurveTo(l.x+r*1.05,l.y+bob,l.x+r*0.75,l.y+bob-r*0.85);c.closePath();c.fill();
-    c.fillStyle='rgba(40,20,10,.55)';c.fillRect(l.x-r*0.6,l.y+bob-r*1.0,r*1.2,r*0.18);c.fillRect(l.x-r*0.6,l.y+bob+r*0.82,r*1.2,r*0.18);
-    if(DR.sel===l){c.strokeStyle='#fff';c.lineWidth=3;c.beginPath();c.arc(l.x,l.y+bob,r*1.25,0,7);c.stroke()}
-    c.fillStyle='#2a1606';c.font=`800 ${Math.round(r*0.95)}px ${getComputedStyle(document.body).fontFamily}`;c.textAlign='center';c.textBaseline='middle';c.fillText(l.n,l.x,l.y+bob+1)}
-  c.globalAlpha=1;
-  for(const s of DR.sparks){c.globalAlpha=Math.max(0,s.life);c.fillStyle=s.c;c.fillRect(s.x-1.5,s.y-1.5,3,3)}c.globalAlpha=1;
-  // hud
-  c.textBaseline='alphabetic';c.textAlign='left';c.font=`700 15px ${getComputedStyle(document.body).fontFamily}`;
-  for(let k=0;k<5;k++){c.globalAlpha=k<DR.light?1:0.2;c.fillStyle='#ffd27a';c.beginPath();c.arc(18+k*20,22,6,0,7);c.fill()}c.globalAlpha=1;
-  c.textAlign='right';c.fillStyle='#fff';c.font=`800 22px ${getComputedStyle(document.body).fontFamily}`;c.fillText(DR.score,W-14,30);
-  c.textAlign='center';
-  for(const t of DR.texts){c.globalAlpha=Math.min(1,t.life*1.5);c.fillStyle=t.c;c.font=`800 ${t.boat?20:17}px ${getComputedStyle(document.body).fontFamily}`;c.fillText(t.t,t.boat?bx:t.x,t.boat?by-96-(1.8-t.life)*10:t.y)}c.globalAlpha=1;
-  if(DR.caught===0&&DR.state==='play'){c.globalAlpha=0.85;c.fillStyle='#cfd8f5';c.font=`600 15px ${getComputedStyle(document.body).fontFamily}`;c.fillText(`Tap two lanterns that add up to ${DR.target}`,W/2,H*0.42)}
-  if(DR.state==='over'){c.globalAlpha=Math.min(0.75,DR.t*1.5);c.fillStyle='#050816';c.fillRect(0,0,W,H);c.globalAlpha=Math.min(1,DR.t*2);
-    c.fillStyle='#ffe066';c.font=`800 28px ${getComputedStyle(document.body).fontFamily}`;c.fillText('The river went dark',W/2,H*0.38);
-    c.fillStyle='#fff';c.font=`800 46px ${getComputedStyle(document.body).fontFamily}`;c.fillText(DR.score,W/2,H*0.38+56);
-    c.fillStyle='#cfd8f5';c.font=`600 16px ${getComputedStyle(document.body).fontFamily}`;c.fillText(DR.rec?'New best!':`Best ${DRS.best} · ${DR.caught} pairs`,W/2,H*0.38+88);
-    if(DR.t>0.8)c.fillText('Tap to float again',W/2,H*0.38+124)}
-  c.globalAlpha=1}
-
 function render(){
-  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else if(S.mode==='sand')return renderSand(true);else if(S.mode==='yard')return renderYard(true);else if(S.mode==='cats')return renderCats(true);else if(S.mode==='offcut')return renderOffcut();else if(S.mode==='drift')return renderDrift(true);else renderCon();
+  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else if(S.mode==='sand')return renderSand(true);else if(S.mode==='yard')return renderYard(true);else if(S.mode==='cats')return renderCats(true);else if(S.mode==='offcut')return renderOffcut();else renderCon();
   paintClock();
 }
 function setMode(m){
@@ -2096,7 +1982,7 @@ function drawQR(cv,text){
 }
 
 /* ---------- boot ---------- */
-const m0=['numbers','letters','conundrum','merge','solitaire','sand','yard','cats','offcut','drift'].includes(S.mode)?S.mode:'numbers';S.mode='';setMode(m0);
+const m0=['numbers','letters','conundrum','merge','solitaire','sand','yard','cats','offcut'].includes(S.mode)?S.mode:'numbers';S.mode='';setMode(m0);
 })();
 </script>
 
