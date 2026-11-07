@@ -2269,17 +2269,25 @@ function playFish(){
   const fy=o=>depthY(o.d)+Math.sin(G.t*2+o.ph)*6;
   // ----- input -----
   S.cv.onpointerdown=e=>{e.preventDefault();const r=S.cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;G.hold=true;
-    if(G.reel)return; if(G.show){if(G.show.t>0.6){G.show=null;G.hook.state='up'}return}
+    if(G.reel){reelTap();return} if(G.show){if(G.show.t>0.6){G.show=null;G.hook.state='up'}return}
     if(y<Wy()){G.hook.state='up';return}
     G.boatTo=Math.max(sz(),Math.min(S.W-sz(),x-sz()*0.55));G.hook.tx=G.boatTo+sz()*0.55;G.hook.ty=Math.min(y,floorY()-14);G.hook.state='move';G.hook.wait=0;
     G.fish.forEach(o=>{o.want=Math.random()<0.8;o.chase=false});
     if(G.tutorial&&G.msgT>0){G.msgT=0}};
   const release=()=>{G.hold=false};S.cv.onpointerup=release;S.cv.onpointercancel=release;S.cv.onpointerleave=release;
   // ----- reeling mini-game -----
+  // tap-fast reeling: tap while the fish is calm, stop when it turns red (3 taps while it's red snaps the line)
+  const calmFor=d=>(2.2+Math.random()*1.6)*(1.1-d*0.08);
   function startReel(o){const f=SP.fish[o.i];o.hooked=true;
-    G.reel={o,f,diff:f[4],zone:0.35-f[4]*0.035,z:0.3,zv:0,fish:0.5,fishTo:0.5,ft:0,p:0.3,startY:G.hook.y,warn:0.5};
+    G.reel={o,f,diff:f[4],p:0.25,mood:'calm',moodT:f[4]<=1?calmFor(1)+1:1.1+Math.random()*0.8,tension:0,startY:G.hook.y,warn:0.5,taps:0,pop:0};
     sfx.yes();tone([[300,0,.08],[300,.12,.08]],'square',0.05);
-    if(G.tutorial){G.msg='Hold your finger down to lift the green box. Keep the fish inside it!';G.msgT=6}}
+    if(G.tutorial){G.msg='Tap tap tap to reel it in! When the fish turns RED, stop tapping!';G.msgT=6}}
+  function reelTap(){const R=G.reel;if(!R)return;R.taps++;
+    if(R.mood==='angry'){R.tension+=0.4;tone([[160,0,.08]],'sawtooth',0.06);
+      if(R.tension>=1){lose('snap');return}
+      G.msg='Stop! Wait for it to calm down!';G.msgT=1.2;return}
+    R.p=Math.min(1,R.p+0.052-R.diff*0.006);R.pop=1;tone([[700+R.p*500,0,.04]],'square',0.025);
+    if(R.p>=1)catchIt(R.o,false)}
   function catchIt(o,instant){const f=SP.fish[o.i],key=F.spot+':'+o.i,B=F.book,cm=Math.round(f[5]+Math.random()*Math.random()*(f[6]-f[5]));
     const old=B[key],isNew=!old,rec=old&&cm>old.best;B[key]={n:(old?old.n:0)+1,best:Math.max(cm,old?old.best:0)};
     const firstTime=G.tutorial;G.tutorial=false;F.tutDone=true;save();
@@ -2290,8 +2298,8 @@ function playFish(){
     $('#fFound').textContent=fishFound(F.spot);
     if(unlocked)setTimeout(()=>{if(S.alive())popup(FISH_SPOTS[F.spot+1].em,`${FISH_SPOTS[F.spot+1].name} is open!`,`You found ${FISH_UNLOCK} kinds of ${instant?'things':'fish'} here. Tap the new spot at the top to fish somewhere new.`,'Cool!',()=>playFish())},1800);
     if(instant)G.items.splice(G.items.indexOf(o),1);else G.fish.splice(G.fish.indexOf(o),1)}
-  function lose(){const o=G.reel.o;o.hooked=false;o.chase=false;o.want=false;o.dir=Math.random()<.5?1:-1;o.v*=2.2;o.flee=2;G.reel=null;G.hook.state='up';
-    sfx.no();G.msg='It got away! Try again.';G.msgT=2.2;say('It got away!')}
+  function lose(why){const o=G.reel.o;o.hooked=false;o.chase=false;o.want=false;o.dir=Math.random()<.5?1:-1;o.v*=2.2;o.flee=2;G.reel=null;G.hook.state='up';
+    sfx.no();if(why==='snap'){G.shake=0.4;G.msg='Snap! The line broke. Try again!';G.msgT=2.4;say('Snap! The line broke!')}else{G.msg='It got away! Try again.';G.msgT=2.2;say('It got away!')}}
   // ----- loop -----
   S.loop(dt=>{
     const c=S.ctx,W=S.W,H=S.H,s=sz();G.t+=dt;
@@ -2321,14 +2329,12 @@ function playFish(){
     if(Math.random()<dt*3)G.bubbles.push({x:Math.random()*W,y:floorY(),r:2+Math.random()*4});
     // reeling
     const R=G.reel;
-    if(R){R.ft-=dt;if(R.ft<=0){R.fishTo=Math.random();R.ft=(1.6-R.diff*0.22)*(0.5+Math.random())}
-      R.fish+=(R.fishTo-R.fish)*Math.min(1,dt*(0.8+R.diff*0.55));
-      R.zv+=(G.hold?2.6:-2.1)*dt;R.zv=Math.max(-1.3,Math.min(1.3,R.zv));R.z+=R.zv*dt;
-      if(R.z<0){R.z=0;R.zv=Math.max(0,R.zv)*-0.3}if(R.z>1-R.zone){R.z=1-R.zone;R.zv=Math.min(0,R.zv)*-0.3}
-      const inZone=R.fish>=R.z&&R.fish<=R.z+R.zone;R.p+=(inZone?0.32-R.diff*0.025:-(0.15+R.diff*0.03))*dt;
-      if(inZone&&Math.random()<dt*8)tone([[900+R.p*400,0,.03]],'square',0.015);
-      h.y=R.startY+(Wy()-R.startY)*Math.max(0,R.p);
-      if(R.p>=1)catchIt(R.o,false);else if(R.p<=0)lose()}
+    if(R){R.moodT-=dt;R.pop=Math.max(0,R.pop-dt*4);R.tension=Math.max(0,R.tension-dt*0.7);
+      if(R.moodT<=0){if(R.mood==='calm'){R.mood='warn';R.moodT=0.9;tone([[500,0,.08],[500,.15,.08]],'triangle',0.05)}
+        else if(R.mood==='warn'){R.mood='angry';R.moodT=1.0+R.diff*0.18;if(G.tutorial){G.msg='RED! Stop tapping!';G.msgT=1.5}}
+        else{R.mood='calm';R.moodT=calmFor(R.diff);R.tension=0}}
+      R.p=Math.max(0.08,R.p-(R.mood==='angry'?0.04+R.diff*0.008:0.012+R.diff*0.005)*dt);
+      h.y=R.startY+(Wy()-R.startY)*R.p}
     if(G.show){G.show.t+=dt;h.y+=(tip.y+30-h.y)*Math.min(1,dt*3);h.x+=(tip.x-h.x)*Math.min(1,dt*3)}
     // ----- draw -----
     const sky=c.createLinearGradient(0,0,0,Wy());sky.addColorStop(0,SP.night?'#26305e':SP.top);sky.addColorStop(1,SP.sky);c.fillStyle=sky;c.fillRect(0,0,W,Wy());
@@ -2350,20 +2356,24 @@ function playFish(){
     c.fillStyle='#8a4a14';c.fillRect(G.boatX-s*1.1,by-s*0.4,s*2.2,s*0.12);
     emojiAt(c,'🧒',G.boatX-s*0.15,by-s*0.85,s*0.95);
     c.strokeStyle='#5a3a1a';c.lineWidth=4;c.beginPath();c.moveTo(G.boatX+s*0.05,by-s*0.55);c.lineTo(tip.x,tip.y);c.stroke();
-    c.strokeStyle='rgba(255,255,255,.9)';c.lineWidth=1.5;c.beginPath();c.moveTo(tip.x,tip.y);
+    c.strokeStyle=R&&R.mood==='angry'?'#ff3b3b':'rgba(255,255,255,.9)';c.lineWidth=R&&R.mood==='angry'?3:1.5;c.beginPath();c.moveTo(tip.x,tip.y);
     if(R)c.lineTo(h.x+Math.sin(G.t*30)*2,h.y);else c.quadraticCurveTo((tip.x+h.x)/2,Math.max(tip.y,h.y)-(h.state==='up'?10:0),h.x,h.y);c.stroke();
     if(h.y>Wy()&&!R){c.fillStyle='#ff3b3b';c.beginPath();c.arc(h.x,Wy()-2+Math.sin(G.t*3)*2,5,0,7);c.fill();c.fillStyle='#fff';c.fillRect(h.x-5,Wy()-3+Math.sin(G.t*3)*2,10,2)}
     c.strokeStyle='#d8d8d8';c.lineWidth=3;c.beginPath();c.moveTo(h.x,h.y);c.lineTo(h.x,h.y+10);c.arc(h.x-5,h.y+10,5,0,Math.PI*0.9);c.stroke();
     if(h.state==='wait'&&!R&&!G.show&&h.wait>6&&Math.floor(G.t*2)%2){c.fillStyle='rgba(255,255,255,.85)';c.font=`700 ${Math.round(s*0.32)}px ${getComputedStyle(document.body).fontFamily}`;c.textAlign='center';c.fillText('Tap near a fish!',h.x,h.y+s*0.9)}
     drawSparks(c,G.sparks,dt,300);
-    // reel meter
-    if(R){const bh=Math.min(H*0.62,440),bw=Math.max(46,s*0.95),bx=W-bw-58,bt=Wy()+(H-Wy()-bh)/2;
-      c.fillStyle='rgba(13,30,60,.78)';c.beginPath();c.roundRect(bx-10,bt-10,bw+46,bh+20,16);c.fill();
-      c.fillStyle='#163a63';c.fillRect(bx,bt,bw,bh);
-      c.fillStyle=(R.fish>=R.z&&R.fish<=R.z+R.zone)?'#4fe08a':'#3fbf7f';c.globalAlpha=0.9;c.fillRect(bx+3,bt+bh*(1-R.z-R.zone),bw-6,bh*R.zone);c.globalAlpha=1;
-      emojiAt(c,R.f[0],bx+bw/2,bt+bh*(1-R.fish),bw*0.7,Math.sin(G.t*6)>0);
-      c.fillStyle='#0b2140';c.fillRect(bx+bw+10,bt,14,bh);const pc=Math.max(0,Math.min(1,R.p));c.fillStyle=pc<0.25?'#ff6f61':'#ffd23f';c.fillRect(bx+bw+10,bt+bh*(1-pc),14,bh*pc);
-      if(R.warn>0){R.warn-=dt;c.font=`700 ${Math.round(s*0.9)}px ${getComputedStyle(document.body).fontFamily}`;c.textAlign='center';c.fillStyle='#ffd23f';c.fillText('!',h.x,h.y-s*0.7)}}
+    // reel display: how close the fish is, and whether to tap or stop
+    if(R){const bh=Math.min(H*0.55,400),bw=Math.max(26,s*0.45),bx=W-bw-30,bt=Wy()+(H-Wy()-bh)/2,font=getComputedStyle(document.body).fontFamily;
+      c.fillStyle='rgba(13,30,60,.78)';c.beginPath();c.roundRect(bx-10,bt-34,bw+20,bh+46,14);c.fill();
+      c.fillStyle='#0b2140';c.fillRect(bx,bt,bw,bh);const pc=Math.max(0,Math.min(1,R.p));c.fillStyle=R.mood==='angry'?'#ff6f61':'#4fe08a';c.fillRect(bx,bt+bh*(1-pc),bw,bh*pc);
+      emojiAt(c,'🚣',bx+bw/2,bt-17,22);
+      const col=R.mood==='angry'?'#ff3b3b':R.mood==='warn'?'#ffd23f':'#4fe08a',shake=R.mood==='warn'?Math.sin(G.t*60)*4:0;
+      c.strokeStyle=col;c.lineWidth=5;c.beginPath();c.arc(h.x+shake,h.y+s*0.3,s*(0.75+R.pop*0.15),0,7);c.stroke();
+      const label=R.mood==='angry'?'STOP! ✋':R.mood==='warn'?'Uh oh…':'TAP! TAP! TAP!',fs=Math.round(Math.max(22,s*(R.mood==='calm'?0.55:0.7)));
+      c.font=`800 ${fs}px ${font}`;c.textAlign='center';const ly=Wy()+(H-Wy())*0.14,lx=Math.min(W/2,W-bw-60-c.measureText(label).width/2);
+      c.lineWidth=6;c.strokeStyle='rgba(0,0,0,.55)';c.strokeText(label,lx,ly);c.fillStyle=col;c.fillText(label,lx,ly);
+      if(R.tension>0.05){c.fillStyle='rgba(0,0,0,.5)';c.fillRect(lx-50,ly+8,100,8);c.fillStyle='#ff3b3b';c.fillRect(lx-50,ly+8,100*Math.min(1,R.tension),8)}
+      if(R.warn>0){R.warn-=dt;c.font=`700 ${Math.round(s*0.9)}px ${font}`;c.fillStyle='#ffd23f';c.fillText('!',h.x,h.y-s*1.4)}}
     // catch card
     if(G.show){const g=G.show,k=Math.min(1,g.t*3),cw=Math.min(W*0.8,420),ch=Math.min(H*0.46,280),cx=W/2,cy=H*0.5;
       c.save();c.translate(cx,cy);c.scale(0.6+0.4*k,0.6+0.4*k);c.globalAlpha=k;
