@@ -525,6 +525,7 @@ html.little .tvp b,html.little .tve b{font-size:20px}
 .njcols{display:grid;grid-template-columns:repeat(5,52px);gap:10px}
 .njcols button{width:52px;height:52px;border-radius:50%;border:3px solid rgba(0,0,0,.2)}
 .njcols button[aria-pressed="true"]{outline:4px solid var(--ink);outline-offset:3px}
+.lgbox{width:100%;max-height:320px;overflow:auto;background:#0f172a;color:#d6e2ff;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;padding:10px;border-radius:12px;white-space:pre-wrap;word-break:break-word;margin:8px 0 0;user-select:text;-webkit-user-select:text}
 /* stickers + grown-ups */
 .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:12px}
 .sticker{height:100px;border-radius:22px;background:var(--card);display:grid;place-items:center;font-size:52px;box-shadow:0 5px 0 var(--sky-2)}
@@ -565,6 +566,41 @@ html.little .tvp b,html.little .tve b{font-size:20px}
 <script>
 (()=>{
 const $=s=>document.querySelector(s);
+/* ---------- diagnostics log: errors, screens, video events, memory. Kept on this tablet; survives crashes. ---------- */
+const LOGK='sq-log-v1',ALIVEK='sq-alive-v1',LOGMAX=600,LOGV={video:''};
+let LOGB=[],logDirty=false;try{LOGB=JSON.parse(localStorage.getItem(LOGK)||'[]')||[]}catch(e){LOGB=[]}
+const scrub=s=>String(s).replace(/(api_key|apikey|token|pw|password)(["'=:\s]+)[^&"',\s}]*/gi,'$1$2…');
+function log(ev,d){const e={t:Date.now(),e:ev};if(d!==undefined)e.d=scrub(typeof d==='string'?d:JSON.stringify(d)).slice(0,400);
+  LOGB.push(e);if(LOGB.length>LOGMAX)LOGB.splice(0,LOGB.length-LOGMAX);logDirty=true;if(/error|crash|fail|stall/i.test(ev))logFlush()}
+function logFlush(){if(!logDirty)return;logDirty=false;try{localStorage.setItem(LOGK,JSON.stringify(LOGB))}catch(e){LOGB.splice(0,Math.floor(LOGB.length/2));try{localStorage.setItem(LOGK,JSON.stringify(LOGB))}catch(_){}}}
+setInterval(logFlush,3000);
+const logMem=()=>{const m=performance&&performance.memory;return m?Math.round(m.usedJSHeapSize/1048576)+' of '+Math.round(m.jsHeapSizeLimit/1048576)+' MB':'n/a'};
+function logBeat(closed){try{localStorage.setItem(ALIVEK,JSON.stringify({t:Date.now(),route:location.hash||'#home',video:LOGV.video,mem:logMem(),closed:!!closed}))}catch(e){}}
+(()=>{let prev=null;try{prev=JSON.parse(localStorage.getItem(ALIVEK)||'null')}catch(e){}
+  if(prev&&!prev.closed)log('CRASH? last session ended without closing',`last seen ${new Date(prev.t).toLocaleString()} on ${prev.route}${prev.video?` watching "${prev.video}"`:''} · memory ${prev.mem}`);
+  log('app start',{ua:navigator.userAgent,screen:`${screen.width}x${screen.height} @${devicePixelRatio||1}x`,deviceMemoryGB:navigator.deviceMemory||'?',memory:logMem()})})();
+setInterval(()=>logBeat(false),5000);logBeat(false);
+window.addEventListener('pagehide',()=>{log('app closed');logFlush();logBeat(true)});
+document.addEventListener('visibilitychange',()=>{log(document.hidden?'app in background':'app back');if(document.hidden){logFlush();logBeat(true)}else logBeat(false)});
+window.addEventListener('error',e=>log('error',`${e.message||e.type||'?'} (line ${e.lineno||'?'}:${e.colno||'?'})`),true);
+window.addEventListener('unhandledrejection',e=>log('error (async)',String(e.reason&&e.reason.message||e.reason)));
+window.addEventListener('hashchange',()=>log('screen',location.hash||'#home'));
+function logReport(){const pad=n=>String(n).padStart(2,'0'),f=t=>{const d=new Date(t);return `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`};
+  return [`Star Quest diagnostics · ${new Date().toLocaleString()}`,`Device: ${navigator.userAgent}`,`Screen ${screen.width}x${screen.height} @${devicePixelRatio||1}x · memory now ${logMem()}`,'',
+    ...LOGB.slice(-350).map(e=>`${f(e.t)}  ${e.e}${e.d?'  '+e.d:''}`)].join('\n')}
+function logGrownups(){const crashes=LOGB.filter(e=>e.e.startsWith('CRASH')).length;
+  return `<div class="prow" style="flex-wrap:wrap;align-items:flex-start"><span>🩺 Diagnostics<br><small style="color:var(--muted)">${LOGB.length} events saved${crashes?` · <b style="color:var(--coral)">${crashes} unexpected close${crashes>1?'s':''}</b>`:''}</small></span>
+    <span class="ctl" style="flex-wrap:wrap"><button class="pbtn" id="lgView">View</button><button class="pbtn go" id="lgShare">Share report</button><button class="pbtn" id="lgClr">Clear</button></span>
+    <p class="note" id="lgMsg" style="width:100%;margin:6px 0 0"></p><pre class="lgbox" id="lgBox" hidden></pre></div>`}
+function logWire(redraw){
+  $('#lgView').onclick=()=>{const b=$('#lgBox');b.hidden=!b.hidden;if(!b.hidden){b.textContent=logReport();b.scrollTop=b.scrollHeight}};
+  $('#lgShare').onclick=async()=>{logFlush();const txt=logReport(),m=$('#lgMsg');
+    try{if(navigator.share){await navigator.share({title:'Star Quest report',text:txt});m.textContent='Shared.';return}}catch(e){if(e&&e.name==='AbortError')return}
+    try{await navigator.clipboard.writeText(txt);m.textContent='Copied! Paste it into a message to Claude.';return}catch(e){}
+    const b=$('#lgBox');b.hidden=false;b.textContent=txt;try{const r=document.createRange();r.selectNodeContents(b);const s=getSelection();s.removeAllRanges();s.addRange(r)}catch(e){}
+    m.textContent='Press and hold the selected text, then Copy.'};
+  $('#lgClr').onclick=()=>{const b=$('#lgClr');if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='Sure?';return}LOGB=[];logDirty=true;logFlush();log('log cleared');redraw()};
+}
 const view=$('#view');
 const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
 const pick=a=>a[Math.floor(Math.random()*a.length)];
@@ -2453,7 +2489,7 @@ function tvOpen(item){sfx.tap();if(isLittle())speakNow(item.Name);
   TV.stack.push(item.Type==='Series'?{kind:'series',id:item.Id,name:item.Name}:{kind:'play',item});playTv()}
 function tvBack(){if(TV.kill)TV.kill();TV.stack.pop();sfx.tap();playTv()}
 function tvLoading(msg){view.innerHTML=`<div class="tvmsg"><div class="tvspin"></div><p>${msg||'Loading…'}</p></div>`}
-function tvFail(e){
+function tvFail(e){log('movies screen error',String(e&&e.message||e));
   if(e&&e.auth){K.jf.token=null;save()}
   view.innerHTML=`<div class="board"><div class="panel spend"><div class="em">📺</div><h2>${e&&e.auth?'Signed out':'The movies are taking a nap'}</h2>
     <p>${e&&e.auth?'A grown-up needs to sign in again in Grown-ups.':'Could not reach the movie server. Check the Wi-Fi and try again.'}</p>
@@ -2513,7 +2549,11 @@ async function tvPlay(top){
         <div class="tvbtns"><span id="tvtime">0:00</span><button id="tvRw" aria-label="Back 10 seconds">⏪ 10</button><button id="tvPP" class="pp" aria-label="Play or pause">▶</button><button id="tvFf" aria-label="Forward 10 seconds">10 ⏩</button><span id="tvdur">0:00</span></div></div></div>
     <div class="row"><button class="pbtn" id="tvBack">◀ Back</button><button class="pbtn go" id="tvNext" hidden>Next episode ▶</button></div></div>`;
   $('#tvBack').onclick=tvBack;
-  const v=$('#tvv'),over=$('#tvover');let hls=null,iv=0,sess=null,stopped=false,hideT=0;
+  const v=$('#tvv'),over=$('#tvover');let hls=null,iv=0,sess=null,stopped=false,hideT=0,hlsErrs=0;
+  LOGV.video=it.Name;log('video open',{name:it.Name,type:it.Type,memory:logMem()});
+  const bufAhead=()=>{try{for(let i=0;i<v.buffered.length;i++)if(v.buffered.start(i)<=v.currentTime+0.5&&v.buffered.end(i)>=v.currentTime)return Math.round(v.buffered.end(i)-v.currentTime)}catch(e){}return 0};
+  ['loadedmetadata','playing','pause','waiting','stalled','ended','seeking'].forEach(ev=>v.addEventListener(ev,()=>log('video '+ev,{at:Math.round(v.currentTime),bufferedAhead:bufAhead()})));
+  v.addEventListener('error',()=>log('video error',{code:v.error&&v.error.code,msg:v.error&&v.error.message,at:Math.round(v.currentTime)}));
   // if anything ever pushes the video itself full screen, pull it back (the app stays full screen)
   const fsGuard=()=>{const fe=document.fullscreenElement||document.webkitFullscreenElement;if(fe===v){try{(document.exitFullscreen||document.webkitExitFullscreen).call(document)}catch(e){}}};
   document.addEventListener('fullscreenchange',fsGuard);document.addEventListener('webkitfullscreenchange',fsGuard);
@@ -2533,12 +2573,13 @@ async function tvPlay(top){
   seek.addEventListener('pointerup',()=>{seek.onpointermove=null});seek.addEventListener('pointercancel',()=>{seek.onpointermove=null});
   const ticks=()=>Math.round((v.currentTime||0)*1e7);
   const report=(what,extra)=>{if(!sess)return Promise.resolve();return jf('/Sessions/Playing'+what,{method:'POST',keepalive:what==='/Stopped',body:Object.assign({ItemId:it.Id,MediaSourceId:sess.ms,PlaySessionId:sess.ps,PositionTicks:ticks(),CanSeek:true,PlayMethod:sess.method,IsPaused:v.paused},extra||{})}).catch(()=>{})};
-  const stop=()=>{if(stopped&&!v.isConnected)return;if(!stopped){stopped=true;report('/Stopped')}clearInterval(iv);clearTimeout(hideT);
+  const stop=()=>{if(stopped&&!v.isConnected)return;log('video stop',{at:Math.round(v.currentTime||0)});LOGV.video='';if(!stopped){stopped=true;report('/Stopped')}clearInterval(iv);clearTimeout(hideT);
     try{hls&&hls.destroy()}catch(e){}hls=null;try{v.pause();v.removeAttribute('src');v.load()}catch(e){}try{v.remove()}catch(e){}
     window.removeEventListener('pagehide',stop);document.removeEventListener('fullscreenchange',fsGuard);document.removeEventListener('webkitfullscreenchange',fsGuard);if(TV.kill===stop)TV.kill=null};
   TV.kill=stop;
   window.addEventListener('pagehide',stop);
-  let n10=0;iv=setInterval(()=>{if(tok!==loopToken||!document.body.contains(v)){stop();return}if(++n10%10===0&&!v.paused)report('/Progress')},1000);
+  let n10=0;iv=setInterval(()=>{if(tok!==loopToken||!document.body.contains(v)){stop();return}if(++n10%10===0&&!v.paused)report('/Progress');
+    if(n10%30===0&&!v.paused){let q=null;try{q=v.getVideoPlaybackQuality()}catch(e){}log('video beat',{at:Math.round(v.currentTime),bufferedAhead:bufAhead(),memory:logMem(),dropped:q?q.droppedVideoFrames+'/'+q.totalVideoFrames:'?'})}},1000);
   // the next episode, if there is one
   const eps=top.eps,ix=eps?eps.findIndex(e=>e.Id===it.Id):-1,nextEp=ix>=0?eps[ix+1]:null;
   const nb=$('#tvNext');if(nextEp){nb.onclick=()=>{stop();TV.kill=null;sfx.tap();TV.stack[TV.stack.length-1]={kind:'play',item:nextEp,eps};playTv()}}
@@ -2547,8 +2588,9 @@ async function tvPlay(top){
   const unstall=()=>{clearTimeout(stallT);over.hidden=true;over.innerHTML='<div class="tvspin"></div>'};
   v.addEventListener('playing',unstall);
   v.addEventListener('waiting',()=>{over.hidden=false;clearTimeout(stallT);stallT=setTimeout(()=>{if(stopped||!v.isConnected)return;
+    log('stall: keep-watching button shown',{at:Math.round(v.currentTime),lastGood:Math.round(lastGood),bufferedAhead:bufAhead(),memory:logMem()});
     over.innerHTML='<button class="tvbig" id="tvGo" aria-label="Keep watching">↻</button><p style="margin:10px 0 0">Tap to keep watching</p>';over.style.flexDirection='column';
-    $('#tvGo').onclick=()=>{TV.stack[TV.stack.length-1].resumeAt=Math.max(lastGood,v.currentTime||0);if(TV.kill)TV.kill();playTv()}},25000)});
+    $('#tvGo').onclick=()=>{TV.stack[TV.stack.length-1].resumeAt=Math.max(lastGood,v.currentTime||0);log('stall: resume tapped',{resumeAt:Math.round(Math.max(lastGood,v.currentTime||0))});if(TV.kill)TV.kill();playTv()}},25000)});
   try{
     if(top.resumeAt==null){let fresh=null;try{fresh=await jf(`/Users/${J.userId}/Items/${it.Id}`)}catch(e){}
       const srv=fresh&&fresh.UserData&&fresh.UserData.PlaybackPositionTicks?fresh.UserData.PlaybackPositionTicks/1e7:0,loc=K.tvLast&&K.tvLast.id===it.Id?K.tvLast.t:0;
@@ -2562,19 +2604,21 @@ async function tvPlay(top){
     else if(ms.TranscodingUrl){method='Transcode';src=J.url+ms.TranscodingUrl;if(!/api_key=/i.test(src))src+=(src.includes('?')?'&':'?')+'api_key='+J.token}
     else throw new Error('cannot play');
     sess={ms:ms.Id,ps:info.PlaySessionId,method};
+    {const vs=(ms.MediaStreams||[]).find(x=>x.Type==='Video')||{},as=(ms.MediaStreams||[]).find(x=>x.Type==='Audio')||{},why=(ms.TranscodingUrl||'').match(/TranscodeReasons=([^&]*)/);
+      log('video source',{method,container:ms.Container,video:[vs.Codec,vs.Width&&vs.Width+'x'+vs.Height,vs.BitRate&&Math.round(vs.BitRate/1000)+'kbps'].filter(Boolean).join(' '),audio:as.Codec,size:ms.Size&&Math.round(ms.Size/1048576)+'MB',bitrate:ms.Bitrate&&Math.round(ms.Bitrate/1000)+'kbps',hls:/\.m3u8/i.test(src),transcodeReasons:why?decodeURIComponent(why[1]):''})}
     const pos=top.resumeAt!=null?top.resumeAt+3:it.UserData&&it.UserData.PlaybackPositionTicks?it.UserData.PlaybackPositionTicks/1e7:0,start=pos>20?pos-3:0;top.resumeAt=null;v.dataset.start=Math.round(start);
     const begin=()=>{v.play().catch(()=>{over.hidden=false;over.innerHTML='<button class="tvbig" id="tvGo">▶</button>';$('#tvGo').onclick=()=>{over.innerHTML='<div class="tvspin"></div>';v.play().catch(()=>{})}});report('')};
     if(/\.m3u8/i.test(src)){
       let useHls=false;try{await loadHls();useHls=window.Hls&&Hls.isSupported()}catch(e){}
       if(tok!==loopToken||stopped)return;
       if(useHls){hls=new Hls({startPosition:start||-1,maxBufferLength:30,maxMaxBufferLength:60,backBufferLength:20,maxBufferSize:40*1000*1000,enableWorker:true});hls.loadSource(src);hls.attachMedia(v);hls.on(Hls.Events.MANIFEST_PARSED,begin);
-        hls.on(Hls.Events.ERROR,(ev,d)=>{if(d.fatal){if(d.type===Hls.ErrorTypes.NETWORK_ERROR)hls.startLoad();else if(d.type===Hls.ErrorTypes.MEDIA_ERROR)hls.recoverMediaError();else tvPlayFail(over)}})}
+        hls.on(Hls.Events.ERROR,(ev,d)=>{if(d.fatal||++hlsErrs<=25)log(d.fatal?'hls FATAL error':'hls error',{type:d.type,details:d.details,at:Math.round(v.currentTime),bufferedAhead:bufAhead()});if(d.fatal){if(d.type===Hls.ErrorTypes.NETWORK_ERROR)hls.startLoad();else if(d.type===Hls.ErrorTypes.MEDIA_ERROR)hls.recoverMediaError();else tvPlayFail(over)}})}
       else{v.src=src;v.addEventListener('loadedmetadata',()=>{if(start)v.currentTime=start;begin()},{once:true})}
     }else{v.src=src;v.addEventListener('loadedmetadata',()=>{if(start)v.currentTime=start;begin()},{once:true})}
     v.addEventListener('error',()=>{if(!hls)tvPlayFail(over)});
-  }catch(e){if(tok===loopToken){stop();if(e.auth)return tvFail(e);tvPlayFail(over)}}
+  }catch(e){log('video setup error',String(e&&e.message||e));if(tok===loopToken){stop();if(e.auth)return tvFail(e);tvPlayFail(over)}}
 }
-function tvPlayFail(over){over.hidden=false;over.innerHTML='<p>This one won\'t play right now. Try another one, or ask a grown-up.</p>'}
+function tvPlayFail(over){log('video FAILED to play',{memory:logMem()});over.hidden=false;over.innerHTML='<p>This one won\'t play right now. Try another one, or ask a grown-up.</p>'}
 
 // When sign-in can't get through, find out which step is blocked so a grown-up knows what to fix
 async function jfDiagnose(url){
@@ -3033,6 +3077,7 @@ function grownups(){
     ${K.gate!==false?`<div class="prow" style="flex-wrap:wrap"><span>Each star buys</span><span class="ctl">${[1,2,3,5].map(m=>`<button class="pbtn" data-mps="${m}" style="${minsPerStar()===m?'background:var(--ink);color:#fff':''}">${m} min</button>`).join('')}</span></div>
     <div class="prow" style="flex-wrap:wrap"><span>Stars to spend: <b>${K.wallet}</b> · Play time left: <b>${fmtSec(K.playSec||0)}</b></span><span class="ctl"><button class="pbtn" id="give5">+5 stars</button><button class="pbtn" id="time5">+5 min</button><button class="pbtn" id="time0">Clear time</button></span></div>`:''}`:''}
     ${tvGrownups()}
+    ${logGrownups()}
     <div class="row" style="justify-content:flex-start"><button class="pbtn ${resetArm?'warn':''}" id="rst">${resetArm?'Tap again to erase everything':'Reset stars and stickers'}</button></div>
     <p class="note">Levels go up by themselves after ${PER_LEVEL} right answers. Use − and + if a game feels too hard or too easy.</p>`;
   view.querySelectorAll('.pm').forEach(b=>b.onclick=()=>{const g=GAMES.find(x=>x.id===b.dataset.id);K.lv[g.id]=Math.max(1,Math.min(g.max,K.lv[g.id]+ +b.dataset.d));K.got[g.id]=0;save();grownups()});
@@ -3054,7 +3099,7 @@ function grownups(){
   if($('#gateT')){$('#gateT').onclick=()=>{K.gate=K.gate===false;save();grownups()};
     view.querySelectorAll('[data-mps]').forEach(b=>b.onclick=()=>{K.minsPerStar=+b.dataset.mps;save();grownups()});
     if($('#give5')){$('#give5').onclick=()=>{K.wallet=(K.wallet||0)+5;save();grownups()};$('#time5').onclick=()=>{K.playSec=(K.playSec||0)+300;save();grownups()};$('#time0').onclick=()=>{K.playSec=0;save();grownups()}}}
-  tvGrownupsWire(grownups);
+  tvGrownupsWire(grownups);logWire(grownups);
   $('#fs').onclick=()=>{K.full=K.full===false;save();if(K.full===false&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});grownups()};
   $('#rst').onclick=()=>{if(!resetArm){resetArm=true;return grownups()}resetArm=false;const keep={jf:K.jf,jfDev:K.jfDev,jfLast:K.jfLast,mode:K.mode,name:K.name,voiceName:K.voiceName,voiceOn:K.voiceOn,gate:K.gate,minsPerStar:K.minsPerStar};K=Object.assign(blank(),keep,{wallet:0,playSec:0});save();updateStars();grownups()};
 }
