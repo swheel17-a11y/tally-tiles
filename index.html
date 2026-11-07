@@ -301,6 +301,8 @@ button:disabled{opacity:.35;cursor:default}
 .sdpats{display:flex;flex-direction:column;gap:5px}
 .sdcut button{width:30px;height:28px;border-radius:8px;background:var(--ground);font-size:12px}
 
+.sdwarn{font-size:12.5px;line-height:1.35;color:#ffb35c;background:rgba(255,138,31,.1);border:1px solid rgba(255,138,31,.35);border-radius:10px;padding:7px 9px}
+
 /* cats */
 .ctboard{--n:7;display:grid;width:100%;max-width:min(100%,calc(100dvh - 340px));min-width:240px;align-self:center;border:3px solid #0b1022;border-radius:12px;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 .ctc{aspect-ratio:1/1;padding:0;border:1.5px solid;display:grid;place-items:center;font-size:calc(min(488px,100vw - 32px)/var(--n)*.56);line-height:1;color:#16203f;position:relative}
@@ -1727,6 +1729,10 @@ function sdTally(J,W,extra){const pats=extra?W.pats.concat([extra]):W.pats;let F
   for(const p of pats){boards+=p.n;for(const x of p.pcs){if(x===J.H)F+=p.n;else if(x===a)A+=p.n;else if(x===b)B+=p.n}}
   if(a&&a===b){B=A}const splits=a?(a===b?Math.floor(A/2):Math.min(A,B)):0,covered=Math.min(J.N,F+splits);
   return{F,A,B,splits,covered,boards,waste:boards*J.L-covered*J.H,done:F+splits>=J.N}}
+// split pieces only count once their partner exists; warn about pieces that would be left over with no partner
+function sdOrphans(J,W,t){if(!W.pair)return '';const [a,b]=W.pair;if(a===b){const o=t.A-t.splits*2;return o>0?`<div class="sdwarn">⚠ ${o} × ${ofFmt(a)} piece${o>1?'s':''} with no partner yet. Each course needs two.</div>`:''}
+  const oa=t.A-t.splits,ob=t.B-t.splits,need=oa>0?[oa,a,b]:ob>0?[ob,b,a]:null;
+  return need?`<div class="sdwarn">⚠ ${need[0]} × ${ofFmt(need[1])} piece${need[0]>1?'s':''} with no ${ofFmt(need[2])} to pair with. They only cover a course once you cut ${ofFmt(need[2])} pieces too; otherwise they're waste.</div>`:''}
 function sdUsed(pcs){return pcs.reduce((s,x)=>s+x,0)}
 function sdJustEnough(J,W){ // fewest boards of this cut that finish the wall, else the count after which it stops helping
 if(!W.cur.length)return 1;const base=sdTally(J,W).covered;let best=1,bestCov=base;
@@ -1777,7 +1783,8 @@ function renderSiding(){
       ${W.pair?`<div class="sdnote">Joint locked at ${ofFmt(pa)}: courses are full or ${ofFmt(pa)} + ${ofFmt(pb)}. Remove all split pieces to change it.</div>`
         :`<div class="sdjoint"><span>Split pieces: <b>${ofFmt(pa)} + ${ofFmt(pb)}</b></span><button data-j="-12">−1′</button><button data-j="-3">−3″</button><button data-j="3">+3″</button><button data-j="12">+1′</button></div>`}
       ${W.cur.length?`<div class="sdcount"><span>How many boards</span><button data-c="-1">−</button><input id="sdN" type="number" inputmode="numeric" min="1" max="999" value="${W.cnt}"><button data-c="1">+</button><button data-c="just">Finish wall</button></div>
-        <div class="sdnote">${left?`${ofFmt(left)} left on each board${left<J.min?' (scrap)':''}`:'No scrap. Every inch used.'} · after this: <b>${preview.covered}/${J.N}</b> courses, <b>${preview.boards}</b> boards</div>`:''}
+        <div class="sdnote">${left?`${ofFmt(left)} left on each board${left<J.min?' (scrap)':''}`:'Nothing left on the board.'} · after this: <b>${preview.covered}/${J.N}</b> courses, <b>${preview.boards}</b> boards, <b>${(preview.waste/12).toFixed(0)}′</b> waste so far</div>
+        ${sdOrphans(J,W,preview)}`:''}
     </div>`;
   controls.innerHTML=`<div class="row"><button class="btn" id="sdList">All jobs</button><button class="btn" id="sdReset" ${W.pats.length||W.cur.length?'':'disabled'}>Start over</button><button class="btn primary tall" id="sdAdd" ${W.cur.length?'':'disabled'}>Cut ${W.cnt} board${W.cnt===1?'':'s'}</button></div>`;
   ofModeWire();
