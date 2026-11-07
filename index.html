@@ -217,6 +217,39 @@ button:disabled{opacity:.35;cursor:default}
 .sqmore{font-size:11px;color:var(--mist);font-family:var(--f-mono)}
 
 
+/* offcut */
+.mnum small{font-size:.55em;opacity:.6}
+.ofticket{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--board);border:1px solid var(--board-line);border-radius:16px;padding:12px 16px}
+.ofnow{font-family:var(--f-display);font-weight:800;font-size:40px;color:var(--brass);line-height:1.05}
+.ofnext{text-align:right;display:flex;flex-direction:column;gap:2px}
+.ofnext span{font-family:var(--f-mono);font-size:15px;color:var(--mist)}
+.ofnext span:first-of-type{color:inherit;font-size:17px}
+.ofrack{display:flex;flex-direction:column;gap:8px}
+.ofrow{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;background:var(--board);border:1px solid var(--board-line);border-radius:14px;padding:10px 10px 10px 12px;cursor:pointer;transition:opacity .2s}
+.ofrow.fits{border-color:var(--brass)}
+.ofrow.nofit{opacity:.45;cursor:default}
+.ofbar{position:relative;height:26px}
+.ofghost{position:absolute;left:0;top:3px;bottom:3px;border:1.5px dashed rgba(255,255,255,.18);border-radius:4px}
+.ofwood{position:absolute;left:0;top:0;bottom:0;border-radius:4px;overflow:hidden;background:repeating-linear-gradient(90deg,rgba(120,70,20,.0) 0 18px,rgba(120,70,20,.18) 18px 20px),linear-gradient(#e2b277,#c98f52);box-shadow:inset 0 -3px 0 rgba(0,0,0,.18);transition:width .35s ease}
+.ofmark{position:absolute;right:0;top:0;bottom:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,.55) 0 5px,rgba(255,255,255,.15) 5px 10px);border-left:2px solid #fff}
+.oflabel{display:flex;flex-direction:column;align-items:flex-end;min-width:96px}
+.oflabel b{font-family:var(--f-mono);font-size:17px}
+.oflabel small{font-size:11.5px;color:var(--mist);white-space:nowrap}
+.oftrash{width:44px;height:40px;border-radius:10px;background:var(--ground);font-size:17px}
+.oftrash.arm{width:auto;padding:0 8px;background:#c0392b;color:#fff;font-size:13px;font-weight:700}
+.ofrow.restock{grid-template-columns:auto 1fr;cursor:default;border-style:dashed}
+.ofrow.restock .oflabel{align-items:flex-start}
+.ofpick{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.ofpick button{height:40px;border-radius:10px;background:var(--tile);color:var(--tile-ink);font-family:var(--f-mono);font-weight:700;font-size:16px}
+.ofrow.sawn{animation:ofsaw .35s ease}
+@keyframes ofsaw{30%{transform:translateX(4px)}60%{transform:translateX(-3px)}}
+.ofrow.scrapped{animation:ofscrap .5s ease}
+@keyframes ofscrap{0%{background:#5a3a1a}}
+.ofdone{background:var(--board);border:1px solid var(--board-line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.ofdone table{width:100%;border-collapse:collapse;font-size:15px}
+.ofdone td{padding:6px 0;border-bottom:1px solid var(--board-line)}
+.ofdone td:last-child{text-align:right;font-family:var(--f-mono)}
+
 /* cats */
 .ctboard{--n:7;display:grid;width:100%;max-width:min(100%,calc(100dvh - 340px));min-width:240px;align-self:center;border:3px solid #0b1022;border-radius:12px;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 .ctc{aspect-ratio:1/1;padding:0;border:1.5px solid;display:grid;place-items:center;font-size:calc(min(488px,100vw - 32px)/var(--n)*.56);line-height:1;color:#16203f;position:relative}
@@ -302,6 +335,7 @@ td.h{padding-top:14px;font-size:11px;letter-spacing:.12em;text-transform:upperca
     <button role="tab" id="tab-sand" aria-selected="false" data-mode="sand">Sand</button>
     <button role="tab" id="tab-yard" aria-selected="false" data-mode="yard">Yard</button>
     <button role="tab" id="tab-cats" aria-selected="false" data-mode="cats">Cats</button>
+    <button role="tab" id="tab-offcut" aria-selected="false" data-mode="offcut">Offcut</button>
   </div>
   <div class="stage" id="stage"></div>
   <div class="controls" id="controls"></div>
@@ -337,7 +371,7 @@ const addPts=p=>{S.dayPts+=p;save();};
 /* ---------- clocks: one per tab, paused while you're on another tab ---------- */
 const R=26,C=2*Math.PI*R,LIMIT=30;
 const mkClock=()=>({elapsed:0,since:null,running:false,timed:false,onEnd:null});
-const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock(),sand:mkClock(),yard:mkClock(),cats:mkClock()};
+const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock(),sand:mkClock(),yard:mkClock(),cats:mkClock(),offcut:mkClock()};
 const el=c=>c.elapsed+(c.since?(performance.now()-c.since)/1000:0);
 let looping=false;
 function clockHTML(){return `<div class="clock" id="clock"><svg viewBox="0 0 64 64"><circle class="track" cx="32" cy="32" r="${R}" fill="none" stroke-width="6"/><circle class="arc" id="arc" cx="32" cy="32" r="${R}" fill="none" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg><div class="t" id="clockT"></div></div>`}
@@ -1601,8 +1635,78 @@ function ctBind(){
   board.addEventListener('pointerup',up);board.addEventListener('pointercancel',()=>{start=-1;if(drag)ctAfter()});
 }
 
+/* ==========================================================
+   OFFCUT: cut-list solitaire. Cut each order from your rack, waste as little as you can.
+   Lengths are in inches inside; orders come in 3" steps; anything under 1' left on a board is scrap.
+   ========================================================== */
+const OFF_KEY='tally-tiles-offcut-v1',OFF_STOCK=[96,120,144,192],OFF_JOB=30,OFF_MIN=12,OFF_MAX=192;
+let OF=null,ofArm=-1,ofFlash=-1,ofScrapFlash=-1;
+const ofFmt=i=>{const f=Math.floor(i/12),n=i%12;return n?(f?`${f}′ ${n}″`:`${n}″`):`${f}′`};
+function ofOrders(seed){const R=seed?ctRng(seed):Math.random,out=[];
+  for(let k=0;k<OFF_JOB;k++){const st=k/OFF_JOB,maxFt=st<0.34?8:st<0.67?12:14,ft=1+(maxFt-1)*Math.pow(R(),1.5);out.push(Math.max(12,Math.round(ft*4)*3))}
+  return out}
+function ofLoad(){try{OF=JSON.parse(localStorage.getItem(OFF_KEY)||'null')}catch(e){OF=null}OF=Object.assign({best:null,bestDaily:{},played:0,job:null},OF||{})}
+function ofSave(){try{localStorage.setItem(OFF_KEY,JSON.stringify(OF))}catch(e){}}
+function ofNew(daily){const key=ctDayKey();
+  OF.job={orders:ofOrders(daily?ctDaySeed('offcut'+key):0),i:0,rack:OFF_STOCK.map(len=>({len,rem:len,used:false})),bought:0,cut:0,waste:0,boards:0,undo:null,daily:daily?key:'',done:false};
+  ofArm=-1;ofSave();renderOffcut()}
+const ofPct=J=>J.bought?J.waste/J.bought*100:0;
+const ofGrade=p=>p<=3?'A+':p<=6?'A':p<=10?'B':p<=15?'C':'D';
+function ofSnap(J){const c=JSON.parse(JSON.stringify(J));c.undo=null;return c}
+function ofCut(s){const J=OF.job,o=J.orders[J.i],b=J.rack[s];if(J.done||!b||b.rem<o)return;
+  J.undo=ofSnap(J);if(!b.used){b.used=true;J.bought+=b.len;J.boards++}b.rem-=o;J.cut+=o;J.i++;ofFlash=s;ofScrapFlash=-1;ofArm=-1;
+  if(b.rem<OFF_MIN){J.waste+=b.rem;J.rack[s]=null;ofScrapFlash=s}
+  try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}
+  if(J.i>=OFF_JOB)ofFinish();ofSave();renderOffcut()}
+const OFF_KEEP=48; // leftovers 4' and longer go back on the rack for the next job
+function ofFinish(){const J=OF.job;J.returned=0;for(const b of J.rack)if(b&&b.used){if(b.rem>=OFF_KEEP){J.returned+=b.rem;J.bought-=b.rem}else J.waste+=b.rem}J.done=true;OF.played++;
+  const p=ofPct(J);if(J.daily){if(OF.bestDaily[J.daily]==null||p<OF.bestDaily[J.daily])OF.bestDaily[J.daily]=p}
+  else if(OF.best==null||p<OF.best)OF.best=p;
+  addPts(Math.max(2,Math.round(20-p)))}
+function renderOffcut(){
+  if(!OF)ofLoad();if(!OF.job)return ofNew(false);
+  const J=OF.job,o=J.orders[J.i],pct=ofPct(J);
+  const fits=J.rack.map(b=>!!b&&!J.done&&b.rem>=o),anyFit=fits.some(x=>x),anyEmpty=J.rack.some(b=>!b);
+  if(J.done){
+    const p=pct,best=J.daily?OF.bestDaily[J.daily]:OF.best;
+    stage.innerHTML=`<div class="headline mhead"><div class="mstat"><div class="eyebrow">Waste</div><div class="mnum">${p.toFixed(1)}%</div></div>
+        <div class="mstat"><div class="eyebrow">Grade</div><div class="mnum">${ofGrade(p)}</div></div>
+        <div class="mstat"><div class="eyebrow">${J.daily?'Today best':'Best'}</div><div class="mnum dim">${best!=null?best.toFixed(1)+'%':'—'}</div></div></div>
+      <div class="ofdone"><div class="eyebrow">${J.daily?'Daily job':'Job'} complete</div>
+        <table><tr><td>Pieces cut</td><td>${OFF_JOB}</td></tr><tr><td>Boards used</td><td>${J.boards}</td></tr>
+        <tr><td>Lumber used</td><td>${(J.bought/12).toFixed(1)}′</td></tr>${J.returned?`<tr><td>Long offcuts back to stock</td><td>${(J.returned/12).toFixed(1)}′</td></tr>`:''}<tr><td>Cut to order</td><td>${(J.cut/12).toFixed(1)}′</td></tr>
+        <tr><td>Waste</td><td>${(J.waste/12).toFixed(1)}′</td></tr></table>
+        <div class="hint">${p<=3?'Barely a sliver on the floor. That’s a tight cut list.':p<=6?'Very clean. The boss would sign off on that.':p<=10?'Solid job. A little more planning ahead trims it down.':'Plenty of kindling this time. Watch the “leaves” number on each board.'}</div></div>`;
+    controls.innerHTML=`<div class="row"><button class="btn primary tall" id="ofNew">New job</button>${OF.bestDaily[ctDayKey()]==null?`<button class="btn tall" id="ofDaily">Daily job</button>`:''}</div>`;
+    $('#ofNew').onclick=()=>ofNew(false);const d=$('#ofDaily');if(d)d.onclick=()=>ofNew(true);return}
+  const next=J.orders.slice(J.i+1,J.i+4);
+  stage.innerHTML=`<div class="headline mhead">
+      <div class="mstat"><div class="eyebrow">Piece</div><div class="mnum dim">${J.i+1}<small>/${OFF_JOB}</small></div></div>
+      <div class="mstat"><div class="eyebrow">Waste</div><div class="mnum">${pct.toFixed(1)}%</div></div>
+      <div class="mstat"><div class="eyebrow">${J.daily?'Daily':'Best'}</div><div class="mnum dim">${J.daily?'★':OF.best!=null?OF.best.toFixed(1)+'%':'—'}</div></div></div>
+    <div class="ofticket"><div><div class="eyebrow">Cut</div><div class="ofnow">${ofFmt(o)}</div></div>
+      <div class="ofnext"><div class="eyebrow">Up next</div>${next.map(n=>`<span>${ofFmt(n)}</span>`).join('')||'<span>last one</span>'}</div></div>
+    <div class="ofrack">${J.rack.map((b,s)=>{
+      if(!b)return `<div class="ofrow restock ${ofScrapFlash===s?'scrapped':''}"><div class="oflabel"><b>Pick new stock</b><small>${ofScrapFlash===s?'last bit went in the scrap bin':'this spot is empty'}</small></div>
+        <div class="ofpick">${OFF_STOCK.map(L=>`<button data-r="${s}" data-l="${L}">${L/12}′</button>`).join('')}</div></div>`;
+      const left=b.rem-o,ok=fits[s];
+      return `<div class="ofrow ${ok?'fits':'nofit'} ${ofFlash===s?'sawn':''}" data-s="${s}" role="button" aria-label="Board with ${ofFmt(b.rem)} left${ok?`, cutting leaves ${ofFmt(left)}`:', too short'}">
+        <div class="ofbar"><div class="ofghost" style="width:${b.len/OFF_MAX*100}%"></div><div class="ofwood" style="width:${b.rem/OFF_MAX*100}%">${ok?`<i class="ofmark" style="width:${o/b.rem*100}%"></i>`:''}</div></div>
+        <div class="oflabel"><b>${ofFmt(b.rem)}</b><small>${ok?(left<OFF_MIN?`leaves ${ofFmt(left)} scrap`:`leaves ${ofFmt(left)}`):'too short'}${b.used?'':` · new ${b.len/12}′`}</small></div>
+        <button class="oftrash ${ofArm===s?'arm':''}" data-t="${s}" aria-label="Scrap this board">${ofArm===s?'Scrap?':'🗑'}</button></div>`}).join('')}</div>
+    <div class="hint" id="ofHint">${!anyFit?(anyEmpty?'Nothing on the rack fits. Pick new stock for an empty spot.':'Nothing fits. Scrap a board (🗑) to make room for new stock.'):'Tap a board to cut the order from it. Under 1′ left goes to the scrap bin. At the end, pieces 4′ and longer go back to stock.'}</div>`;
+  ofFlash=-1;
+  controls.innerHTML=`<div class="row"><button class="btn" id="ofUndo" ${J.undo?'':'disabled'}>Undo</button><button class="btn" id="ofNew">New job</button><button class="btn" id="ofDaily" ${OF.bestDaily[ctDayKey()]!=null||J.daily?'disabled':''}>Daily job</button></div>`;
+  stage.querySelectorAll('.ofrow[data-s]').forEach(r=>r.onclick=e=>{if(e.target.closest('.oftrash'))return;ofCut(+r.dataset.s)});
+  stage.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{const s=+b.dataset.t;if(ofArm!==s){ofArm=s;return renderOffcut()}
+    const B=J.rack[s];J.undo=ofSnap(J);if(B.used)J.waste+=B.rem;J.rack[s]=null;ofArm=-1;ofScrapFlash=-1;ofSave();renderOffcut()});
+  stage.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{const s=+b.dataset.r,L=+b.dataset.l;J.rack[s]={len:L,rem:L,used:false};ofScrapFlash=-1;ofSave();renderOffcut()});
+  $('#ofUndo').onclick=()=>{if(!J.undo)return;OF.job=J.undo;ofArm=-1;ofScrapFlash=-1;ofSave();renderOffcut()};
+  $('#ofNew').onclick=()=>ofNew(false);$('#ofDaily').onclick=()=>ofNew(true);
+}
+
 function render(){
-  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else if(S.mode==='sand')return renderSand(true);else if(S.mode==='yard')return renderYard(true);else if(S.mode==='cats')return renderCats(true);else renderCon();
+  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else if(S.mode==='sand')return renderSand(true);else if(S.mode==='yard')return renderYard(true);else if(S.mode==='cats')return renderCats(true);else if(S.mode==='offcut')return renderOffcut();else renderCon();
   paintClock();
 }
 function setMode(m){
@@ -1734,7 +1838,7 @@ function drawQR(cv,text){
 }
 
 /* ---------- boot ---------- */
-const m0=['numbers','letters','conundrum','merge','solitaire','sand','yard','cats'].includes(S.mode)?S.mode:'numbers';S.mode='';setMode(m0);
+const m0=['numbers','letters','conundrum','merge','solitaire','sand','yard','cats','offcut'].includes(S.mode)?S.mode:'numbers';S.mode='';setMode(m0);
 })();
 </script>
 
