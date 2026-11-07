@@ -526,6 +526,24 @@ html.little .tvp b,html.little .tve b{font-size:20px}
 .njcols button{width:52px;height:52px;border-radius:50%;border:3px solid rgba(0,0,0,.2)}
 .njcols button[aria-pressed="true"]{outline:4px solid var(--ink);outline-offset:3px}
 .lgbox{width:100%;max-height:320px;overflow:auto;background:#0f172a;color:#d6e2ff;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;padding:10px;border-radius:12px;white-space:pre-wrap;word-break:break-word;margin:8px 0 0;user-select:text;-webkit-user-select:text}
+/* times-table help */
+.helpbtn{background:#fff6d6;box-shadow:0 4px 0 #e0c46a}
+.linkbtn{background:none;border:none;color:var(--ocean);font-weight:800;text-decoration:underline;font-size:inherit;padding:0 4px}
+.mhelp{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,25,55,.55);display:flex;align-items:center;justify-content:center;z-index:60;padding:16px}
+.mhcard{background:var(--card);border-radius:26px;padding:18px 20px;max-width:680px;width:100%;max-height:100%;overflow:auto;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 10px 0 rgba(0,0,0,.15)}
+.mhq{font-family:var(--f-display);font-size:40px;font-weight:700}
+.mhsvg{max-width:100%;height:auto}
+.mht{font-family:var(--f-display);font-size:22px;text-align:center;margin:0;line-height:1.3;min-height:2.6em}
+.mheq{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;min-height:38px}
+.mheq span{background:#eef3ff;border-radius:12px;padding:6px 12px;font-family:var(--f-display);font-size:20px;font-weight:700}
+.mheq span:last-child{background:#fff1c9}
+.mhdots{display:flex;gap:6px;align-items:center}.mhdots i{width:10px;height:10px;border-radius:50%;background:var(--sky-2)}.mhdots i.on{background:var(--ocean)}
+.ttpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:12px;width:min(640px,100%)}
+.ttpick button{height:80px;border-radius:20px;background:var(--card);box-shadow:0 5px 0 var(--sky-2);font-family:var(--f-display);font-size:28px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}
+.ttpick button.hot{background:#fff6d6;box-shadow:0 5px 0 #e0c46a}.ttpick button.wide{grid-column:span 2}
+.ttpick small{font-size:13px;color:var(--muted);font-family:var(--f-body)}
+.ttbar{display:flex;gap:16px;align-items:center;justify-content:space-between;width:min(640px,100%);font-size:17px}
+.ttbar b{font-family:var(--f-display);font-size:22px}
 /* stickers + grown-ups */
 .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:12px}
 .sticker{height:100px;border-radius:22px;background:var(--card);display:grid;place-items:center;font-size:52px;box-shadow:0 5px 0 var(--sky-2)}
@@ -637,6 +655,7 @@ const GAMES=[
   {id:'piano',name:'Pink Piano',em:'🎹',sub:'Play music and songs',color:'#ff8ac4',max:0,little:true},
   {id:'robot',name:'Robot Path',em:'🤖',sub:'Program the robot',color:'#5b6ee1',max:8},
   {id:'boss',name:'Boss Battle',em:'👾',sub:'Times tables',color:'#d9435b',max:6},
+  {id:'times',name:'Times Tables',em:'✖️',sub:'Practice with help',color:'#2f9be0',max:0},
   {id:'daily',name:'Daily Challenge',em:'📅',sub:'5 puzzles a day',color:'#f08a12',max:0}
 ];
 const STICKERS='🐶🐱🦊🐻🐼🐨🐯🦁🐮🐷🐸🐵🐔🐧🐦🦉🦄🐝🦋🐢🐙🦈🐬🐳🦖🦕🚒🚜🏎️🚂✈️🛸🌈⭐🌟🍕🍩🎈🏆👑'.match(/\p{Extended_Pictographic}️?/gu);
@@ -1869,22 +1888,27 @@ function playBoss(){
   if(location.hash!=='#boss')return; // a late timer from a game you already left
   const lv=K.lv.boss,[em,name]=BOSSES[(lv-1+(K.bossN||0))%BOSSES.length],maxHp=5+Math.floor(lv/2);
   let hp=maxHp,hearts=3,busy=false;setHeader('Boss Battle',`Level ${lv}: ${name}`);
-  const q=()=>{const t=pick(TABLES[lv-1]),b=rnd(1,lv>=6?12:10);const [x,y]=Math.random()<.5?[t,b]:[b,t];return{text:`${x} × ${y}`,ans:x*y}};
+  const q=()=>{const t=pick(TABLES[lv-1]),b=rnd(1,lv>=6?12:10);const [x,y]=Math.random()<.5?[t,b]:[b,t];return{x,y,text:`${x} × ${y}`,ans:x*y}};let helps=0;
   view.innerHTML=`<div class="boss"><div class="arena"><div class="hero">🦸<div class="hearts" id="hearts"></div></div>
       <div class="foe"><div class="hpbar"><i id="hp"></i></div><div class="bossem" id="boss">${em}</div></div><div class="zap" id="zap">⚡</div></div>
-    <div class="panel"><div class="big" id="bq"></div></div><div id="bch"></div><p class="note" id="bnote" style="text-align:center;margin:0 auto;min-height:1.4em"></p></div>`;
+    <div class="panel"><div class="big" id="bq"></div></div><div id="bch"></div>
+    <div class="row"><button class="pbtn helpbtn" id="bhelp">💡 Help me</button></div><p class="note" id="bnote" style="text-align:center;margin:0 auto;min-height:1.4em"></p></div>`;
   const hud=()=>{$('#hp').style.width=(hp/maxHp*100)+'%';$('#hearts').textContent='❤️'.repeat(hearts)+'🤍'.repeat(3-hearts)};hud();
   function ask(){const Q=q();$('#bq').textContent=`${Q.text} = ?`;
+    $('#bhelp').onclick=()=>{if(busy)return;if(!Q.helped){Q.helped=true;helps++}multHelp(Q.x,Q.y)};
     const box=document.createElement('div');box.className='choices';box.id='bch';
     nearOptions(Q.ans,4,Q.ans<20?4:Q.ans<50?8:12,1).forEach(v=>{const b=document.createElement('button');b.className='choice';b.textContent=v;
       b.onclick=async()=>{if(busy)return;busy=true;
         if(v===Q.ans){b.classList.add('ok');sfx.yes();const z=$('#zap');z.classList.remove('fire');void z.offsetWidth;z.classList.add('fire');
           await fsleep(380);hp--;hud();const B=$('#boss');B.classList.remove('hit');void B.offsetWidth;B.classList.add('hit');tone([[200,0,.15],[120,.05,.2]],'sawtooth',0.05);
-          if(hp<=0){B.classList.add('ko');sfx.up();say(`You beat the ${name}!`);await fsleep(900);K.bossN=(K.bossN||0)+1;addStars(3,B,'boss');
-            K.got.boss=PER_LEVEL-1;const up=correct('boss');popup('🏆',`${name} defeated!`,'You earned 3 stars.',up?'Next level':'Next boss',()=>playBoss());return}
+          if(hp<=0){B.classList.add('ko');sfx.up();say(`You beat the ${name}!`);await fsleep(900);K.bossN=(K.bossN||0)+1;const stars=helps>2?2:3;addStars(stars,B,'boss');
+            K.got.boss=PER_LEVEL-1;const up=correct('boss');popup('🏆',`${name} defeated!`,`You earned ${stars} stars.${helps>2?' Fewer helps next time means 3 stars!':''}`,up?'Next level':'Next boss',()=>playBoss());return}
           await fsleep(450)}
         else{b.classList.add('no');sfx.no();const B=$('#boss');B.classList.remove('lunge');void B.offsetWidth;B.classList.add('lunge');hearts--;hud();
-          $('#bnote').textContent=`${Q.text} = ${Q.ans}`;say(`${Q.text.replace('×','times')} is ${Q.ans}`);await fsleep(1500);$('#bnote').textContent='';
+          $('#bnote').textContent=`${Q.text} = ${Q.ans}`;say(`${Q.text.replace('×','times')} is ${Q.ans}`);
+          if(Math.max(Q.x,Q.y)>5&&hearts>0){$('#bnote').innerHTML=`${Q.text} = ${Q.ans} <button class="linkbtn" id="bsee">See how ▶</button>`;
+            await new Promise(res=>{const t=setTimeout(res,2600);$('#bsee').onclick=()=>{clearTimeout(t);multHelp(Q.x,Q.y,res)}})}
+          else await fsleep(1500);$('#bnote').textContent='';
           if(hearts<=0){popup(em,`The ${name} won this time!`,'Practice makes you stronger. Try again!','Try again',()=>playBoss());return}}
         busy=false;ask()};box.appendChild(b)});
     $('#bch').replaceWith(box)}
@@ -3026,6 +3050,101 @@ function njStart(level,carry){
 }
 
 /* =========================================================
+   TIMES-TABLE HELP: shows *how* to work out a fact with dot arrays, the way school teaches it.
+   Over 5: split into a 5s fact + a small fact (6×7 = 6×5 + 6×2). ×9: ×10 then take one group away.
+   ×10: add a zero. Small facts: skip-count the rows. After a few helps on the same fact it gives a hint first.
+   ========================================================= */
+function multSteps(x,y){
+  const s=Math.min(x,y),b=Math.max(x,y),ans=x*y,R=s,C=b,st=[];
+  // each step: text, how to color the dots, and a running equation line
+  if(s===1){st.push({t:`One group of ${b} is just ${b}.`,paint:()=>'L',eq:[`1 × ${b} = ${b}`]});return{R,C,st}}
+  if(b===10){
+    st.push({t:`${s} rows of 10 dots.`,paint:()=>'N'});
+    st.push({t:`Count by tens: ${[...Array(s)].map((_,i)=>(i+1)*10).join(', ')}.`,paint:()=>'L',eq:[`${s} × 10 = ${ans}`]});
+    st.push({t:`Trick: anything times 10, just put a zero on the end! ${s} → ${ans}.`,paint:()=>'L',eq:[`${s} × 10 = ${ans}`]});return{R,C,st}}
+  if(b===9){
+    const R2=s,C2=10;
+    st.push({t:`Nine is one less than ten. Let's do ${s} × 10 first.`,paint:()=>'N',C:10});
+    st.push({t:`${s} × 10 = ${s*10}. (Just add a zero!)`,paint:()=>'L',C:10,eq:[`${s} × 10 = ${s*10}`]});
+    st.push({t:`We only wanted 9 in each row, so take away one column of ${s}.`,paint:(r,c)=>c===9?'G':'L',C:10,eq:[`${s} × 10 = ${s*10}`,`− ${s}`]});
+    st.push({t:`${s*10} take away ${s} is ${ans}.`,paint:(r,c)=>c===9?'G':'L',C:10,eq:[`${s} × 10 = ${s*10}`,`− ${s}`,`= ${ans}`]});
+    return{R:R2,C:C2,st}}
+  if(b<=5){
+    st.push({t:`${s} rows with ${b} dots in each row.`,paint:()=>'N'});
+    for(let r=1;r<=s;r++)st.push({t:`Count by ${b}s: ${[...Array(r)].map((_,i)=>(i+1)*b).join(', ')}${r===s?'!':'…'}`,paint:(rr)=>rr<r?'K':'N',eq:r===s?[`${s} × ${b} = ${ans}`]:null});
+    return{R,C,st}}
+  // over 5: split the long side into a part you know (5, or 10 for 11 and 12) and the rest
+  const L=b>10?10:5,Rt=b-L,pa=s*L,pb=s*Rt;
+  const small=Rt===1?`${s} × 1 = ${pb}. Just one more column!`:Rt===2?`${s} × 2 = ${pb}. That's just doubling ${s}!`:`${s} × ${Rt} = ${pb}.`;
+  st.push({t:`${s} rows of ${b}. That's a lot to count! Let's split it into ${L} and ${Rt}.`,paint:(r,c)=>c<L?'L':'R'});
+  st.push({t:`Blue part: ${s} × ${L} = ${pa}. ${L===5?'You know your 5s!':'Just add a zero!'}`,paint:(r,c)=>c<L?'L':'n',eq:[`${s} × ${L} = ${pa}`]});
+  st.push({t:`Orange part: ${small}`,paint:(r,c)=>c<L?'l':'R',eq:[`${s} × ${L} = ${pa}`,`${s} × ${Rt} = ${pb}`]});
+  st.push({t:`Put them together: ${pa} + ${pb} = ${ans}. So ${x} × ${y} = ${ans}!`,paint:(r,c)=>c<L?'L':'R',eq:[`${s} × ${L} = ${pa}`,`${s} × ${Rt} = ${pb}`,`${pa} + ${pb} = ${ans}`]});
+  return{R,C,st}}
+function multHint(x,y){const s=Math.min(x,y),b=Math.max(x,y);
+  if(b===9)return `Try ${s} × 10 first, then take away ${s}.`;
+  if(b===10)return `Times 10: put a zero on the end of ${s}.`;
+  if(b<=5)return `Count by ${b}s, ${s} times.`;
+  const L=b>10?10:5;return `Try ${s} × ${L} first, then add ${s} × ${b-L}.`}
+function multHelp(x,y,done){
+  K.mhelp=K.mhelp||{};const key=Math.min(x,y)+'x'+Math.max(x,y),uses=K.mhelp[key]||0;K.mhelp[key]=uses+1;save();
+  const M=multSteps(x,y);let i=0,hintOnly=uses>=3;
+  const ov=document.createElement('div');ov.className='mhelp';document.body.appendChild(ov);
+  const close=()=>{ov.remove();speakNow('');done&&done()};
+  const draw=()=>{
+    if(hintOnly){ov.innerHTML=`<div class="mhcard"><div class="mhq">${x} × ${y}</div><p class="mht">💡 ${multHint(x,y)}</p>
+        <div class="row"><button class="pbtn" id="mhAll">Show me all the steps</button><button class="pbtn go" id="mhGo">I've got it</button></div></div>`;
+      say(multHint(x,y));$('#mhAll').onclick=()=>{hintOnly=false;draw()};$('#mhGo').onclick=close;return}
+    const S=M.st[i],R=M.R,C=S.C||M.C,cell=Math.max(14,Math.min(40,Math.floor((Math.min(innerWidth,620)-80)/C),Math.floor(Math.min(300,innerHeight*0.36)/R)));
+    const col={N:'#c3cde0',L:'#3f8ef0',R:'#f39a2e',K:'#3fbf7f',G:'#e05a5a',l:'#a9c8f5',n:'#e6ecf6'};
+    let dots='';for(let r=0;r<R;r++)for(let c=0;c<C;c++){const k=S.paint(r,c);dots+=`<circle cx="${c*cell+cell/2}" cy="${r*cell+cell/2}" r="${cell*0.36}" fill="${col[k]||col.N}" ${k==='G'?'opacity=".45"':''}/>`;
+      if(k==='G')dots+=`<path d="M${c*cell+cell*0.25} ${r*cell+cell*0.25} L${c*cell+cell*0.75} ${r*cell+cell*0.75}" stroke="#c0392b" stroke-width="3"/>`}
+    const split=M.st[0].paint(0,0)==='L'&&M.st[0].paint(0,C-1)==='R'?C-(Math.max(x,y)-(Math.max(x,y)>10?10:5)):0;
+    ov.innerHTML=`<div class="mhcard"><div class="mhq">${x} × ${y}</div>
+      <svg class="mhsvg" width="${C*cell}" height="${R*cell}" viewBox="0 0 ${C*cell} ${R*cell}">${dots}${split?`<line x1="${split*cell}" y1="-4" x2="${split*cell}" y2="${R*cell+4}" stroke="#1d2b4f" stroke-width="3" stroke-dasharray="6 5"/>`:''}</svg>
+      <p class="mht">${S.t}</p>${S.eq?`<div class="mheq">${S.eq.map(e=>`<span>${e}</span>`).join('')}</div>`:'<div class="mheq"></div>'}
+      <div class="row"><button class="pbtn" id="mhBack" ${i?'':'disabled'}>◀</button><div class="mhdots">${M.st.map((_,k)=>`<i class="${k<=i?'on':''}"></i>`).join('')}</div>
+        <button class="pbtn go" id="mhNext">${i+1<M.st.length?'Next ▶':'Got it!'}</button></div></div>`;
+    say(S.t.replace(/×/g,'times').replace(/−/g,'minus'));
+    $('#mhNext').onclick=()=>{if(i+1<M.st.length){i++;sfx.tap();draw()}else{sfx.up();close()}};
+    $('#mhBack').onclick=()=>{if(i){i--;draw()}}};
+  draw();ov.onclick=e=>{if(e.target===ov)close()};
+}
+
+/* ---------- Times Tables practice: one table at a time, help always there, no hearts ---------- */
+function playTimes(){
+  if(location.hash!=='#times')return;
+  setHeader('Times Tables','Practice with help');
+  K.times=K.times||{};
+  view.innerHTML=`<div class="board"><p class="prompt">Pick a table to practice</p>
+    <div class="ttpick">${[2,3,4,5,6,7,8,9,10,11,12].map(t=>`<button data-t="${t}" class="${t>5&&t<10?'hot':''}">×${t}<small>${K.times[t]?K.times[t]+' ✓':''}</small></button>`).join('')}
+      <button data-t="mix" class="hot wide">Mix 6–9<small>${K.times.mix?K.times.mix+' ✓':''}</small></button></div>
+    <p class="note" style="text-align:center">The tricky ones (6, 7, 8 and 9) have a 💡 Help button that shows you how to work them out.</p></div>`;
+  view.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{sfx.tap();timesRun(b.dataset.t)});
+}
+function timesRun(t){
+  let streak=0,count=0,busy=false;const tok=loopToken;
+  const q=()=>{const a=t==='mix'?pick([6,7,8,9]):+t,b=t==='mix'?rnd(2,9):rnd(1,10);return Math.random()<.5?{x:a,y:b}:{x:b,y:a}};
+  const ask=()=>{if(tok!==loopToken)return;const Q=q(),ans=Q.x*Q.y;let helped=false;
+    setHeader('Times Tables',t==='mix'?'Mix 6–9':`The ×${t} table`);
+    view.innerHTML=`<div class="board"><div class="ttbar"><span>🔥 Streak <b>${streak}</b></span><span>✓ <b>${count}</b></span><button class="pbtn" id="ttBack">Tables</button></div>
+      <div class="panel"><div class="big">${Q.x} × ${Q.y} = ?</div></div><div id="ttch"></div>
+      <div class="row"><button class="pbtn helpbtn" id="ttHelp">💡 Help me</button></div><p class="note" id="ttn" style="text-align:center;min-height:1.4em"></p></div>`;
+    $('#ttBack').onclick=()=>playTimes();
+    $('#ttHelp').onclick=()=>{helped=true;multHelp(Q.x,Q.y)};
+    const box=document.createElement('div');box.className='choices';
+    nearOptions(ans,4,ans<20?4:ans<50?8:12,1).forEach(v=>{const b=document.createElement('button');b.className='choice';b.textContent=v;
+      b.onclick=async()=>{if(busy)return;
+        if(v===ans){busy=true;b.classList.add('ok');sfx.yes();count++;K.times[t]=(K.times[t]||0)+1;save();
+          if(!helped){streak++;if(streak%3===0)addStars(1,b,'times')}
+          $('#ttn').textContent=helped?'Nice! Next time, try it without help.':pick(['Great job!','You got it!','Nice!','Yes!']);await fsleep(800);busy=false;ask()}
+        else{b.classList.add('no');sfx.no();streak=0;$('#ttn').innerHTML=`Not quite. <button class="linkbtn" id="ttSee">See how ▶</button>`;
+          $('#ttSee').onclick=()=>{helped=true;multHelp(Q.x,Q.y)}}};box.appendChild(b)});
+    $('#ttch').replaceWith(box)};
+  ask();
+}
+
+/* =========================================================
    HOME, STICKERS, GROWN-UPS
    ========================================================= */
 function home(){
@@ -3105,7 +3224,7 @@ function grownups(){
 }
 
 /* ---------- navigation (plain #names so the back button works) ---------- */
-const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),ninja:gated('ninja',playNinja),tv:gated('tv',()=>{TV.stack=[];playTv()}),adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
+const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,times:playTimes,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),ninja:gated('ninja',playNinja),tv:gated('tv',()=>{TV.stack=[];playTv()}),adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
 function go(name){if(location.hash.slice(1)!==name)location.hash=name;else show()}
 function show(){if(window.__tvKill)window.__tvKill();loopToken++;const r=location.hash.slice(1);resetArm=false;$('#timeChip').hidden=true;updateStars();$('#overlay').hidden=true;popQ.length=0;try{if(window.SQAndroid)SQAndroid.stop();else if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}
   view.scrollTop=0;(ROUTES[r]||home)()}
