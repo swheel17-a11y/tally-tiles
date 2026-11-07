@@ -1,5 +1,5 @@
 // Star Quest offline cache. Bump VERSION whenever index.html changes so phones pick up the update.
-const VERSION='star-quest-v23';
+const VERSION='star-quest-v24';
 const THREE_URL='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';
 const CORE=['./','index.html','manifest.webmanifest','icon-192.png','icon-512.png','apple-touch-icon.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(VERSION).then(c=>c.addAll(CORE).then(()=>c.add(THREE_URL).catch(()=>{}))).then(()=>self.skipWaiting()))});

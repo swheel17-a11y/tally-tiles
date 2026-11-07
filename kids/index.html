@@ -544,6 +544,25 @@ html.little .tvp b,html.little .tve b{font-size:20px}
 .ttpick small{font-size:13px;color:var(--muted);font-family:var(--f-body)}
 .ttbar{display:flex;gap:16px;align-items:center;justify-content:space-between;width:min(640px,100%);font-size:17px}
 .ttbar b{font-family:var(--f-display);font-size:22px}
+.nrlist{display:flex;flex-direction:column;gap:12px;width:min(640px,100%)}
+.nrcard{display:flex;align-items:center;gap:16px;text-align:left;padding:14px 18px;border-radius:22px;background:var(--card);box-shadow:0 5px 0 var(--sky-2);min-height:76px}
+.nrcard b{display:block;font-family:var(--f-display);font-size:24px}.nrcard small{color:var(--muted);font-size:15px}
+.nrcard.done{background:#eefbe9;box-shadow:0 5px 0 #a6dc95}.nrcard:disabled{opacity:.5}
+.nrnum{flex:0 0 52px;height:52px;border-radius:50%;background:#6b4bd6;color:#fff;font-family:var(--f-display);font-size:26px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.nrcard.done .nrnum{background:#3fbf7f}.nrcard:disabled .nrnum{background:var(--sky-2)}
+.nrpage{display:flex;flex-direction:column;align-items:center;gap:22px;width:min(820px,100%);margin:0 auto;padding:10px 0}
+.nrtext{background:var(--card);border-radius:26px;padding:26px 22px;box-shadow:0 6px 0 var(--sky-2);text-align:center;line-height:1.9;width:100%}
+.nrw{font-family:var(--f-display);font-size:clamp(30px,5.2vw,44px);font-weight:600;padding:0 4px;border-radius:10px;border-bottom:3px dotted #c3cde0;background:none;color:inherit}
+.nrw:active{background:#fff1c9}.nrw.name{color:#6b4bd6}
+.nrask{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.nrask .nropt{height:72px;min-width:140px;font-size:30px;border-radius:20px}
+.nropt.ok{background:#3fbf7f;color:#fff;box-shadow:0 4px 0 #2a9460}.nropt.no{background:#ffd9d6;animation:nrshake .3s}
+@keyframes nrshake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.nrnext{height:64px;font-size:24px;padding:0 34px}
+.nrchunks{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.nrchunks span{font-family:var(--f-display);font-size:54px;font-weight:700;background:#eef3ff;border-radius:16px;padding:4px 16px;min-width:56px;text-align:center}
+.nrchunks span:nth-of-type(even){background:#fff1c9}.nrchunks i{font-size:30px;color:var(--muted);font-style:normal}
+.nrwhole{font-family:var(--f-display);font-size:44px;font-weight:700;color:#6b4bd6}
 /* stickers + grown-ups */
 .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:12px}
 .sticker{height:100px;border-radius:22px;background:var(--card);display:grid;place-items:center;font-size:52px;box-shadow:0 5px 0 var(--sky-2)}
@@ -656,6 +675,7 @@ const GAMES=[
   {id:'robot',name:'Robot Path',em:'🤖',sub:'Program the robot',color:'#5b6ee1',max:8},
   {id:'boss',name:'Boss Battle',em:'👾',sub:'Times tables',color:'#d9435b',max:6},
   {id:'times',name:'Times Tables',em:'✖️',sub:'Practice with help',color:'#2f9be0',max:0},
+  {id:'ninjaread',name:'Ninja Stories',em:'📖',sub:'Read to power up',color:'#6b4bd6',max:0},
   {id:'daily',name:'Daily Challenge',em:'📅',sub:'5 puzzles a day',color:'#f08a12',max:0}
 ];
 const STICKERS='🐶🐱🦊🐻🐼🐨🐯🦁🐮🐷🐸🐵🐔🐧🐦🦉🦄🐝🦋🐢🐙🦈🐬🐳🦖🦕🚒🚜🏎️🚂✈️🛸🌈⭐🌟🍕🍩🎈🏆👑'.match(/\p{Extended_Pictographic}️?/gu);
@@ -2881,7 +2901,7 @@ function njMaker(){
   view.innerHTML=`<div class="njmenu"><p class="prompt">Make a new ninja!</p>
     <div class="njmaker"><img id="njPrev" alt="Your new ninja">
       <div class="njform"><label>Name<input id="njName" class="gin" maxlength="12" placeholder="Ninja name" autocomplete="off" autocapitalize="words"></label>
-        <div class="njcols">${NJ_COLORS.map(c=>`<button data-c="${c}" style="background:${c}" aria-label="Suit color"></button>`).join('')}</div></div></div>
+        <div class="njcols">${[...new Set(NJ_COLORS.concat((K.ninja&&K.ninja.colors)||[]))].map(c=>`<button data-c="${c}" style="background:${c}" aria-label="Suit color"></button>`).join('')}</div></div></div>
     <div class="row"><button class="pbtn" id="njBack">◀ Back</button><button class="pbtn go" id="njSave">Save ninja</button></div></div>`;
   const draw=()=>{$('#njPrev').src=njAvatar({color},160);view.querySelectorAll('[data-c]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===color))};draw();
   view.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{color=b.dataset.c;sfx.tap();draw()});
@@ -3145,6 +3165,84 @@ function timesRun(t){
 }
 
 /* =========================================================
+   NINJA STORIES: short decodable chapters starring Tib, Drock and Kuko.
+   Tiny pages, words he can sound out, tap a word to see it in chunks (sh·i·p → ship),
+   choices you can only get right by reading, and a words-per-minute meter for rereads.
+   ========================================================= */
+// page: {t:'text'} or {t:'text', ask:[[word, true/false or 'number'], ...], oops:'text when wrong'}
+const NR_CH=[
+ {title:'Tib and the Bot',lv:'Level 1 · short words',pages:[
+  {t:'Tib is a ninja.'},{t:'Tib has a gold suit.'},{t:'Tib can run fast.'},{t:'A bot is in the den.'},{t:'The bot is big. It has a red lamp on top.'},
+  {t:'The bot is on the left. Tib must hop to the right.',ask:[['left',false],['right',true]],oops:'Bonk! The bot is on the left. Read it again.'},
+  {t:'Tib hops. The bot did not get him.'},{t:'Tib gets a gem. Yes!'}]},
+ {title:'Drock Can Chop',lv:'Level 2 · sh, ch, th',pages:[
+  {t:'Drock is a ninja in a red suit.'},{t:'Drock can chop and kick.'},{t:'Six bots rush at Tib and Drock.'},{t:'Chop! Thud! Kick! Thud!'},
+  {t:'The bots fall in a big mess.'},{t:'Drock said, "Get the gem, not the shell."',ask:[['shell',false],['gem',true]],oops:'Oops! What did Drock say to get? Read it again.'},
+  {t:'Tib gets the gem. Drock grins.'},{t:'Then a bell rings. More bots!'},{t:'Tib and Drock dash off. That was fun!'}]},
+ {title:'Kuko and the Portal',lv:'Level 3 · ee, oo, ing',pages:[
+  {t:'Kuko is a ninja in a blue suit.'},{t:'Kuko can swim and jump and spin.'},{t:'The bots come from a big green portal.'},
+  {t:'Kuko has three stars. Tib has two stars.'},{t:'How many stars do they have?',ask:[['5',true],['6',false],['4',false]],oops:'Not quite. Kuko has three. Tib has two. Count them up!'},
+  {t:'Zing! Zing! The stars hit the portal.'},{t:'The portal shook. Then it went still.'},{t:'No more bots will come. Kuko did a big spin.'}]},
+ {title:'Three Ninjas',lv:'Level 4 · longer words',pages:[
+  {t:'Tib, Drock and Kuko met at the top of the hill.'},{t:'They had to stop the bots from taking the gems.'},
+  {t:'Tib said, "I will go fast. Drock, you chop. Kuko, you throw stars."'},
+  {t:'Who will throw the stars?',ask:[['Tib',false],['Drock',false],['Kuko',true]],oops:'Look back. Who did Tib ask to throw stars?'},
+  {t:'The ninjas ran down the hill to the bot lair.'},{t:'Ten bots were standing by the door.'},{t:'Drock chopped. Kuko threw. Tib was so fast the bots got lost.'},
+  {t:'The gems were safe. The three ninjas had a snack.'}]},
+ {title:'The Biggest Bot',lv:'Level 5 · short stories',pages:[
+  {t:'One night, the ground began to shake.'},{t:'A bot as big as a house stomped out of the dark.'},
+  {t:'It had six legs and two red eyes that blinked.'},
+  {t:'How many legs did the big bot have?',ask:[['two',false],['six',true],['ten',false]],oops:'Read it again. Count the legs!'},
+  {t:'Tib ran left. Drock ran right. Kuko stayed in the middle.'},{t:'The big bot did not know which ninja to chase.'},
+  {t:'It spun and spun until it got dizzy and fell with a crash.'},
+  {t:'Where did Kuko go?',ask:[['left',false],['right',false],['the middle',true]],oops:'Tib went left and Drock went right. Where did Kuko stay?'},
+  {t:'The three ninjas cheered. They saved the town!'}]}];
+const NR_NAMES=new Set(['tib','drock','kuko','ninja','ninjas','portal','bot','bots']);
+const NR_SIGHT=new Set(['the','a','is','was','said','to','of','you','they','do','were','what','one','come','how','many','who','where','have','there','two','eyes','house','ground','door','more','go','no','so','i','he','she','we','me','be','into','by','suit','chase','down','began','night','throw','threw','know','which','until','dizzy','safe','some','are','from','out','will','yes']);
+const NR_CHUNKS=['tch','ing','sh','ch','th','wh','ck','ng','ee','oo','ea','ai','ay','oa','ar','or','er','ou','ow','ll','ss','ff','nk'];
+function nrChunk(w){const s=w.toLowerCase(),out=[];let i=0;while(i<s.length){const c=NR_CHUNKS.find(c=>s.startsWith(c,i));if(c){out.push(c);i+=c.length}else{out.push(s[i]);i++}}return out}
+const nrWords=t=>t.split(/\s+/).filter(Boolean).length;
+const NR_COLORS=['#9aa3ad','#a4d93a','#6fd0ff','#8b5a2b','#24305e']; // ninja suit colors you unlock by finishing chapters
+function nrData(){K.read=K.read||{done:{},wpm:{},last:{}};return K.read}
+function playRead(){
+  if(location.hash!=='#ninjaread')return;
+  const D=nrData();setHeader('Ninja Stories','Read to power up your ninjas');
+  view.innerHTML=`<div class="board"><p class="prompt">Pick a chapter</p><div class="nrlist">${NR_CH.map((c,i)=>{const open=i===0||D.done[i-1],done=D.done[i];
+    return `<button class="nrcard ${done?'done':''}" data-c="${i}" ${open?'':'disabled'}><span class="nrnum">${open?(done?'✓':i+1):'🔒'}</span><span><b>${c.title}</b><small>${c.lv}${D.wpm[i]?` · best ${D.wpm[i]} words a minute`:''}</small></span></button>`}).join('')}</div>
+    <p class="note" style="text-align:center">Stuck on a word? Tap it to see it in little pieces.</p></div>`;
+  view.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{sfx.tap();nrRead(+b.dataset.c)});
+}
+function nrRead(ci){
+  const C=NR_CH[ci],D=nrData(),tok=loopToken;let p=0,readMs=0,words=0,shownAt=0,paused=0,lock=false;
+  const page=()=>{if(tok!==loopToken)return;const P=C.pages[p];setHeader(C.title,`Page ${p+1} of ${C.pages.length}`);
+    view.innerHTML=`<div class="nrpage"><div class="nrtext">${P.t.split(/\s+/).map(w=>{const bare=w.replace(/[^A-Za-z']/g,'');return `<button class="nrw ${NR_NAMES.has(bare.toLowerCase())?'name':''}" data-w="${bare}">${w}</button>`}).join(' ')}</div>
+      ${P.ask?`<div class="nrask">${P.ask.map(([w],k)=>`<button class="pbtn nropt" data-k="${k}">${w}</button>`).join('')}</div><p class="note" id="nrMsg" style="text-align:center;min-height:1.4em"></p>`
+        :`<div class="row"><button class="pbtn go nrnext" id="nrNext">${p+1<C.pages.length?'Next ▶':'The end ✓'}</button></div>`}
+      <div class="progress">${C.pages.map((_,k)=>`<i class="${k<=p?'on':''}"></i>`).join('')}</div></div>`;
+    shownAt=performance.now();paused=0;lock=false;
+    view.querySelectorAll('.nrw').forEach(b=>b.onclick=()=>nrHelp(b.dataset.w,ms=>{paused+=ms}));
+    const advance=()=>{if(lock)return;lock=true;readMs+=Math.max(0,performance.now()-shownAt-paused);words+=nrWords(P.t);p++;sfx.tap();if(p<C.pages.length)page();else finish()};
+    if(P.ask)view.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{const ok=P.ask[+b.dataset.k][1];
+      if(lock)return;if(ok){b.classList.add('ok');sfx.yes();setTimeout(advance,600)}else{b.classList.add('no');sfx.no();$('#nrMsg').textContent=P.oops||'Read it again.';setTimeout(()=>b.classList.remove('no'),700)}});
+    else $('#nrNext').onclick=advance};
+  const finish=()=>{const mins=Math.max(readMs/60000,0.05),wpm=Math.round(words/mins),first=!D.done[ci],prev=D.last[ci];
+    const zoom=wpm>140;D.done[ci]=true;if(!zoom){D.last[ci]=wpm;if(wpm>(D.wpm[ci]||0))D.wpm[ci]=wpm}save();
+    const unlock=first&&NR_COLORS[ci]?NR_COLORS[ci]:null;if(unlock){K.ninja=K.ninja||{sel:0,custom:[],best:1,won:0};K.ninja.colors=[...new Set([...(K.ninja.colors||[]),unlock])];save()}
+    addStars(first?3:1,view,'ninjaread');sfx.up();
+    const speed=zoom?'Whoa, that was super fast! Ninjas read every word. Try it again slow and steady.':prev?(wpm>prev?`Last time: ${prev}. You got faster! 🚀`:`Last time: ${prev}. Read it again to beat it!`):'Read it again later and try to beat it!';
+    setTimeout(()=>{if(tok===loopToken)popup('📖',`You read “${C.title}”!`,`${zoom?`${words} words.`:`${words} words at ${wpm} words a minute.`} ${speed}${unlock?' You unlocked a new ninja suit color!':''}`,ci+1<NR_CH.length?'Next chapter':'Chapters',()=>ci+1<NR_CH.length?nrRead(ci+1):playRead())},500)};
+  page();
+}
+function nrHelp(word,addPause){if(!word)return;const t0=performance.now(),lw=word.toLowerCase(),kind=NR_NAMES.has(lw)?'name':NR_SIGHT.has(lw)||lw.length<2?'snap':'sound',parts=kind==='sound'?nrChunk(word):[lw];
+  const ov=document.createElement('div');ov.className='mhelp';
+  ov.innerHTML=`<div class="mhcard nrhelp"><div class="nrchunks">${parts.map(c=>`<span>${c}</span>`).join('<i>·</i>')}</div><div class="nrwhole">${word.toLowerCase()}</div>
+    <p class="note" style="text-align:center;margin:0">${kind==='name'?'This is a name word. Just remember it!':kind==='snap'?'This is a snap word. Tap Hear it, then say it with me!':'Say each piece, then put them together.'}</p>
+    <div class="row"><button class="pbtn" id="nrSay">🔊 Hear it</button><button class="pbtn go" id="nrOk">Got it</button></div></div>`;
+  document.body.appendChild(ov);
+  const close=()=>{ov.remove();addPause(performance.now()-t0)};
+  $('#nrSay').onclick=()=>speakNow(word,true);$('#nrOk').onclick=close;ov.onclick=e=>{if(e.target===ov)close()}}
+
+/* =========================================================
    HOME, STICKERS, GROWN-UPS
    ========================================================= */
 function home(){
@@ -3224,7 +3322,7 @@ function grownups(){
 }
 
 /* ---------- navigation (plain #names so the back button works) ---------- */
-const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,times:playTimes,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),ninja:gated('ninja',playNinja),tv:gated('tv',()=>{TV.stack=[];playTv()}),adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
+const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,times:playTimes,ninjaread:playRead,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),ninja:gated('ninja',playNinja),tv:gated('tv',()=>{TV.stack=[];playTv()}),adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
 function go(name){if(location.hash.slice(1)!==name)location.hash=name;else show()}
 function show(){if(window.__tvKill)window.__tvKill();loopToken++;const r=location.hash.slice(1);resetArm=false;$('#timeChip').hidden=true;updateStars();$('#overlay').hidden=true;popQ.length=0;try{if(window.SQAndroid)SQAndroid.stop();else if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}
   view.scrollTop=0;(ROUTES[r]||home)()}
