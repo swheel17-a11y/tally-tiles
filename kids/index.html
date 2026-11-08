@@ -563,6 +563,47 @@ html.little .tvp b,html.little .tve b{font-size:20px}
 .nrchunks span{font-family:var(--f-display);font-size:54px;font-weight:700;background:#eef3ff;border-radius:16px;padding:4px 16px;min-width:56px;text-align:center}
 .nrchunks span:nth-of-type(even){background:#fff1c9}.nrchunks i{font-size:30px;color:var(--muted);font-style:normal}
 .nrwhole{font-family:var(--f-display);font-size:44px;font-weight:700;color:#6b4bd6}
+.mxwrap{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:center;width:min(1100px,100%);margin:0 auto}
+.mxstage{position:relative;display:flex;justify-content:center}
+.mxpot,.mxres{width:100%;max-width:520px;max-height:62vh;touch-action:none;display:block;overflow:visible}
+.mxside{display:flex;flex-direction:column;align-items:center;gap:14px}
+.mxing{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%;max-width:460px}
+.mxing button{aspect-ratio:1;border-radius:22px;background:var(--card);font-size:clamp(38px,5.5vw,56px);box-shadow:0 5px 0 var(--sky-2)}
+.mxing button:active{transform:translateY(3px);box-shadow:0 2px 0 var(--sky-2)}
+.mxdrop{position:fixed;font-size:56px;line-height:1;margin:-28px 0 0 -28px;transition:transform .45s ease-in,opacity .45s;pointer-events:none;z-index:70}
+.mxspoon{position:absolute;left:50%;top:40%;font-size:64px;line-height:1;pointer-events:none;opacity:0;transform:translate(-20%,-80%) rotate(-20deg)}
+.mxspoon.on{opacity:1}.mxspoon.hint{opacity:1;animation:mxhint 1.4s ease-in-out infinite}
+@keyframes mxhint{0%,100%{transform:translate(-90%,-80%) rotate(-30deg)}50%{transform:translate(30%,-70%) rotate(10deg)}}
+.mxdone{height:68px;font-size:26px;padding:0 34px;animation:mxpulse 1.2s ease-in-out infinite}.mxdone[hidden]{display:none}
+@keyframes mxpulse{50%{transform:scale(1.06)}}
+.mxpick{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;width:min(760px,100%)}
+.mxpick button{min-height:150px;border-radius:26px;background:var(--card);box-shadow:0 6px 0 var(--sky-2);border:4px solid var(--c,transparent);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.mxpick span{font-size:64px;line-height:1}.mxpick b{font-family:var(--f-display);font-size:24px}
+.mxlab{font-family:var(--f-display);font-size:22px;font-weight:700;margin:6px 0 0}
+.mxshelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;width:min(760px,100%)}
+.mxshelf button{background:var(--card);border-radius:18px;padding:4px;box-shadow:0 4px 0 var(--sky-2)}
+.mxshelf svg{width:100%;height:auto;max-height:none;display:block;touch-action:auto;pointer-events:none}
+.mxfire,.mxflame{animation:mxflick .45s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes mxflick{to{transform:scaleY(.82)}}
+.mxtw{animation:mxtw 1.6s ease-in-out infinite}@keyframes mxtw{50%{opacity:.25}}
+.mxbub{animation:mxbub 2.6s linear infinite;transform-box:fill-box}@keyframes mxbub{from{transform:translateY(0);opacity:.6}to{transform:translateY(-120px);opacity:0}}
+.mxblob{transform-box:fill-box;transform-origin:50% 100%}.mxblob.squish{animation:mxsq .6s}
+@keyframes mxsq{30%{transform:scale(1.25,.75)}60%{transform:scale(.9,1.12)}}
+.mxsw,.mxtops{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:460px}
+.mxsw button{width:58px;height:58px;border-radius:50%;box-shadow:0 0 0 3px var(--sky-2);font-size:26px}
+.mxsw button[aria-pressed=true]{box-shadow:0 0 0 6px var(--ocean)}
+.mxtops button{width:70px;height:70px;border-radius:18px;background:var(--card);font-size:38px;box-shadow:0 4px 0 var(--sky-2)}
+.mxtops button[aria-pressed=true]{background:#fff1c9;box-shadow:0 0 0 4px #f2b705}
+.mxsprb{display:inline-block;width:42px;height:42px;border-radius:50%;background:repeating-linear-gradient(45deg,#ff5a7a 0 5px,#ffd23f 5px 10px,#3fbf55 10px 15px,#3d5fd6 15px 20px)}
+.mxoven{display:flex;flex-direction:column;align-items:center;gap:10px}.mxov{width:min(460px,90vw);max-height:60vh}
+.mxcount{font-family:var(--f-display);font-size:80px;font-weight:700;line-height:1}.mxcount.pop{animation:mxpop .5s}@keyframes mxpop{from{transform:scale(1.6)}}
+.mxname{font-family:var(--f-display);font-size:32px;text-align:center;margin:0}
+.mxplay{touch-action:none}
+.mxmagic{position:fixed;top:0;left:0;right:0;bottom:0;z-index:80;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+.mxmagic p{font-family:var(--f-display);font-size:clamp(28px,5vw,46px);font-weight:700;color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.3);text-align:center;padding:0 20px;margin:0}
+.mxbig{font-size:min(40vw,240px);line-height:1.1;animation:mxbig 1s cubic-bezier(.3,1.8,.5,1)}@keyframes mxbig{from{transform:scale(0) rotate(-180deg)}}
+.mxrain{position:absolute;top:-60px;font-size:44px;animation:mxrain 2.4s linear infinite}@keyframes mxrain{to{transform:translateY(115vh) rotate(360deg)}}
+@media (orientation:portrait){.mxwrap{grid-template-columns:1fr}.mxpot,.mxres{max-height:42vh}}
 /* stickers + grown-ups */
 .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:12px}
 .sticker{height:100px;border-radius:22px;background:var(--card);display:grid;place-items:center;font-size:52px;box-shadow:0 5px 0 var(--sky-2)}
@@ -662,6 +703,7 @@ const GAMES=[
   {id:'fish',name:'Fishing Trip',em:'🎣',sub:'Catch them all',color:'#1a8fb5',max:0,play:true},
   {id:'brick',name:'Brick Builder',em:'🧱',sub:'Build anything in 3D',color:'#d9262b',max:0,play:true},
   {id:'doodle',name:'Doodle Pad',em:'🎨',sub:'Draw anything',color:'#f59a23',max:0,play:true,both:true},
+  {id:'mix',name:'Mix & Make',em:'🧪',sub:'Potions, slime and treats',color:'#7bc043',max:0,little:true},
   {id:'adventure',name:'Magic Adventure',em:'🦄',sub:'You pick what happens',color:'#9b6bff',max:0,little:true},
   {id:'butterfly',name:'Butterfly Garden',em:'🦋',sub:'Catch and count',color:'#ff7eb6',max:4,little:true},
   {id:'dressup',name:'Princess Dress-Up',em:'👸',sub:'Dresses and crowns',color:'#b57bff',max:0,little:true},
@@ -3243,6 +3285,229 @@ function nrHelp(word,addPause){if(!word)return;const t0=performance.now(),lw=wor
   $('#nrSay').onclick=()=>speakNow(word,true);$('#nrOk').onclick=close;ov.onclick=e=>{if(e.target===ov)close()}}
 
 /* =========================================================
+   MIX & MAKE (Eila): potions, slime, cake and cookies.
+   Tap things to pour them in, stir with your finger until the colors swirl together,
+   then play with what you made: drink the potion, squish the slime, blow out the candles, eat the cookie.
+   Everything you make goes on your shelf.
+   ========================================================= */
+const MX_ST={
+ potion:{name:'Potions',em:'🧪',col:'#8a4fd8',pot:'cauldron',hello:"Let's make a magic potion! Tap things to put them in the pot.",ing:[
+  ['🍓','#e8344a','strawberry'],['🫐','#3d5fd6','blueberries'],['🍋','#f5d128','lemon'],['🍃','#3fbf55','leaves'],['🌸','#ff8fc8','flowers'],['🍇','#8a4fd8','grapes'],['⭐','#fff3a8','star dust','glitter'],['🫧','#bfe8ff','bubbles','bubbles']]},
+ slime:{name:'Slime',em:'🟢',col:'#3fbf55',pot:'tub',hello:"Let's make slime! Start with some glue, then add colors.",ing:[
+  ['🧴','#f4f4f0','glue'],['🔴','#e8344a','red'],['🔵','#3d5fd6','blue'],['🟡','#f5d128','yellow'],['🟢','#3fbf55','green'],['🟣','#8a4fd8','purple'],['✨','#f0e6ff','glitter','glitter'],['☁️','#ffffff','fluffy foam','fluffy']]},
+ cake:{name:'Cake',em:'🎂',col:'#ff7eb6',pot:'bowl',hello:"Let's bake a cake! Put things in the bowl.",ing:[
+  ['🥚','#f7e3a1','an egg'],['🌾','#f2e8d0','flour'],['🥛','#ffffff','milk'],['🧈','#f3d36b','butter'],['🍫','#6b3e26','chocolate'],['🍓','#ff8fb0','strawberries'],['🫐','#6a7fe0','blueberries'],['🍋','#f5e04a','lemon']]},
+ cookie:{name:'Cookies',em:'🍪',col:'#e0953a',pot:'bowl',hello:"Let's make cookies! Put things in the bowl.",ing:[
+  ['🌾','#f2e8d0','flour'],['🧈','#f3d36b','butter'],['🥚','#f7e3a1','an egg'],['🍯','#e9b04a','honey'],['🥜','#c98a43','peanut butter'],['🍫','#5a3418','chocolate chips','chips'],['🍓','#ff8fb0','strawberries'],['🍬','#ff7eb6','candy']]}};
+const mxH=c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16));
+const mxX=a=>'#'+a.map(v=>Math.round(Math.max(0,Math.min(255,v))).toString(16).padStart(2,'0')).join('');
+const mxLerp=(a,b,t)=>{const A=mxH(a),B=mxH(b);return mxX(A.map((v,i)=>v+(B[i]-v)*t))};
+// kid-style mixing: average the hues around the color wheel (blue + yellow = green, red + blue = purple, red + yellow = orange);
+// whites and pale things just make it lighter, and lots of clashing colors turn it muddy.
+function mxHsl(c){const [r,g,b]=mxH(c).map(v=>v/255),mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,d=mx-mn;let h=0,s=0;
+  if(d){s=d/(1-Math.abs(2*l-1));h=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;h*=60;if(h<0)h+=360}return[h,s,l]}
+function mxFromHsl(h,s,l){const C=(1-Math.abs(2*l-1))*s,X=C*(1-Math.abs((h/60)%2-1)),m=l-C/2;const [r,g,b]=h<60?[C,X,0]:h<120?[X,C,0]:h<180?[0,C,X]:h<240?[0,X,C]:h<300?[X,0,C]:[C,0,X];return mxX([r,g,b].map(v=>(v+m)*255))}
+// hues are averaged on a painter's wheel (red, yellow, blue spaced evenly), so blue + yellow lands on green
+const MX_RYB=[[0,0],[35,60],[60,120],[120,180],[240,240],[300,300],[360,360]];
+const mxMap=(h,a,b)=>{for(let i=1;i<MX_RYB.length;i++){const p=MX_RYB[i-1],q=MX_RYB[i];if(h>=p[a]&&h<=q[a])return p[b]+(h-p[a])/(q[a]-p[a]||1)*(q[b]-p[b])}return h};
+function mxBlend(cs){if(!cs.length)return '#ffffff';const H=cs.map(mxHsl);let x=0,y=0,w=0,S=0,L=0;
+  H.forEach(([h,s,l])=>{const k=s*(1-Math.abs(2*l-1)),r=mxMap(h,0,1)*Math.PI/180;x+=Math.cos(r)*k;y+=Math.sin(r)*k;w+=k;S+=s;L+=l});
+  const n=cs.length;if(w<0.05)return mxFromHsl(0,0,L/n);
+  const R=Math.hypot(x,y)/w,h=mxMap((Math.atan2(y,x)*180/Math.PI+360)%360,1,0),sat=Math.min(1,(S/n)*(0.55+0.5*R)),lit=L/n-Math.max(0,0.4-R)*0.25;
+  return mxFromHsl(h,Math.max(0,sat),Math.max(.12,Math.min(.92,lit)))}
+const MX_NAMES=[['Red','#e8344a'],['Pink','#ff8fc8'],['Orange','#f5902a'],['Yellow','#f5d128'],['Green','#3fbf55'],['Blue','#3d5fd6'],['Purple','#8a4fd8'],['Brown','#7a4a2a'],['White','#f4f4f0'],['Teal','#18b5b0'],['Gold','#d9a520'],['Gray','#9a9a9a']];
+const mxName=c=>{const [h,s,l]=mxHsl(c);if(l>.86||(s<.2&&l>.7))return 'White';if(s<.15)return 'Gray';if(h>=15&&h<50&&l<.42)return 'Brown';if(h>=15&&h<55&&s<.62&&l>.55)return 'Golden';
+  if(h<12||h>=340)return l>.68?'Pink':'Red';if(h<42)return 'Orange';if(h<68)return l<.5?'Gold':'Yellow';if(h<165)return 'Green';if(h<195)return 'Teal';if(h<255)return 'Blue';if(h<318)return 'Purple';return 'Pink'};
+let mxU=0;
+const mxRng=s=>()=>(s=(s*16807)%2147483647)/2147483647;
+const MX_SPR=['#ff5a7a','#ffd23f','#3fbf55','#3d5fd6','#ff9a2e','#b57bff'];
+function mxStar(cx,cy,R,r){const p=[];for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,q=i%2?r:R;p.push((cx+q*Math.cos(a)).toFixed(1)+','+(cy+q*Math.sin(a)).toFixed(1))}return p.join(' ')}
+const MX_SHAPES={circle:'<circle cx="150" cy="140" r="102"/>',
+  heart:'<path d="M150 242 C50 182 28 122 60 82 C90 46 135 56 150 92 C165 56 210 46 240 82 C272 122 250 182 150 242Z"/>',
+  star:`<polygon points="${mxStar(150,148,118,54)}"/>`,
+  flower:[0,1,2,3,4,5].map(i=>`<circle cx="${(150+62*Math.cos(i*Math.PI/3)).toFixed(1)}" cy="${(140+62*Math.sin(i*Math.PI/3)).toFixed(1)}" r="46"/>`).join('')+'<circle cx="150" cy="140" r="66"/>'};
+const MX_SHAPE_NAME={circle:'Round',heart:'Heart',star:'Star',flower:'Flower'};
+
+/* ---------- pots and what you made, as SVG ---------- */
+function mxPotSVG(st){const k=MX_ST[st].pot,u=++mxU;
+  const body=k==='cauldron'?'#2b2b3a':k==='tub'?'#d7f0ff':'#9fd3f0',rim=k==='cauldron'?'#4a4a66':k==='tub'?'#a9d8f5':'#6fb6e0';
+  return `<svg class="mxpot" viewBox="0 0 300 280" id="mxPot">
+   <defs><clipPath id="mxc${u}"><path d="M50 92 Q50 238 150 244 Q250 238 250 92 Z"/></clipPath></defs>
+   ${k==='cauldron'?`<g class="mxfire"><path d="M105 280 Q118 236 134 262 Q150 222 166 262 Q182 236 195 280Z" fill="#ff9a2e"/><path d="M128 280 Q140 252 150 266 Q160 252 172 280Z" fill="#ffd23f"/></g>
+     <rect x="70" y="232" width="14" height="34" rx="5" fill="#2b2b3a"/><rect x="216" y="232" width="14" height="34" rx="5" fill="#2b2b3a"/>`:''}
+   <path d="M40 88 Q40 252 150 258 Q260 252 260 88 Z" fill="${body}"/>
+   <g clip-path="url(#mxc${u})"><g id="mxLiq"></g>
+     <g id="mxSwirl" opacity="0"><path d="M150 178 m-6 0 a6 6 0 1 1 12 0 a14 14 0 1 1 -28 0 a24 24 0 1 1 48 0 a36 36 0 1 1 -72 0 a50 50 0 1 1 100 0 a66 66 0 1 1 -132 0" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".4"/></g>
+     <g id="mxFx"></g></g>
+   <ellipse cx="150" cy="88" rx="110" ry="17" fill="none" stroke="${rim}" stroke-width="12"/>
+   ${k!=='cauldron'?'<path d="M62 140 Q68 196 106 222" stroke="#fff" stroke-width="8" fill="none" opacity=".45" stroke-linecap="round"/>':''}</svg>`}
+function mxFxSVG(fx,top,bot,seed){const r=mxRng(seed||7);let s='';const y=()=>top+8+r()*Math.max(4,bot-top-16),x=()=>70+r()*160;
+  if(fx.includes('glitter'))for(let i=0;i<8;i++)s+=`<text x="${x()}" y="${y()}" font-size="${14+r()*10}" text-anchor="middle" class="mxtw" style="animation-delay:${(r()*1.5).toFixed(2)}s">✨</text>`;
+  if(fx.includes('bubbles'))for(let i=0;i<6;i++)s+=`<circle cx="${x()}" cy="${bot-6}" r="${5+r()*7}" fill="#fff" opacity=".55" class="mxbub" style="animation-delay:${(r()*2).toFixed(2)}s"/>`;
+  if(fx.includes('fluffy'))for(let i=0;i<7;i++)s+=`<circle cx="${x()}" cy="${y()}" r="${10+r()*10}" fill="#fff" opacity=".5"/>`;
+  if(fx.includes('chips'))for(let i=0;i<9;i++)s+=`<ellipse cx="${x()}" cy="${y()}" rx="6" ry="5" fill="#4a2a14"/>`;
+  return s}
+function mxSpr(x,y,seed){const r=mxRng(seed);let s='';for(let i=0;i<9;i++)s+=`<rect x="${(x-22+r()*44).toFixed(1)}" y="${(y-18+r()*36).toFixed(1)}" width="11" height="4" rx="2" fill="${MX_SPR[i%6]}" transform="rotate(${(r()*180).toFixed(0)} ${x} ${y})"/>`;return s}
+function mxTops(it,party){return (it.tops||[]).map((t,i)=>t.k==='🌈'?mxSpr(t.x,t.y,t.s):t.k==='candle'
+   ?`<g class="mxcdl" data-c="${i}"><rect x="${t.x-7}" y="${t.y-44}" width="14" height="44" rx="5" fill="#8fd0ff"/><rect x="${t.x-7}" y="${t.y-32}" width="14" height="6" fill="#fff"/><rect x="${t.x-7}" y="${t.y-16}" width="14" height="6" fill="#fff"/>
+      ${!party||!party.out||!party.out.has(i)?`<ellipse class="mxflame" cx="${t.x}" cy="${t.y-56}" rx="8" ry="13" fill="#ffb32b"/><ellipse cx="${t.x}" cy="${t.y-52}" rx="4" ry="7" fill="#fff3a0"/>`:''}<rect x="${t.x-22}" y="${t.y-80}" width="44" height="84" fill="transparent"/></g>`
+   :`<text x="${t.x}" y="${t.y}" font-size="34" text-anchor="middle" dominant-baseline="central">${t.k}</text>`).join('')}
+function mxSVG(it,opt={}){const u=++mxU,c=it.color;
+  if(it.st==='potion'){const B='M128 50 h44 v52 Q238 124 236 188 Q232 258 150 260 Q68 258 64 188 Q62 124 128 102 Z';
+    return `<svg class="mxres" viewBox="0 0 300 280"><defs><clipPath id="pb${u}"><path d="${B}"/></clipPath></defs>
+      <path d="${B}" fill="#eef8ff" stroke="#9cc9e8" stroke-width="5"/>
+      <g clip-path="url(#pb${u})"><rect x="40" y="128" width="220" height="140" fill="${c}"/><ellipse cx="150" cy="128" rx="110" ry="8" fill="${mxLerp(c,'#ffffff',.35)}"/>${mxFxSVG(it.fx,128,256,u)}</g>
+      <rect x="126" y="24" width="48" height="32" rx="7" fill="#b07a4a"/><path d="M96 150 Q88 200 114 232" stroke="#fff" stroke-width="9" fill="none" opacity=".5" stroke-linecap="round"/></svg>`}
+  if(it.st==='slime')return `<svg class="mxres" viewBox="0 0 300 280"><g class="mxblob"><path d="M58 214 Q30 140 100 120 Q140 70 196 110 Q268 118 250 204 Q246 250 150 248 Q68 250 58 214Z" fill="${c}"/>
+      <ellipse cx="112" cy="140" rx="26" ry="11" fill="#fff" opacity=".45" transform="rotate(-25 112 140)"/>${mxFxSVG(it.fx,120,236,u)}
+      <circle cx="125" cy="178" r="15" fill="#fff"/><circle cx="185" cy="178" r="15" fill="#fff"/><circle cx="128" cy="182" r="7" fill="#222"/><circle cx="182" cy="182" r="7" fill="#222"/>
+      <path d="M134 208 Q155 226 176 208" stroke="#222" stroke-width="5" fill="none" stroke-linecap="round"/></g></svg>`;
+  if(it.st==='cake'){const side=mxLerp(c,'#e3a85a',.3),f=it.frost||'#ffc2dc';let drips='';for(let x=55,i=0;x<245;x+=19,i++)drips+=`<path d="M${x} 140 v${i%2?26:14} q9.5 12 19 0 v-${i%2?26:14}Z" fill="${f}"/>`;
+    return `<svg class="mxres" viewBox="0 0 300 280"><ellipse cx="150" cy="248" rx="135" ry="20" fill="#e8eef7"/><ellipse cx="150" cy="240" rx="95" ry="13" fill="${mxLerp(side,'#000000',.12)}"/>
+      <rect x="55" y="140" width="190" height="100" fill="${side}"/><rect x="55" y="186" width="190" height="9" fill="${f}" opacity=".85"/>${drips}<ellipse cx="150" cy="140" rx="95" ry="22" fill="${f}"/>${mxTops(it,opt.party)}</svg>`}
+  // cookie
+  const bk=mxLerp(c,'#d9a25b',.45),sh=MX_SHAPES[it.shape||'circle'],bites=opt.bites||[];
+  return `<svg class="mxres" viewBox="0 0 300 280"><defs><mask id="bm${u}"><rect width="300" height="280" fill="#fff"/>${bites.map(b=>`<circle cx="${b.x}" cy="${b.y}" r="38" fill="#000"/>`).join('')}</mask></defs>
+    <g mask="url(#bm${u})"><g fill="${mxLerp(bk,'#000000',.22)}" transform="translate(3 6)">${sh}</g><g fill="${bk}">${sh}</g>
+    ${it.frost&&it.frost!=='none'?`<g fill="${it.frost}" transform="translate(150 142) scale(.84) translate(-150 -142)">${sh}</g>`:''}
+    ${it.fx.includes('chips')?[[-50,-30],[20,-55],[55,10],[-15,30],[-60,40],[35,60],[0,-10],[70,-40],[-35,-70]].map(([dx,dy])=>`<ellipse cx="${150+dx}" cy="${140+dy}" rx="8" ry="6" fill="#4a2a14"/>`).join(''):''}
+    ${mxTops(it)}</g></svg>`}
+
+/* ---------- pick what to make + the shelf ---------- */
+function playMix(){
+  if(location.hash!=='#mix')return;
+  K.mix=K.mix||{shelf:[]};setHeader('Mix & Make','Potions, slime and treats');
+  view.innerHTML=`<div class="board"><p class="prompt">What do you want to make?</p>
+    <div class="mxpick">${Object.entries(MX_ST).map(([k,s])=>`<button data-s="${k}" style="--c:${s.col}" aria-label="${s.name}"><span>${s.em}</span><b>${s.name}</b></button>`).join('')}</div>
+    ${K.mix.shelf.length?`<p class="mxlab">Your shelf</p><div class="mxshelf">${K.mix.shelf.map((it,i)=>`<button data-i="${i}" aria-label="${it.name}">${mxSVG(it)}</button>`).join('')}</div>`:''}</div>`;
+  say('What do you want to make?');
+  view.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{sfx.tap();mxMix(b.dataset.s)});
+  view.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{sfx.tap();mxPlay(K.mix.shelf[+b.dataset.i],false)});
+}
+function mxMix(st){
+  const S=MX_ST[st],tok=loopToken,M={layers:[],fx:new Set(),stirred:false,pend:0,prog:0,orig:[]};
+  setHeader(S.name,'Tap to pour. Stir with your finger!');
+  view.innerHTML=`<div class="mxwrap"><div class="mxstage" id="mxStage">${mxPotSVG(st)}<div class="mxspoon" id="mxSpoon">🥄</div></div>
+    <div class="mxside"><div class="mxing">${S.ing.map((g,i)=>`<button data-g="${i}" aria-label="${g[2]}">${g[0]}</button>`).join('')}</div>
+      <div class="row"><button class="pbtn" id="mxBack" aria-label="Back">◀</button><button class="pbtn" id="mxDump">🗑️ Start over</button></div>
+      <button class="pbtn go mxdone" id="mxDone" hidden>All done! ✓</button></div></div>`;
+  say(S.hello);
+  const H=19,svg=$('#mxPot'),spoon=$('#mxSpoon'),stage=$('#mxStage'),word=S.pot==='cauldron'?'pot':S.pot;
+  const draw=()=>{const n=M.layers.length,top=244-n*H;
+    $('#mxLiq').innerHTML=M.layers.map((c,i)=>`<rect x="40" y="${244-(i+1)*H}" width="220" height="${H+(i===n-1?3:1)}" fill="${c}"/>`).join('')+(n?`<ellipse cx="150" cy="${top}" rx="105" ry="5" fill="#fff" opacity=".18"/>`:'');
+    $('#mxFx').innerHTML=n?mxFxSVG([...M.fx],top,244,n*31+5):'';
+    $('#mxDone').hidden=!(M.stirred&&n>=2);
+    spoon.classList.toggle('hint',n>=2&&!M.stirred)};
+  view.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{const g=S.ing[+b.dataset.g];
+    if(M.layers.length+M.pend>=8){sfx.no();say(`The ${word} is full! Stir it up!`);return}
+    M.pend++;const a=b.getBoundingClientRect(),p=svg.getBoundingClientRect(),d=document.createElement('span');d.className='mxdrop';d.textContent=g[0];
+    d.style.left=(a.left+a.width/2)+'px';d.style.top=(a.top+a.height/2)+'px';document.body.appendChild(d);
+    requestAnimationFrame(()=>{d.style.transform=`translate(${p.left+p.width/2-(a.left+a.width/2)}px,${p.top+p.height*0.3-(a.top+a.height/2)}px) scale(.6) rotate(200deg)`;d.style.opacity='.4'});
+    setTimeout(()=>{d.remove();if(tok!==loopToken)return;M.pend--;
+      if(M.stirred)M.orig=M.layers.slice();M.orig.push(g[1]);M.layers.push(g[1]);if(g[3])M.fx.add(g[3]);M.stirred=false;M.prog=0;M.dist=0;
+      tone([[520+rnd(0,200),0,.06],[300,.05,.12]],'sine',0.07);say(g[2]);draw()},460)});
+  $('#mxDump').onclick=()=>{M.layers=[];M.orig=[];M.fx.clear();M.stirred=false;M.prog=0;tone([[400,0,.1],[200,.08,.2]],'triangle',0.06);draw()};
+  $('#mxBack').onclick=()=>playMix();
+  // stirring: move your finger around in the pot; colors swirl toward the mix
+  let down=false,last=null,ang=0;M.dist=0;
+  const pt=e=>{const r=stage.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}};
+  svg.addEventListener('pointerdown',e=>{if(!M.layers.length){say(`Put something in the ${word} first!`);return}down=true;last=pt(e);try{svg.setPointerCapture(e.pointerId)}catch(_){}
+    spoon.classList.remove('hint');spoon.classList.add('on');spoon.style.left=last.x+'px';spoon.style.top=last.y+'px';$('#mxSwirl').setAttribute('opacity','1')});
+  svg.addEventListener('pointermove',e=>{if(!down)return;const q=pt(e),dd=Math.hypot(q.x-last.x,q.y-last.y);last=q;spoon.style.left=q.x+'px';spoon.style.top=q.y+'px';
+    if(M.stirred||dd<1)return;const before=Math.floor(M.dist/180);M.dist+=dd;ang=(ang+dd*1.2)%360;$('#mxSwirl').setAttribute('transform',`rotate(${ang} 150 178)`);
+    if(Math.floor(M.dist/180)>before)tone([[220+rnd(0,60),0,.05]],'sine',0.03);
+    const blend=mxBlend(M.orig);M.prog=Math.min(1,M.dist/1400);
+    $('#mxLiq').querySelectorAll('rect').forEach((r,i)=>r.setAttribute('fill',mxLerp(M.orig[i],blend,M.prog)));
+    if(M.prog>=1){M.stirred=true;M.layers=M.orig.map(()=>blend);sfx.up();sparkleOver(svg);say(M.layers.length>=2?'All mixed! Tap all done, or add more.':'Stirred!');draw()}},{passive:true});
+  const up=()=>{if(!down)return;down=false;spoon.classList.remove('on');const sw=$('#mxSwirl');sw&&sw.setAttribute('opacity','0')};
+  svg.addEventListener('pointerup',up);svg.addEventListener('pointercancel',up);
+  $('#mxDone').onclick=()=>{sfx.tap();const it={st,color:M.layers[0],fx:[...M.fx]};
+    if(st==='potion'){it.name=`${mxName(it.color)} ${pick(['Sparkle','Giggle','Fairy','Bubble','Dragon','Bouncy','Sleepy','Rainbow'])} Potion`;mxPlay(it,true)}
+    else if(st==='slime'){it.name=`${mxName(it.color)} ${it.fx.includes('fluffy')?'Fluffy':it.fx.includes('glitter')?'Glitter':'Squishy'} Slime`;mxPlay(it,true)}
+    else if(st==='cake')mxOven(it,()=>mxDeco(it));
+    else mxCutter(it)};
+  draw();
+}
+function mxCutter(it){setHeader('Cookie cutters','Pick a shape');
+  const raw=mxLerp(it.color,'#f2e2c0',.2);
+  view.innerHTML=`<div class="board"><p class="prompt">Pick a cookie shape</p><div class="mxpick">${Object.keys(MX_SHAPES).map(k=>`<button data-k="${k}" aria-label="${MX_SHAPE_NAME[k]}"><svg viewBox="0 0 300 280" width="96" height="90"><g fill="${raw}">${MX_SHAPES[k]}</g></svg><b>${MX_SHAPE_NAME[k]}</b></button>`).join('')}</div></div>`;
+  say('Pick a cookie shape!');
+  view.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{it.shape=b.dataset.k;tone([[700,0,.06],[500,.06,.1]],'square',0.04);say(MX_SHAPE_NAME[it.shape]+'!');mxOven(it,()=>mxDeco(it))})}
+function mxOven(it,next){const tok=loopToken,cake=it.st==='cake';setHeader('Into the oven!','Wait for the ding');
+  const raw=mxLerp(it.color,'#f2e2c0',.15),food=cake?`<rect x="60" y="150" width="180" height="80" rx="8" fill="#9aa1b0"/><rect x="70" y="140" width="160" height="70" rx="8" fill="${raw}"/>`:`<g fill="${raw}">${MX_SHAPES[it.shape]}</g>`;
+  view.innerHTML=`<div class="mxoven"><svg viewBox="0 0 300 270" class="mxov"><rect x="20" y="20" width="260" height="236" rx="22" fill="#d9dde6"/><rect x="38" y="30" width="224" height="32" rx="8" fill="#b9bfcc"/>
+    ${[78,114,150,186,222].map(x=>`<circle cx="${x}" cy="46" r="9" fill="#7d8597"/>`).join('')}<rect x="44" y="76" width="212" height="160" rx="14" fill="#3a2c2c"/>
+    <rect id="mxGlow" x="52" y="84" width="196" height="144" rx="10" fill="#ff8a2a" opacity=".2"/><g transform="translate(150 168) scale(.36) translate(-150 -150)">${food}</g>
+    <rect x="70" y="242" width="160" height="10" rx="5" fill="#9aa1b0"/></svg><div class="mxcount" id="mxCount">3</div></div>`;
+  say('Into the oven! Let\'s count.');let n=3;
+  const tick=()=>{if(tok!==loopToken)return;const el=$('#mxCount');if(n>0){el.textContent=n;el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');$('#mxGlow').setAttribute('opacity',(.2+(3-n)*.2).toFixed(2));
+      tone([[880,0,.05]],'square',0.04);speakNow(String(n));n--;setTimeout(tick,1100)}
+    else{el.textContent='🔔';tone([[1568,0,.4],[2093,.08,.7]],'sine',0.09);say("Ding! It's ready!");setTimeout(()=>{if(tok===loopToken)next()},1100)}};
+  setTimeout(tick,1200)}
+function mxDeco(it){const cake=it.st==='cake';it.tops=it.tops||[];if(!it.frost)it.frost=cake?'#ffc2dc':'none';
+  const FROST=cake?['#ffc2dc','#ffffff','#7a4a2a','#bfe3ff','#c9f2c0','#e6d2ff','#fff1a8']:['none','#ffffff','#ffc2dc','#bfe3ff','#c9f2c0','#e6d2ff','#7a4a2a'];
+  const TOPS=cake?['🍓','🍒','🌸','⭐','🍬','🌈','candle']:['🌈','🍬','⭐','💗','🍫','🌸'];let cur=cake?'🍓':'🌈';
+  setHeader(cake?'Decorate your cake':'Decorate your cookie','Pick a topping, then tap to put it on');
+  view.innerHTML=`<div class="mxwrap"><div class="mxstage" id="mxCv"></div><div class="mxside">
+    <p class="mxlab">${cake?'Frosting':'Icing'}</p><div class="mxsw">${FROST.map(f=>`<button data-f="${f}" style="background:${f==='none'?'#fff':f}" aria-label="${f==='none'?'No icing':'Color'}">${f==='none'?'🚫':''}</button>`).join('')}</div>
+    <p class="mxlab">Toppings</p><div class="mxtops">${TOPS.map(t=>`<button data-t="${t}" aria-label="Topping">${t==='candle'?'🕯️':t==='🌈'?'<i class="mxsprb"></i>':t}</button>`).join('')}</div>
+    <div class="row"><button class="pbtn" id="mxClr">🧽 Clean off</button></div><button class="pbtn go mxdone" id="mxFin">All done! ✓</button></div></div>`;
+  say(cake?'Pick a frosting color, then add toppings!':'Pick icing, then add sprinkles!');
+  const draw=()=>{$('#mxCv').innerHTML=mxSVG(it);view.querySelectorAll('[data-f]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.f===it.frost));view.querySelectorAll('[data-t]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.t===cur))};
+  view.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{it.frost=b.dataset.f;tone([[660,0,.06],[990,.05,.1]],'sine',0.06);draw()});
+  view.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{cur=b.dataset.t;sfx.tap();say(cur==='candle'?'Candles!':cur==='🌈'?'Sprinkles!':'');draw()});
+  $('#mxClr').onclick=()=>{it.tops=[];tone([[400,0,.1],[300,.08,.15]],'triangle',0.05);draw()};
+  $('#mxCv').addEventListener('pointerdown',e=>{const s=$('#mxCv svg');if(!s)return;const P=s.createSVGPoint();P.x=e.clientX;P.y=e.clientY;const q=P.matrixTransform(s.getScreenCTM().inverse());
+    let x=Math.round(q.x),y=Math.round(q.y);
+    if(cake){if(x<60||x>240||y<100||y>236)return;if(cur==='candle')y=Math.min(Math.max(y,128),150)}else if(Math.hypot(x-150,y-142)>118)return;
+    if(it.tops.length>=30){say("That's a lot of toppings!");return}
+    it.tops.push({k:cur,x,y,s:rnd(1,1e6)});tone([[700+rnd(0,300),0,.06]],'sine',0.07);draw()});
+  $('#mxFin').onclick=()=>{it.name=cake?`${mxName(mxLerp(it.color,'#e3a85a',.3))} ${pick(['Birthday','Party','Princess','Yummy'])} Cake`:`${MX_SHAPE_NAME[it.shape]} Cookie`;mxPlay(it,true)};
+  draw()}
+
+/* ---------- play with what you made ---------- */
+const MX_MAGIC=[['🦄','You turned into a unicorn!'],['🐸','Ribbit! You turned into a frog!'],['🐱','Meow! You turned into a kitty!'],['🧚','You turned into a fairy!'],['🦖','Roar! You turned into a dinosaur!'],['🎈','Whee! You are floating like a balloon!'],['🐶','Woof! You turned into a puppy!'],['👸','You turned into a princess!']];
+function mxPlay(it,fresh){const tok=loopToken;
+  if(fresh){K.mix=K.mix||{shelf:[]};K.mix.shelf.unshift(JSON.parse(JSON.stringify(it)));K.mix.shelf=K.mix.shelf.slice(0,12);save()}
+  setHeader(it.name,'');
+  const hint={potion:'Drink it to see what happens!',slime:'Poke it! Stretch it!',cake:(it.tops||[]).some(t=>t.k==='candle')?'Tap the candles to blow them out!':'Tap the cake for a bite of fun!',cookie:'Tap the cookie to take a bite!'}[it.st];
+  view.innerHTML=`<div class="mxwrap"><div class="mxstage mxplay" id="mxCv"></div><div class="mxside"><h2 class="mxname">${it.name}</h2><p class="note" style="text-align:center">${hint}</p>
+    <div class="row">${it.st==='potion'?'<button class="pbtn go mxdone" id="mxAct">🪄 Drink it!</button>':it.st==='cake'?'<button class="pbtn go mxdone" id="mxAct">🎵 Sing</button>':it.st==='cookie'?'<button class="pbtn mxdone" id="mxAct" hidden>🍪 Another one!</button>':''}</div>
+    <div class="row"><button class="pbtn" id="mxNew">✨ Make something new</button></div></div></div>`;
+  const cv=$('#mxCv');$('#mxNew').onclick=()=>playMix();
+  if(fresh){addStars(1,cv,'mix');setTimeout(()=>{if(tok===loopToken){sparkleOver(cv);say(`You made a ${it.name}!`)}},200)}else say(it.name);
+  if(it.st==='potion'){cv.innerHTML=mxSVG(it);$('#mxAct').onclick=()=>{tone([[300,0,.12],[260,.15,.12],[340,.3,.12]],'sine',0.08);setTimeout(()=>{if(tok===loopToken)mxMagic(it)},450)}}
+  if(it.st==='slime'){cv.innerHTML=mxSVG(it);const blob=cv.querySelector('.mxblob');let st=null,moved=false;
+    cv.addEventListener('pointerdown',e=>{st={x:e.clientX,y:e.clientY};moved=false;blob.style.transition='none';try{cv.setPointerCapture(e.pointerId)}catch(_){}});
+    cv.addEventListener('pointermove',e=>{if(!st)return;const dx=e.clientX-st.x,dy=e.clientY-st.y;if(Math.hypot(dx,dy)>8)moved=true;
+      const sx=Math.min(1.9,Math.max(.6,1+Math.abs(dx)/220-Math.abs(dy)/500)),sy=Math.min(1.9,Math.max(.6,1-dy/220-Math.abs(dx)/500));blob.style.transform=`scale(${sx.toFixed(3)},${sy.toFixed(3)})`});
+    const rel=()=>{if(!st)return;st=null;blob.style.transition='transform .6s cubic-bezier(.3,1.9,.5,1)';blob.style.transform='';
+      if(!moved){blob.classList.remove('squish');void blob.getBoundingClientRect();blob.classList.add('squish')}
+      tone([[180,0,.12],[120,.08,.18]],'sine',0.09);if(Math.random()<.4)say(pick(['Squishy!','Boing!','Splat!','Wobble wobble!','Hee hee, that tickles!']))};
+    cv.addEventListener('pointerup',rel);cv.addEventListener('pointercancel',rel)}
+  if(it.st==='cake'){const party={out:new Set()},n=(it.tops||[]).filter(t=>t.k==='candle').length;const draw=()=>{cv.innerHTML=mxSVG(it,{party})};draw();
+    const sing=()=>{const N={G:392,A:440,B:494,C:523,D:587,E:659,F:698,g:784};let t=0;const notes=[];
+      'GGAGCB GGAGDC GGgECBA FFECDC'.split('').forEach(ch=>{if(ch===' '){t+=.25;return}notes.push([N[ch],t,.3]);t+=.32});tone(notes,'triangle',0.07)};
+    $('#mxAct').onclick=()=>{sing();say(n?'Make a wish, and blow out the candles!':'Happy happy day!')};
+    if(fresh&&n)setTimeout(()=>{if(tok===loopToken){sing()}},1400);
+    cv.addEventListener('pointerdown',e=>{const g=e.target.closest('.mxcdl');
+      if(g){const i=+g.dataset.c;if(party.out.has(i))return;party.out.add(i);tone([[900,0,.05],[500,.04,.2]],'sine',0.05);draw();
+        const r=cv.getBoundingClientRect(),p=document.createElement('span');p.className='twinkle';p.textContent='💨';p.style.left=(e.clientX-10)+'px';p.style.top=(e.clientY-30)+'px';document.body.appendChild(p);setTimeout(()=>p.remove(),1000);
+        if(party.out.size===n){sfx.up();sparkleOver(cv);say('Yay! You blew them all out!');setTimeout(()=>{if(tok===loopToken){party.out.clear();draw()}},3500)}}
+      else{sparkleOver(cv);tone([[660,0,.06],[880,.06,.1]],'sine',0.05);if(Math.random()<.5)say(pick(['Yummy!','So pretty!','Mmm, cake!']))}})}
+  if(it.st==='cookie'){const bites=[];const draw=()=>{cv.innerHTML=mxSVG(it,{bites})};draw();
+    cv.addEventListener('pointerdown',e=>{if(bites.length>=7)return;const s=cv.querySelector('svg'),P=s.createSVGPoint();P.x=e.clientX;P.y=e.clientY;const q=P.matrixTransform(s.getScreenCTM().inverse());
+      if(Math.hypot(q.x-150,q.y-142)>135)return;bites.push({x:q.x,y:q.y});tone([[140,0,.05],[110,.05,.05],[160,.1,.06]],'square',0.05);draw();
+      if(bites.length===7){sfx.up();say('All gone! Yum yum!');sparkleOver(cv);$('#mxAct').hidden=false}else if(Math.random()<.35)say(pick(['Crunch!','Yum!','Nom nom nom!']))});
+    $('#mxAct').onclick=()=>{bites.length=0;$('#mxAct').hidden=true;sfx.tap();draw()}}
+}
+function mxMagic(it){const E=pick(MX_MAGIC),o=document.createElement('div');o.className='mxmagic';
+  o.style.background=`radial-gradient(circle at 50% 45%, ${mxLerp(it.color,'#ffffff',.55)}, ${it.color})`;
+  o.innerHTML=`<div class="mxbig">${E[0]}</div><p>${E[1]}</p>`+[...Array(12)].map((_,i)=>`<span class="mxrain" style="left:${rnd(2,95)}%;animation-delay:${(i*0.18).toFixed(2)}s">${pick([E[0],'✨','💖','⭐'])}</span>`).join('');
+  document.body.appendChild(o);tone([[784,0,.1],[988,.1,.1],[1175,.2,.1],[1568,.3,.35]],'sine',0.08);speakNow(E[1]);
+  const close=()=>o.remove();o.onclick=close;setTimeout(close,4500)}
+
+/* =========================================================
    HOME, STICKERS, GROWN-UPS
    ========================================================= */
 function home(){
@@ -3322,7 +3587,7 @@ function grownups(){
 }
 
 /* ---------- navigation (plain #names so the back button works) ---------- */
-const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,times:playTimes,ninjaread:playRead,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),ninja:gated('ninja',playNinja),tv:gated('tv',()=>{TV.stack=[];playTv()}),adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
+const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,times:playTimes,ninjaread:playRead,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),ninja:gated('ninja',playNinja),tv:gated('tv',()=>{TV.stack=[];playTv()}),mix:playMix,adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
 function go(name){if(location.hash.slice(1)!==name)location.hash=name;else show()}
 function show(){if(window.__tvKill)window.__tvKill();loopToken++;const r=location.hash.slice(1);resetArm=false;$('#timeChip').hidden=true;updateStars();$('#overlay').hidden=true;popQ.length=0;try{if(window.SQAndroid)SQAndroid.stop();else if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}
   view.scrollTop=0;(ROUTES[r]||home)()}
