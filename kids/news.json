@@ -1,0 +1,13 @@
+{
+  "messages": [
+    {
+      "id": "tooth-fairy-noah-2026-11-08",
+      "type": "toothfairy",
+      "mode": "big",
+      "name": "Noah",
+      "stars": 300,
+      "from": "2026-11-09T05:00:00-06:00",
+      "until": "2026-11-23T00:00:00-06:00"
+    }
+  ]
+}
