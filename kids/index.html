@@ -604,6 +604,16 @@ html.little .tvp b,html.little .tve b{font-size:20px}
 .mxbig{font-size:min(40vw,240px);line-height:1.1;animation:mxbig 1s cubic-bezier(.3,1.8,.5,1)}@keyframes mxbig{from{transform:scale(0) rotate(-180deg)}}
 .mxrain{position:absolute;top:-60px;font-size:44px;animation:mxrain 2.4s linear infinite}@keyframes mxrain{to{transform:translateY(115vh) rotate(360deg)}}
 @media (orientation:portrait){.mxwrap{grid-template-columns:1fr}.mxpot,.mxres{max-height:42vh}}
+.skpage{background:var(--card);border-radius:28px;padding:16px;box-shadow:0 6px 0 var(--pc);border:5px solid var(--pc);width:min(1000px,100%);margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.skpage .sticker{background:#f4f7ff;box-shadow:0 4px 0 #dde5f5}.skpage .sticker.locked{background:#eef2f8;box-shadow:none}
+.skpage.done .sticker{animation:none}
+.skhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:18px;color:var(--muted)}
+.skhead b{font-family:var(--f-display);font-size:26px;color:var(--pc)}
+.skbar{height:14px;border-radius:8px;background:#e6ecf6;overflow:hidden}.skbar i{display:block;height:100%;background:var(--pc);border-radius:8px}
+.sknote{text-align:center;max-width:none}
+.skbook{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;width:min(1000px,100%);margin:0 auto}
+.skcover{background:var(--pc);color:#fff;border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:6px;text-align:left;box-shadow:0 6px 0 rgba(0,0,0,.2);min-height:130px}
+.skcover b{font-family:var(--f-display);font-size:22px}.skcover span{font-size:26px;letter-spacing:2px}.skcover small{opacity:.85;font-size:15px}
 /* stickers + grown-ups */
 .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:12px}
 .sticker{height:100px;border-radius:22px;background:var(--card);display:grid;place-items:center;font-size:52px;box-shadow:0 5px 0 var(--sky-2)}
@@ -782,11 +792,14 @@ function flyStar(fromEl){
 }
 // returns true if a popup will show
 function addStars(n,fromEl,game){
-  const before=stickersEarned();
+  const before=skTotal();
   K.stars+=n;if(!GATED.includes(game))K.wallet=(K.wallet||0)+n;save();
   for(let i=0;i<n;i++)setTimeout(()=>flyStar(fromEl),i*120);
   setTimeout(updateStars,700);
-  if(stickersEarned()>before){setTimeout(()=>{sfx.up();speakNow('You got a new sticker!');popup(stickerSet()[stickersEarned()-1],'New sticker!','It’s in your sticker book.','Yay!')},900);return true}
+  const after=skTotal();
+  if(after>before){setTimeout(()=>{sfx.up();speakNow('You got a new sticker!');popup(skAt(after-1),'New sticker!','It’s in your sticker book.','Yay!');
+    if(after%SK_N===0){const done=skPage(after/SK_N-1),next=skPage(after/SK_N);
+      popup('📒','Page complete!',`Your “${done.title}” page goes in your sticker book. Here’s a brand new page to fill: “${next.title}”!`,'Yay!',()=>{speakNow('Your page went in the book! Time for a new page!')})}},900);return true}
   return false;
 }
 const PER_LEVEL=6;
@@ -1500,6 +1513,22 @@ function playTower(){
    LITTLE KIDS (3-5): pink theme, voice prompts, no reading needed
    ========================================================= */
 const LITTLE_STICKERS='👑🦋🌸🦄🌈💖🎀🌷🍓🐱🐰🦢🌟🧁🍭🎠🏰🐞🌼🐬🦩🍩🎈💐🐹🐼🐥🦊🐶🍰⭐🌺🐠🦜🍒🐨🐸🍦🌙✨'.match(/\p{Extended_Pictographic}️?/gu);
+/* sticker book: every 10 stars is a sticker; 40 stickers fill a page; a full page goes in the book and a new page starts */
+const SK_RE=/\p{Extended_Pictographic}️?/gu,SK_N=40;
+const SK_SETS={space:'🚀🛸🌙🪐☄️🌟👾🤖🛰️🔭🌌🌠🌍🌞🌝⚡🔋💡🧲⚙️🔧🔩🧪🔬📡🕹️🎮💻⌚📱🎧🎯🧩🪀🪁🎲🥷🏅🗿🌋',
+  ocean:'🐳🐋🐬🦈🐙🦑🦀🦞🦐🐠🐟🐡🐚🪸🌊🏝️⛵🚤🛶⚓🧜🐢🦭🐧🦦🐊🪼🏖️🌴🥥🦩🦢🦆🐸🪷🌅🛟🤿🎣🧭',
+  dino:'🦖🦕🐉🐲🦎🐍🦂🕷️🕸️🐜🐝🐞🦗🪲🦟🪰🐛🦋🐌🌿🍄🌵🌲🌳🪨🦴🥚🔥⛰️🏔️🌄🪵🍂🍁🌾🦔🦇🐺🦅🦬',
+  food:'🍕🍔🌭🍟🌮🌯🍿🥨🧀🥞🧇🥓🍗🍖🍝🍜🍣🍤🍩🍪🎂🍰🧁🍫🍬🍭🍦🍨🍧🍎🍌🍉🍇🍓🍒🍍🥝🍑🥕🌽',
+  sport:'⚽🏀🏈⚾🥎🎾🏐🏉🥏🎳🏓🏒🥅⛳🏹🥊🥋🛹🛼⛸️🎿🛷🚲🛴🏍️🚗🚕🚙🚌🚓🚑🚁🚢🏎️🚜🚒🚂✈️🏆🎖️',
+  fairy:'👑💎💍👗👠👛🎀🪞🧸🪅🎠🎡🎪🏰🦄🌈🌸🌺🌻🌹🌷💐🪻🧚🪄💫☁️☀️🍓🧁🍭🎈🎁💝🦢🐇🫧🩰🪽🍬'};
+const skSet=k=>SK_SETS[k].match(SK_RE);
+const SK_BOOK={big:[['Animals & More',()=>STICKERS,'#1d2b4f'],['Space & Robots',()=>skSet('space'),'#3b2f7a'],['Under the Sea',()=>skSet('ocean'),'#1576a8'],['Dinos & Bugs',()=>skSet('dino'),'#3f7a2f'],['Yummy Food',()=>skSet('food'),'#b8432f'],['Sports & Go',()=>skSet('sport'),'#a86d0c']],
+  little:[['Pretty Things',()=>LITTLE_STICKERS,'#7a3a6e'],['Fairy Princess',()=>skSet('fairy'),'#9a3f9a'],['Under the Sea',()=>skSet('ocean'),'#1576a8'],['Yummy Treats',()=>skSet('food'),'#b8432f']]};
+const skTotal=()=>Math.floor((K.stars||0)/10);
+function skPage(i){const B=SK_BOOK[K.mode==='little'?'little':'big'],P=B[i%B.length],round=Math.floor(i/B.length);
+  return{i,title:P[0]+(round?` ${round+1}`:''),set:P[1](),color:P[2]}}
+const skNow=()=>{const t=skTotal();return{page:Math.floor(t/SK_N),have:t%SK_N}};
+const skAt=t=>skPage(Math.floor(t/SK_N)).set[t%SK_N];
 const isLittle=()=>K.mode==='little';
 function applyMode(){document.documentElement.classList.toggle('little',isLittle())}
 // speak with the tablet's own voice when running as the installed app
@@ -3516,7 +3545,7 @@ function home(){
   const n=stickersEarned();
   if(K.mode==='little'){
     view.innerHTML=`<div class="tiles ltiles">${[...GAMES.filter(g=>g.little),...GAMES.filter(g=>g.both)].map(g=>`<button class="tile" data-g="${g.id}" data-say="${g.name}" style="background:${g.color}"><span class="em">${g.em}</span><span><b>${g.name}</b></span></button>`).join('')}
-      <button class="tile" data-g="stickers" data-say="Sticker book" style="background:#7a3a6e"><span class="em">${n?stickerSet()[n-1]:'📒'}</span><span><b>Stickers</b><br><small>${n} of ${stickerSet().length}</small></span></button></div>
+      <button class="tile" data-g="stickers" data-say="Sticker book" style="background:#7a3a6e"><span class="em">${skTotal()?skAt(skTotal()-1):'📒'}</span><span><b>Stickers</b><br><small>Page ${skNow().page+1}: ${skNow().have} of ${SK_N}</small></span></button></div>
       <div class="home-foot"><span></span><button class="grownup" id="grown">Grown-ups: press and hold<i></i></button></div>`;
     view.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{sfx.tap();speakNow(b.dataset.say);go(b.dataset.g)});
     holdGrownups();return}
@@ -3525,7 +3554,7 @@ function home(){
     <div class="tiles">${GAMES.filter(g=>g.play&&!g.little).map(tile).join('')}</div>
     <p class="hello">Learn</p>
     <div class="tiles">${GAMES.filter(g=>!g.play&&!g.little).map(tile).join('')}
-      <button class="tile" data-g="stickers" style="background:#1d2b4f"><span class="em">${n?stickerSet()[n-1]:'📒'}</span><span><b>Sticker Book</b><br><small>${n} of ${stickerSet().length} stickers</small></span></button></div>
+      <button class="tile" data-g="stickers" style="background:#1d2b4f"><span class="em">${skTotal()?skAt(skTotal()-1):'📒'}</span><span><b>Sticker Book</b><br><small>Page ${skNow().page+1}: ${skNow().have} of ${SK_N}</small></span></button></div>
     <div class="home-foot"><p class="note">${gateOn()?`You have ⭐ ${K.wallet} to spend on Play games. Learn games earn more!`:`Every 10 stars earns a new sticker. ${10-K.stars%10} more to go!`}</p>
       <button class="grownup" id="grown">Grown-ups: press and hold<i></i></button></div>`;
   view.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{sfx.tap();go(b.dataset.g)});
@@ -3539,10 +3568,20 @@ function holdGrownups(){
   g.oncontextmenu=e=>e.preventDefault();
 }
 function stickers(){
-  setHeader('Sticker Book');const n=stickersEarned();
-  view.innerHTML=`<p class="note">You have ${n} sticker${n===1?'':'s'}. Earn 10 stars for the next one!</p>
-    <div class="sgrid">${stickerSet().map((s,i)=>i<n?`<div class="sticker">${s}</div>`:`<div class="sticker locked">?</div>`).join('')}</div>`;
+  const {page,have}=skNow(),P=skPage(page);setHeader('Sticker Book',page?`${page} page${page===1?'':'s'} in your book`:'Fill the page!');
+  const left=SK_N-have,starsLeft=10-(K.stars%10);
+  view.innerHTML=`<div class="skpage" style="--pc:${P.color}"><div class="skhead"><b>Page ${page+1}: ${P.title}</b><span>${have} of ${SK_N}</span></div>
+      <div class="skbar"><i style="width:${have/SK_N*100}%"></i></div>
+      <div class="sgrid">${P.set.map((x,i)=>i<have?`<div class="sticker">${x}</div>`:`<div class="sticker locked">?</div>`).join('')}</div>
+      <p class="note sknote">${left===1?'Just 1 more sticker to finish this page!':`${left} more stickers to finish this page.`} Next sticker in ${starsLeft} star${starsLeft===1?'':'s'}.</p></div>
+    ${page?`<p class="hello">My sticker book</p><div class="skbook">${[...Array(page)].map((_,i)=>{const D=skPage(i);return `<button class="skcover" data-pg="${i}" style="--pc:${D.color}"><b>${D.title}</b><span>${D.set.slice(0,8).join('')}</span><small>✓ 40 stickers</small></button>`}).join('')}</div>`:''}`;
+  view.querySelectorAll('[data-pg]').forEach(b=>b.onclick=()=>{sfx.tap();skView(+b.dataset.pg)});
 }
+function skView(i){const P=skPage(i);setHeader('Sticker Book',`Page ${i+1}: ${P.title}`);
+  view.innerHTML=`<div class="skpage done" style="--pc:${P.color}"><div class="skhead"><b>Page ${i+1}: ${P.title}</b><span>Finished! ✓</span></div>
+    <div class="sgrid">${P.set.map(x=>`<div class="sticker">${x}</div>`).join('')}</div></div>
+    <div class="row"><button class="pbtn" id="skBack">◀ Back to my book</button></div>`;
+  $('#skBack').onclick=()=>{sfx.tap();stickers()}}
 let resetArm=false;
 function grownups(){
   setHeader('Grown-ups');
