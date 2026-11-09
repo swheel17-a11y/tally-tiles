@@ -695,6 +695,25 @@ html.little .tvp b,html.little .tve b{font-size:20px}
 .famnote div{display:flex;flex-direction:column;gap:8px}.famrep{display:flex;flex-wrap:wrap;gap:8px}
 .famrep button{background:rgba(255,255,255,.18);color:#fff;border-radius:14px;padding:8px 12px;font-size:17px;font-weight:700}
 .famask{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px}.famask .pbtn{background:rgba(255,255,255,.15);color:#fff;box-shadow:none}
+.wdgate{width:min(760px,100%);margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.wdcard{background:var(--card);border-radius:28px;padding:24px;box-shadow:0 6px 0 #f0b8ab;border:5px solid #e0533a;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.wdem{font-size:80px;line-height:1}.wdcard h2{font-family:var(--f-display);font-size:clamp(32px,5vw,46px);margin:0}.wdcard p{font-size:22px;margin:0}
+.wdstart{height:76px;font-size:30px;padding:0 48px;animation:mxpulse 1.2s ease-in-out infinite}
+.wddays{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}.wddays span{padding:6px 12px;border-radius:12px;background:#eef2f8;font-weight:700;font-size:16px}
+.wddays .now{background:#fff1c9;box-shadow:0 0 0 3px #f2b705}.wddays .done{background:#d6f5df}.wddays .test{background:#1d2b4f;color:#fff}
+.wdcard .skbar{width:100%}.wdcard small{color:var(--muted)}
+.wdwrap{width:min(900px,100%);margin:0 auto;display:flex;flex-direction:column;gap:12px;align-items:center}
+.wdtop{display:flex;align-items:center;gap:12px;width:100%}.wdhear{height:64px;font-size:22px;padding:0 20px;white-space:nowrap}
+.wdprog{flex:1;height:14px;border-radius:8px;background:#e6ecf6;overflow:hidden}.wdprog i{display:block;height:100%;background:#3fbf7f}.wdtop span{font-weight:800;color:var(--muted)}
+.wdmsg{font-size:22px;text-align:center;margin:0;min-height:1.4em}.wdbad span.x{color:#d9435b;text-decoration:underline}
+.wdshow{display:flex;gap:6px}.wdshow span{font-family:var(--f-display);font-size:48px;font-weight:700;background:#d6f5df;border-radius:12px;padding:0 12px}
+.wdtyped{min-height:84px;min-width:60%;display:flex;align-items:center;justify-content:center;gap:4px;background:var(--card);border-radius:22px;padding:8px 18px;box-shadow:0 5px 0 var(--sky-2)}
+.wdtyped span{font-family:var(--f-display);font-size:54px;font-weight:700;line-height:1}.wdtyped i{color:var(--muted);font-size:20px}
+.wdcur{width:4px;height:52px;background:#2f9be0;border-radius:2px;animation:tftw 1s steps(2) infinite}
+.wdkeys{display:flex;flex-direction:column;gap:8px;width:100%;max-width:820px}.wdkeys div{display:flex;gap:8px;justify-content:center}
+.wdkeys button{flex:1;max-width:96px;height:68px;border-radius:16px;background:var(--card);box-shadow:0 4px 0 var(--sky-2);font-family:var(--f-display);font-size:34px;font-weight:700}
+.wdkeys button:active{transform:translateY(3px);box-shadow:0 1px 0 var(--sky-2)}
+.wdkeys .wdwide{max-width:none;flex:1.4;font-size:22px}.wdkeys .wdwide.go{background:#3fbf7f;color:#fff;box-shadow:0 4px 0 #2a9460}
 /* stickers + grown-ups */
 .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:12px}
 .sticker{height:100px;border-radius:22px;background:var(--card);display:grid;place-items:center;font-size:52px;box-shadow:0 5px 0 var(--sky-2)}
@@ -3836,7 +3855,7 @@ function stDay(){K.st=K.st||{days:{},movies:[]};const k=dayKey(0);if(!K.st.days[
 // what the tablet is doing right now, in words for the admin page
 function famDoing(){if(document.querySelector('.famlock'))return 'Locked';const r=location.hash.slice(1)||'home';
   if(r==='tv'&&window.__tvNow&&document.querySelector('#tvv'))return 'Watching '+window.__tvNow.name;
-  const g=GAMES.find(x=>x.id===r);return g?g.name:{home:'Home screen',stickers:'Sticker Book',grownups:'Grown-ups',bank:'Star Bank',chat:'Writing a message'}[r]||r}
+  const g=GAMES.find(x=>x.id===r);return g?g.name:{home:wdLocked()?'Home (spelling words locked)':'Home screen',stickers:'Sticker Book',grownups:'Grown-ups',bank:'Star Bank',chat:'Writing a message',spelling:'Spelling Words'}[r]||r}
 let stLastStars=null,stLastWallet=null,stTick=0;
 setInterval(()=>{if(document.hidden||!K.mode)return;const D=stDay(),r=location.hash.slice(1);
   if(stLastStars!==null&&K.stars>stLastStars)D.earn+=K.stars-stLastStars;if(stLastWallet!==null&&K.wallet<stLastWallet)D.spent+=stLastWallet-K.wallet;stLastStars=K.stars;stLastWallet=K.wallet;
@@ -3904,6 +3923,8 @@ function famCmd(c){const age=c.at?Date.now()-c.at:0,stale=age>15*60*1000;log('fa
     case 'extend':{const m=Math.max(1,Math.min(60,c.mins||5));if(K.locked){famUnlock();K.lockAt=Date.now()+m*60000}else if(K.lockAt)K.lockAt+=m*60000;else break;K.lockText='';save();famCountdown();
       if(!stale)famNotice(`Yay! ${m} more minutes!`,'🎉');chatInbox(`Yes! ${m} more minutes.`,'🎉');break}
     case 'ntfy':K.ntfy=/^[A-Za-z0-9_-]{6,64}$/.test(c.topic||'')?c.topic:'';break;
+    case 'words':wdSet(c);if(location.hash===''||location.hash==='#home')show();if(!stale&&K.words)famNotice(`New spelling words! ${K.words.list.length} words. Test on ${wdDay(K.words.test)}.`,'📝');break;
+    case 'wordsSkip':if(K.words){wdPlan();K.words.skip[dayKey(0)]=true;save();if(location.hash===''||location.hash==='#home')show()}break;
     case 'seen':(K.outbox||[]).forEach(m=>{if(m.t<=(c.upTo||0))m.seen=true});break;
     case 'unlock':famUnlock();if(!stale)famNotice('The tablet is unlocked!','🔓');break;
     case 'stars':{const n=Math.max(0,Math.min(1000,c.n|0));if(!n)break;const pops=awardBig(n);
@@ -3932,7 +3953,7 @@ async function famStart(){if(!FB_CONFIG||FB.loading||FB.on||!/^https?:$/.test(lo
 function famPush(force){if(!FB.on)return;const now=Date.now();if(!force&&now-FB.lastPush<20000)return;FB.lastPush=now;
   const days={};Object.keys((K.st&&K.st.days)||{}).sort().slice(-14).forEach(k=>days[k]=K.st.days[k]);
   FB.db.collection('devices').doc(FB.uid).set({name:K.name||'',mode:K.mode||'',stars:K.stars||0,wallet:K.wallet||0,rate:sbRate(),playSec:K.playSec||0,
-    locked:!!K.locked,lockAt:K.lockAt||null,doing:famDoing(),days,movies:((K.st&&K.st.movies)||[]).slice(0,25),buys:(K.buys||[]).slice(0,20),wishes:K.wishes||[],msgs:(K.outbox||[]).slice(0,20),alerts:!!K.ntfy,alertTopic:K.ntfy||'',
+    locked:!!K.locked,lockAt:K.lockAt||null,doing:famDoing(),days,movies:((K.st&&K.st.movies)||[]).slice(0,25),buys:(K.buys||[]).slice(0,20),wishes:K.wishes||[],msgs:(K.outbox||[]).slice(0,20),alerts:!!K.ntfy,words:wdSummary(),alertTopic:K.ntfy||'',
     stickers:skTotal(),seen:firebase.firestore.FieldValue.serverTimestamp(),seenMs:now,ua:navigator.userAgent.slice(0,120)},{merge:false}).catch(e=>{FB.err=String(e&&e.message||e)})}
 setInterval(()=>{if(document.hidden)return;if(!FB.on)famStart();else famPush()},60000);
 window.addEventListener('hashchange',()=>setTimeout(()=>famPush(true),1500));
@@ -3979,6 +4000,80 @@ function playChat(){
 }
 
 /* =========================================================
+   SPELLING WORDS (Noah): the weekly school list, practiced like the real test.
+   The tablet says the word, uses it in a sentence, says it again; he spells it on a big letter keyboard.
+   The list is split across the days before the test; the last day is a practice test of every word.
+   Until today's words are done, the rest of the app stays locked (Message Mom & Dad still works).
+   ========================================================= */
+const wdAdd=(k,n)=>{const [y,m,d]=k.split('-').map(Number),t=new Date(y,m-1,d+n);return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`};
+const wdDay=k=>{const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString(undefined,{weekday:'short'})};
+function wdPlan(){const W=K.words;if(!W||!W.list||!W.list.length)return null;const today=dayKey(0),days=[];
+  for(let d=W.start;d<W.test&&days.length<7;d=wdAdd(d,1))days.push(d);
+  const n=Math.max(1,days.length),cs=Math.ceil(W.list.length/n),idx=days.indexOf(today),active=idx>=0,last=idx===days.length-1;
+  W.got=W.got||{};W.fin=W.fin||{};W.miss=W.miss||{};W.skip=W.skip||{};W.done=W.done||{};
+  const need=!active?[]:last?W.list.filter(x=>W.fin[x.w]!==today):W.list.slice(0,(idx+1)*cs).filter(x=>!W.got[x.w]);
+  return{W,days,idx,active,last,cs,need,today,learned:W.list.filter(x=>W.got[x.w]).length}}
+function wdLocked(){if(K.mode!=='big')return false;const P=wdPlan();return !!(P&&P.active&&P.need.length&&!P.W.skip[P.today]&&!P.W.done[P.today])}
+const WD_FREE=['','home','spelling','chat','grownups'];
+function wdSummary(){const P=wdPlan();if(!P)return null;const W=P.W;
+  return{n:W.list.length,test:W.test,start:W.start,learned:P.learned,need:P.need.length,locked:wdLocked(),doneToday:!!W.done[P.today],skipped:!!W.skip[P.today],
+    tricky:Object.entries(W.miss).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([w,c])=>w+' ('+c+')'),list:W.list.map(x=>x.w)}}
+// gate screen on Noah's home
+function wdHome(){const P=wdPlan(),W=P.W;setHeader('Star Quest','Spelling words first!');
+  view.innerHTML=`<div class="wdgate"><div class="wdcard"><div class="wdem">📝</div><h2>Spelling words first!</h2>
+      <p>${P.last?`Practice test day! Spell all <b>${W.list.length}</b> words. Test is ${wdDay(W.test)}.`:`Today: <b>${P.need.length}</b> word${P.need.length===1?'':'s'}. Then everything unlocks!`}</p>
+      <button class="pbtn go wdstart" id="wdGo">Start ▶</button>
+      <div class="wddays">${P.days.map((d,i)=>`<span class="${W.done[d]?'done':i===P.idx?'now':''}">${wdDay(d)}${W.done[d]?' ✓':''}</span>`).join('')}<span class="test">${wdDay(W.test)} 🏆 Test</span></div>
+      <div class="skbar" style="--pc:#2f9be0"><i style="width:${P.learned/W.list.length*100}%"></i></div><small>${P.learned} of ${W.list.length} words learned this week</small></div>
+    <div class="row"><button class="pbtn" id="wdChat">💬 Message Mom & Dad</button><button class="pbtn" id="wdSkip">Grown-up: skip today</button></div>
+    <div class="home-foot"><span></span><button class="grownup" id="grown">Grown-ups: press and hold<i></i></button></div></div>`;
+  speakNow(P.last?'Practice test day! Let\'s spell all your words.':`Spelling words first! You have ${P.need.length} words today.`);
+  $('#wdGo').onclick=()=>{sfx.tap();go('spelling')};$('#wdChat').onclick=()=>go('chat');
+  $('#wdSkip').onclick=()=>pinPad('Grown-up: enter your PIN to skip today',()=>{W.skip[P.today]=true;save();famPush(true);home()});
+  holdGrownups()}
+const WD_KEYS=['abcdefg','hijklmn','opqrstu',"vwxyz'"];
+function playSpelling(){
+  if(location.hash!=='#spelling')return;
+  const P=wdPlan();if(!P){setHeader('Spelling Words','');view.innerHTML='<div class="board"><p class="prompt">No spelling words right now.</p><p class="note" style="text-align:center">Mom or Dad will add your list from their phone.</p></div>';return}
+  const W=P.W,tok=loopToken,today=P.today,gated=P.active&&P.need.length&&!W.done[today];
+  // today's queue, or (no gate) extra practice on the whole list
+  let queue=(gated?P.need:W.list).map(x=>({...x})),total=queue.length,doneN=0,typed='',mode='spell',helped=false;
+  const say=x=>speakNow(`${x.w}. ${x.s?x.s.replace(/[.!?]?$/,'.'):''} ${x.w}.`,true);
+  const cur=()=>queue[0];
+  const draw=(msg)=>{if(tok!==loopToken)return;const x=cur();setHeader('Spelling Words',gated?`${total-doneN} left today`:'Extra practice');
+    view.innerHTML=`<div class="wdwrap"><div class="wdtop"><button class="pbtn wdhear" id="wdHear">🔊 Hear it again</button><div class="wdprog"><i style="width:${doneN/total*100}%"></i></div><span>${doneN} / ${total}</span></div>
+      ${mode==='copy'?`<div class="wdshow">${x.w.split('').map(c=>`<span>${c}</span>`).join('')}</div><p class="wdmsg">Now you type it while you look.</p>`:`<p class="wdmsg">${msg||'Listen, then spell the word.'}</p>`}
+      <div class="wdtyped ${typed?'':'empty'}" id="wdTyped">${typed?typed.split('').map(c=>`<span>${c}</span>`).join(''):'<i>tap the letters</i>'}<b class="wdcur"></b></div>
+      <div class="wdkeys">${WD_KEYS.map(r=>`<div>${r.split('').map(c=>`<button data-k="${c}">${c}</button>`).join('')}</div>`).join('')}
+        <div><button class="wdwide" data-k="del">⌫</button>${mode==='spell'?`<button class="wdwide" data-k="hint">💡 First letter</button>`:''}<button class="wdwide go" data-k="ok">Check ✓</button></div></div></div>`;
+    $('#wdHear').onclick=()=>say(x);
+    view.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{const k=b.dataset.k;
+      if(k==='del'){typed=typed.slice(0,-1);return draw(msg)}
+      if(k==='hint'){helped=true;if(!typed)typed=x.w[0];draw(`It starts with "${x.w[0]}".`);speakNow(`It starts with ${x.w[0]}.`,true);return}
+      if(k==='ok')return check();
+      if(typed.length<20){typed+=k;tone([[600+typed.length*30,0,.04]],'sine',0.03);draw(msg)}})};
+  const check=()=>{const x=cur(),ok=typed.trim().toLowerCase()===x.w.toLowerCase();
+    if(mode==='copy'){if(ok){sfx.yes();mode='spell';typed='';queue.push(queue.shift());if(queue.length>2)queue.splice(2,0,queue.pop());next('Good! That word will come back later.')}else{sfx.no();typed='';draw()}return}
+    if(ok&&!helped){sfx.yes();W.got[x.w]=today;if(P.last||!P.active)W.fin[x.w]=today;queue.shift();doneN++;typed='';save();addStars(1,$('#wdTyped'),'spelling');
+      if(!queue.length)return finish();next(pick(['Great spelling!','You got it!','Nice work!','Correct!']))}
+    else if(ok&&helped){sfx.yes();typed='';helped=false;queue.push(queue.shift());next('Right! You had help, so it will come back for you to try alone.')}
+    else{sfx.no();W.miss[x.w]=(W.miss[x.w]||0)+1;save();const wrong=typed;typed='';helped=false;mode='copy';
+      draw();const m=view.querySelector('.wdmsg');m.innerHTML=`You wrote <b class="wdbad">${wrong.split('').map((c,i)=>`<span class="${c===x.w[i]?'':'x'}">${c}</span>`).join('')||'nothing'}</b>. Here is how to spell it. Now type it while you look.`;
+      speakNow(`Almost! ${x.w} is spelled ${x.w.split('').join(', ')}.`,true)}};
+  const next=msg=>{helped=false;typed='';draw(msg);setTimeout(()=>{if(tok===loopToken&&queue.length)say(cur())},700)};
+  const finish=()=>{if(gated){W.done[today]=true;save();addStars(5,view,'spelling');famPush(true);
+      const tricky=Object.keys(W.miss).filter(w=>P.need.some(x=>x.w===w));famAlert(`📝 ${kidName()} finished spelling`,`${total} word${total===1?'':'s'} done${tricky.length?`. Tricky: ${tricky.slice(0,6).join(', ')}`:'. No misses!'}`,'pencil')}
+    sfx.up();popup('🏆',gated?'All done for today!':'Practice done!',gated?(P.last?'You spelled every word. You are ready for your test!':'Everything is unlocked. Go play!'):'Great extra practice!','Yay!',()=>go('home'))};
+  if(!queue.length){view.innerHTML='<div class="board"><p class="prompt">All done for today! 🎉</p></div>';return}
+  draw();setTimeout(()=>{if(tok===loopToken)say(cur())},500);
+}
+// a new list from the parent page
+function wdSet(c){const list=(c.list||[]).map(x=>({w:String(x.w||'').toLowerCase().replace(/[^a-z']/g,'').slice(0,20),s:String(x.s||'').slice(0,160)})).filter(x=>x.w);
+  if(!list.length){K.words=null;save();return}
+  const today=dayKey(0),start=c.start&&c.start>today?c.start:today;
+  K.words={id:c.id||Date.now(),list,start,test:c.test&&c.test>start?c.test:wdAdd(start,3),got:{},fin:{},miss:{},skip:{},done:{}};save()}
+
+/* =========================================================
    HOME, STICKERS, GROWN-UPS
    ========================================================= */
 function home(){
@@ -3993,11 +4088,13 @@ function home(){
       <div class="home-foot"><span></span><button class="grownup" id="grown">Grown-ups: press and hold<i></i></button></div>`;
     view.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{sfx.tap();speakNow(b.dataset.say);go(b.dataset.g)});
     holdGrownups();return}
+  if(wdLocked())return wdHome();
   const tile=g=>`<button class="tile" data-g="${g.id}" style="background:${g.color}"><span class="em">${g.em}</span>${isGated(g.id)?`<span class="lv">⭐ ${K.playSec>0?fmtSec(K.playSec)+' left':'Uses stars'}</span>`:g.max?`<span class="lv">Level ${K.lv[g.id]}</span>`:''}<span><b>${g.name}</b><br><small>${g.sub}</small></span></button>`;
   view.innerHTML=`<p class="hello">Play</p>
     <div class="tiles">${GAMES.filter(g=>g.play&&!g.little).map(tile).join('')}</div>
     <p class="hello">Learn</p>
     <div class="tiles">${GAMES.filter(g=>!g.play&&!g.little).map(tile).join('')}
+      ${K.words&&K.words.list&&K.words.list.length?`<button class="tile" data-g="spelling" style="background:#e0533a"><span class="em">📝</span><span><b>Spelling Words</b><br><small>${wdPlan().learned} of ${K.words.list.length} · Test ${wdDay(K.words.test)}</small></span></button>`:''}
       <button class="tile" data-g="chat" style="background:#2f9be0"><span class="em">💬</span><span><b>Message Mom & Dad</b><br><small>Send a note to their phone</small></span></button>
       <button class="tile" data-g="bank" style="background:#c7901a"><span class="em">🏦</span><span><b>Star Bank</b><br><small>⭐ ${K.wallet||0} = ${sbMoney(K.wallet||0)}</small></span></button>
       <button class="tile" data-g="stickers" style="background:#1d2b4f"><span class="em">${skTotal()?skAt(skTotal()-1):'📒'}</span><span><b>Sticker Book</b><br><small>Page ${skNow().page+1}: ${skNow().have} of ${SK_N}</small></span></button></div>
@@ -4073,9 +4170,9 @@ function grownups(){
 }
 
 /* ---------- navigation (plain #names so the back button works) ---------- */
-const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,times:playTimes,money:playMoney,bank:playBank,chat:playChat,ninjaread:playRead,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),ninja:gated('ninja',playNinja),tv:gated('tv',()=>{TV.stack=[];playTv()}),mix:playMix,adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
+const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,times:playTimes,money:playMoney,bank:playBank,chat:playChat,spelling:playSpelling,ninjaread:playRead,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),ninja:gated('ninja',playNinja),tv:gated('tv',()=>{TV.stack=[];playTv()}),mix:playMix,adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
 function go(name){if(location.hash.slice(1)!==name)location.hash=name;else show()}
-function show(){if(window.__tvKill)window.__tvKill();loopToken++;const r=location.hash.slice(1);resetArm=false;$('#timeChip').hidden=true;updateStars();$('#overlay').hidden=true;popQ.length=0;try{if(window.SQAndroid)SQAndroid.stop();else if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}
+function show(){if(window.__tvKill)window.__tvKill();loopToken++;let r=location.hash.slice(1);if(wdLocked()&&!WD_FREE.includes(r)){history.replaceState(null,'','#home');r='home'}resetArm=false;$('#timeChip').hidden=true;updateStars();$('#overlay').hidden=true;popQ.length=0;try{if(window.SQAndroid)SQAndroid.stop();else if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}
   view.scrollTop=0;(ROUTES[r]||home)()}
 window.addEventListener('hashchange',show);
 $('#homeBtn').onclick=()=>{sfx.tap();go('home')};
