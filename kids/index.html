@@ -636,6 +636,51 @@ html.little .tvp b,html.little .tve b{font-size:20px}
 .tfbag{position:absolute;left:50%;top:55%;font-size:150px;line-height:1;cursor:pointer;animation:tfshake 1s ease-in-out infinite;filter:drop-shadow(0 0 30px #ffd86b)}
 @keyframes tfshake{0%,100%{transform:translate(-50%,-50%) rotate(0)}25%{transform:translate(-50%,-50%) rotate(-9deg)}75%{transform:translate(-50%,-50%) rotate(9deg)}}
 .tfcount{position:absolute;left:0;right:0;top:24%;text-align:center;font-family:var(--f-display);font-size:clamp(64px,12vw,130px);font-weight:800;color:#ffe066;text-shadow:0 0 30px #ffb300}
+.mnstage{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center;min-height:150px}
+.mnc{position:relative;display:inline-flex;flex-direction:column;align-items:center;border-radius:50%;transition:transform .2s}
+.mnc.lit{transform:scale(1.12);filter:drop-shadow(0 0 10px #ffd23f)}
+.mnrun{position:absolute;top:-30px;left:50%;transform:translateX(-50%);background:#1d2b4f;color:#fff;border-radius:10px;padding:2px 8px;font-size:18px;white-space:nowrap}
+.mncap{width:100%;text-align:center;font-family:var(--f-display);font-size:24px;margin:4px 0 0}
+.mnpick{background:var(--card);border-radius:22px;padding:8px;box-shadow:0 5px 0 var(--sky-2);display:inline-flex;align-items:center;justify-content:center}
+.mnpick.ok{background:#d6f5df}.mnpick.no{background:#ffe0dc}
+.mncounter{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;min-height:120px;background:#f3e3c7;border:4px dashed #d4b483}
+.mncounter .mnc{background:none}.mnempty{color:#9a7b4f;font-size:18px}
+.mntot{text-align:center;font-family:var(--f-display);font-size:28px;font-weight:700;margin:4px 0}.mntot.over{color:#d9435b}
+.mntray{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.mnarrow{font-size:44px;color:var(--muted)}.mntag{display:flex;flex-direction:column;align-items:center;font-size:64px;line-height:1}.mntag b{font-size:26px;background:#fff3b0;border-radius:10px;padding:2px 10px;margin-top:6px}
+.mnbill{display:block}
+.sbwrap{width:min(900px,100%);margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.sbcard{display:flex;align-items:center;justify-content:center;gap:18px;background:var(--card);border-radius:26px;padding:18px;box-shadow:0 6px 0 #e6c26a;border:4px solid #f2c94c;flex-wrap:wrap}
+.sbbig{font-family:var(--f-display);font-size:clamp(40px,7vw,64px);font-weight:800;display:flex;flex-direction:column;align-items:center;line-height:1.05}
+.sbbig small{font-size:16px;color:var(--muted);font-weight:600}.sbbig.money{color:#2e7d32}.sbeq{font-size:44px;color:var(--muted)}
+.sbbills{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;align-items:center}.sbbills svg{width:54px;height:auto}
+.sbwishes{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.sbwish{background:var(--card);border-radius:20px;padding:14px;box-shadow:0 4px 0 var(--sky-2);display:flex;flex-direction:column;gap:8px;--pc:#2e9e5b}
+.sbwhead{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.sbwhead b{font-size:20px}.sbwhead span{color:var(--muted)}
+.sbwfoot{display:flex;justify-content:space-between;align-items:center;gap:8px}.sbwfoot .pbtn{height:44px;padding:0 14px;font-size:17px;margin-left:6px}
+.sbhist{background:var(--card);border-radius:18px;padding:6px 14px}.sbhist div{display:flex;gap:12px;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eef2f8}.sbhist div:last-child{border:0}
+.sbhist span{color:var(--muted);white-space:nowrap}
+.sbform{width:min(620px,100%);margin:0 auto;display:flex;flex-direction:column;gap:14px;background:var(--card);border-radius:24px;padding:20px;box-shadow:0 6px 0 var(--sky-2)}
+.sbform label{display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:19px}
+.sbform input{font:inherit;font-size:22px;padding:10px 14px;border-radius:14px;border:2px solid var(--sky-2);user-select:text;-webkit-user-select:text}
+.sbdollar{display:flex;align-items:center;gap:6px;font-size:26px}.sbdollar input{width:7em}
+.sbems{display:flex;flex-wrap:wrap;gap:8px}.sbems button{width:52px;height:52px;font-size:28px;border-radius:14px;background:#f4f7ff}.sbems button[aria-pressed=true]{box-shadow:0 0 0 4px #f2b705;background:#fff1c9}
+.sbcalc{font-size:20px;text-align:center;margin:0}
+.sbmath{display:flex;flex-direction:column;gap:6px;font-size:24px}.sbmath div{display:flex;justify-content:space-between;padding:8px 14px;border-radius:14px;background:#f4f7ff}
+.sbmath div:last-child{background:#e3f6e8;font-weight:800}.sbmath div.neg{background:#ffe6e2}
+.pincard{gap:10px;align-items:center}.pindots{display:flex;gap:14px;justify-content:center}.pindots i{width:20px;height:20px;border-radius:50%;border:3px solid var(--ink)}.pindots i.on{background:var(--ink)}
+.pinmsg{min-height:1.3em;margin:0;color:#d9435b}
+.pinkeys{display:grid;grid-template-columns:repeat(3,76px);gap:10px;justify-content:center}.pinkeys button{height:66px;border-radius:18px;background:#f4f7ff;font-size:28px;font-weight:700;box-shadow:0 4px 0 #dde5f5}
+.pinov{z-index:120}
+.famnote{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:110;background:#1d2b4f;color:#fff;border-radius:22px;padding:14px 22px;display:flex;gap:12px;align-items:center;
+  font-size:clamp(20px,3vw,28px);box-shadow:0 10px 30px rgba(0,0,0,.3);max-width:92vw;animation:famin .5s cubic-bezier(.3,1.6,.5,1);transition:opacity .7s,transform .7s}
+.famnote span{font-size:1.4em}.famnote.out{opacity:0;transform:translate(-50%,-30px)}@keyframes famin{from{transform:translate(-50%,-80px)}}
+.famcd{position:fixed;top:12px;right:12px;z-index:105;background:#fff3b0;color:#1d2b4f;border-radius:16px;padding:8px 14px;font-size:20px;font-weight:800;box-shadow:0 4px 0 #e6c26a;pointer-events:none}
+.famcd.low{background:#ffd0c9;box-shadow:0 4px 0 #e89a8e;animation:mxpulse 1s infinite}
+.famlock{position:fixed;top:0;left:0;right:0;bottom:0;z-index:115;background:radial-gradient(ellipse at 50% 0%,#3b2a7a,#141a4a 60%,#070a24);color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px}
+.famlockin{display:flex;flex-direction:column;align-items:center;gap:8px;max-width:640px}.famlockem{font-size:120px;line-height:1}
+.famlockin h2{font-family:var(--f-display);font-size:clamp(40px,7vw,64px);margin:0}.famlockin p{font-size:clamp(20px,3vw,28px);margin:0}.famlockin .famsmall{opacity:.8;font-size:20px}
+.famlockin .grownup{margin-top:30px;color:#fff;opacity:.6}
 /* stickers + grown-ups */
 .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:12px}
 .sticker{height:100px;border-radius:22px;background:var(--card);display:grid;place-items:center;font-size:52px;box-shadow:0 5px 0 var(--sky-2)}
@@ -748,6 +793,7 @@ const GAMES=[
   {id:'piano',name:'Pink Piano',em:'🎹',sub:'Play music and songs',color:'#ff8ac4',max:0,little:true},
   {id:'robot',name:'Robot Path',em:'🤖',sub:'Program the robot',color:'#5b6ee1',max:8},
   {id:'boss',name:'Boss Battle',em:'👾',sub:'Times tables',color:'#d9435b',max:6},
+  {id:'money',name:'Money Market',em:'💰',sub:'Coins, dollars and change',color:'#2e9e5b',max:6},
   {id:'times',name:'Times Tables',em:'✖️',sub:'Practice with help',color:'#2f9be0',max:0},
   {id:'ninjaread',name:'Ninja Stories',em:'📖',sub:'Read to power up',color:'#6b4bd6',max:0},
   {id:'daily',name:'Daily Challenge',em:'📅',sub:'5 puzzles a day',color:'#f08a12',max:0}
@@ -2680,6 +2726,7 @@ const TV_PROFILE={MaxStreamingBitrate:20000000,MaxStaticBitrate:100000000,MusicS
   ContainerProfiles:[],CodecProfiles:[],SubtitleProfiles:[{Format:'vtt',Method:'External'}]};
 async function tvPlay(top){
   const it=top.item,tok=loopToken,J=K.jf;
+  window.__tvNow={id:it.Id,name:it.Type==='Episode'&&it.SeriesName?`${it.SeriesName} S${it.ParentIndexNumber||1}E${it.IndexNumber||'?'}: ${it.Name}`:it.Name};
   setHeader(it.Type==='Episode'&&it.SeriesName?it.SeriesName:it.Name,it.Type==='Episode'?`S${it.ParentIndexNumber||1} E${it.IndexNumber||'?'} · ${it.Name}`:'');
   view.innerHTML=`<div class="tvplay"><div class="tvvwrap" id="tvwrap"><video id="tvv" playsinline webkit-playsinline disablepictureinpicture disableremoteplayback preload="auto"></video><div class="tvover" id="tvover"><div class="tvspin"></div></div>
       <div class="tvctl" id="tvctl"><div class="tvseek" id="tvseek"><i id="tvfill"></i></div>
@@ -3637,6 +3684,241 @@ async function toothFairy(m){
 }
 
 /* =========================================================
+   MONEY MARKET: learn coins and dollars the way school teaches it.
+   L1 what's each coin worth · L2 count the same coins · L3 count mixed coins (biggest first)
+   L4 pay for something with the exact coins · L5 count dollars and coins · L6 how much change?
+   Coins show their words (ONE CENT, ONE DIME...) like real ones, not numbers, so he learns them by look.
+   ========================================================= */
+const MN_COIN={p:{v:1,name:'penny',mm:19,fill:'#c8763c',edge:'#9b5326',word:'ONE CENT',txt:'#6e3510'},n:{v:5,name:'nickel',mm:21,fill:'#c3c7cf',edge:'#9095a0',word:'FIVE CENTS',txt:'#4d535e'},
+  d:{v:10,name:'dime',mm:18,fill:'#d4d7de',edge:'#9aa0ab',word:'ONE DIME',ridge:1,txt:'#4d535e'},q:{v:25,name:'quarter',mm:24,fill:'#cfd3da',edge:'#959ba6',word:'QUARTER',ridge:1,txt:'#4d535e'}};
+const MN_BILL={1:{word:'ONE'},5:{word:'FIVE'},10:{word:'TEN'}};
+const mnFmt=c=>c<100?`${c}¢`:`$${Math.floor(c/100)}.${String(c%100).padStart(2,'0')}`;
+const MN_ITEMS=[['🍎','an apple'],['🍌','a banana'],['🧃','a juice box'],['🍪','a cookie'],['✏️','a pencil'],['🎈','a balloon'],['🍭','a lollipop'],['🧸','a teddy bear'],['🚗','a toy car'],['⚽','a ball'],['🦖','a toy dino'],['📕','a book'],['🥷','a ninja mask'],['🧩','a puzzle']];
+function mnCoin(k,scale=4.2,label){const C=MN_COIN[k],r=C.mm*scale/2,s=r*2+4,c=s/2;
+  return `<svg class="mncoin" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" aria-label="${C.name}"><circle cx="${c}" cy="${c}" r="${r}" fill="${C.edge}"/>
+    ${C.ridge?`<circle cx="${c}" cy="${c}" r="${r-1.5}" fill="none" stroke="${C.fill}" stroke-width="3" stroke-dasharray="2 2"/>`:''}
+    <circle cx="${c}" cy="${c}" r="${r*0.86}" fill="${C.fill}"/><circle cx="${c}" cy="${c}" r="${r*0.86}" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2"/>
+    <text x="${c}" y="${c+r*0.1}" text-anchor="middle" font-size="${Math.max(7,r*0.3)}" font-weight="800" fill="${C.txt}" font-family="sans-serif">${C.word.split(' ').map((w,i,a)=>`<tspan x="${c}" dy="${i?r*0.34:-(a.length-1)*r*0.17}">${w}</tspan>`).join('')}</text>
+    ${label?`<text x="${c}" y="${s-3}" text-anchor="middle" font-size="12" font-weight="800" fill="#1d2b4f">${label}</text>`:''}</svg>`}
+function mnBill(v,w=150){const h=w*0.43;return `<svg class="mnbill" width="${w}" height="${h}" viewBox="0 0 150 64" aria-label="${v} dollar bill"><rect x="1" y="1" width="148" height="62" rx="5" fill="#cfe6c4" stroke="#6f9a62" stroke-width="2"/>
+  <rect x="6" y="6" width="138" height="52" rx="3" fill="none" stroke="#86b078" stroke-width="1.5"/><ellipse cx="75" cy="32" rx="16" ry="20" fill="#b6d6a8" stroke="#6f9a62"/>
+  <text x="16" y="22" font-size="14" font-weight="800" fill="#2f5a25" font-family="sans-serif">${v}</text><text x="134" y="56" text-anchor="end" font-size="14" font-weight="800" fill="#2f5a25" font-family="sans-serif">${v}</text>
+  <text x="112" y="24" text-anchor="middle" font-size="9" font-weight="800" fill="#2f5a25" font-family="sans-serif">${MN_BILL[v].word}</text><text x="38" y="52" text-anchor="middle" font-size="9" font-weight="800" fill="#2f5a25" font-family="sans-serif">DOLLAR${v>1?'S':''}</text></svg>`}
+// a pile of coins worth `c` cents using the biggest coins, then mixed up a little so he has to sort them
+function mnPile(c,mix){const out=[];for(const k of ['q','d','n','p']){while(c>=MN_COIN[k].v){out.push(k);c-=MN_COIN[k].v}}
+  if(mix&&out.length<6){const i=out.indexOf('q');if(i>=0&&Math.random()<.5){out.splice(i,1,'d','d','n')}}return out}
+const mnSort=a=>a.slice().sort((x,y)=>MN_COIN[y].v-MN_COIN[x].v);
+function mnChoices(ans,step){const s=new Set([ans]);let g=0;while(s.size<4&&g++<60){const d=pick([1,2,3])*pick([-1,1])*step;const v=ans+d;if(v>0)s.add(v)}return shuffle([...s])}
+// "count it with me": label each coin with the running total, biggest first
+function mnCountAlong(box,coins,bills){const els=[...box.querySelectorAll('[data-v]')].sort((a,b)=>b.dataset.v-a.dataset.v);let tot=0,i=0;
+  els.forEach(e=>{e.classList.remove('lit');e.parentNode.appendChild(e)});
+  const step=()=>{if(i>=els.length||!box.isConnected)return;const e=els[i++];tot+=+e.dataset.v;e.classList.add('lit');
+    let t=e.querySelector('.mnrun');if(!t){t=document.createElement('b');t.className='mnrun';e.appendChild(t)}t.textContent=mnFmt(tot);speakNow(mnFmt(tot).replace('¢',' cents').replace(/^\$(\d+)\.(\d\d)$/,(m,d,c)=>`${d} dollars${+c?' and '+(+c)+' cents':''}`),true);setTimeout(step,1100)};
+  step()}
+function playMoney(){
+  if(location.hash!=='#money')return;
+  const lv=K.lv.money,tok=loopToken;setHeader('Money Market',`Level ${lv}`);
+  const done=btn=>{addStars(1,btn,'money');if(correct('money'))setTimeout(()=>levelUp('money',playMoney),600);else setTimeout(()=>{if(tok===loopToken)playMoney()},900)};
+  const wrongNote=t=>{const n=$('#mnNote');if(n)n.textContent=t};
+  const ask=(prompt,stage,ans,opts,fmt,help)=>{
+    view.innerHTML=`<div class="board"><p class="prompt">${prompt}</p><div class="panel mnstage" id="mnStage">${stage}</div><div id="ch"></div>
+      ${help?'<div class="row"><button class="pbtn helpbtn" id="mnHelp">💡 Count it with me</button></div>':''}<p class="note" id="mnNote" style="text-align:center;min-height:1.4em"></p>${progressDots('money')}</div>`;
+    const ch=choices(opts.map(fmt),fmt(ans),done);ch.addEventListener('click',e=>{const b=e.target.closest('.choice');if(b&&b.textContent!==fmt(ans)){K.got.money=0;save();wrongNote(help?'Not quite. Tap 💡 and count it together!':'Not quite. Try again!')}},true);
+    $('#ch').replaceWith(ch);if(help)$('#mnHelp').onclick=()=>mnCountAlong($('#mnStage'));speakNow(prompt.replace(/<[^>]+>/g,''))};
+  const coinRow=ks=>ks.map(k=>`<span class="mnc" data-v="${MN_COIN[k].v}">${mnCoin(k)}</span>`).join('');
+  if(lv===1){const k=pick(['p','n','d','q']);
+    if(Math.random()<.5)return ask('How much is this coin worth?',`<span class="mnc">${mnCoin(k,6)}</span><p class="mncap">This is a ${MN_COIN[k].name}.</p>`,MN_COIN[k].v,[1,5,10,25],mnFmt,false);
+    // tap the coin
+    view.innerHTML=`<div class="board"><p class="prompt">Tap the <b>${MN_COIN[k].name}</b>.</p><div class="panel mnstage">${shuffle(['p','n','d','q']).map(c=>`<button class="mnpick" data-k="${c}">${mnCoin(c)}</button>`).join('')}</div><p class="note" id="mnNote" style="text-align:center;min-height:1.4em"></p>${progressDots('money')}</div>`;
+    speakNow(`Tap the ${MN_COIN[k].name}.`);
+    view.querySelectorAll('.mnpick').forEach(b=>b.onclick=()=>{if(b.dataset.k===k){b.classList.add('ok');sfx.yes();done(b)}else{b.classList.add('no');sfx.no();K.got.money=0;save();wrongNote(`That's a ${MN_COIN[b.dataset.k].name}. It's worth ${mnFmt(MN_COIN[b.dataset.k].v)}.`)}});return}
+  if(lv===2){const k=pick(['n','d','q','d','n']),n=rnd(2,k==='q'?4:6),ans=MN_COIN[k].v*n;
+    return ask(`How much money is this?`,coinRow(Array(n).fill(k)),ans,mnChoices(ans,MN_COIN[k].v),mnFmt,true)}
+  if(lv===3){const ans=rnd(3,19)*5+(Math.random()<.5?rnd(1,4):0),ks=shuffle(mnPile(ans,true));
+    return ask(`How much money is this? <small>Start with the biggest coins!</small>`,coinRow(ks),ans,mnChoices(ans,5),mnFmt,true)}
+  if(lv===4){// pay for it: put coins on the counter
+    const [em,what]=pick(MN_ITEMS),price=rnd(2,19)*5+(Math.random()<.4?rnd(1,4):0);let put=[];
+    view.innerHTML=`<div class="board"><p class="prompt">${em} ${what[0].toUpperCase()+what.slice(1)} costs <b>${mnFmt(price)}</b>. Pay for it!</p>
+      <div class="panel mncounter" id="mnCounter"><span class="mnempty">Tap coins to put them here</span></div><p class="mntot" id="mnTot">You put down: 0¢</p>
+      <div class="mntray">${['q','d','n','p'].map(k=>`<button class="mnpick" data-k="${k}">${mnCoin(k,3.6)}</button>`).join('')}</div>
+      <div class="row"><button class="pbtn" id="mnClear">↩ Take them back</button><button class="pbtn go" id="mnPay">Pay</button></div><p class="note" id="mnNote" style="text-align:center;min-height:1.4em"></p>${progressDots('money')}</div>`;
+    speakNow(`${what} costs ${mnFmt(price).replace('¢',' cents')}. Pay for it!`);
+    const draw=()=>{const tot=put.reduce((s,k)=>s+MN_COIN[k].v,0);$('#mnCounter').innerHTML=put.length?mnSort(put).map((k,i)=>`<button class="mnc" data-i="${i}">${mnCoin(k,3.2)}</button>`).join(''):'<span class="mnempty">Tap coins to put them here</span>';
+      $('#mnTot').textContent=`You put down: ${mnFmt(tot)}`;$('#mnTot').classList.toggle('over',tot>price);
+      $('#mnCounter').querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{const k=mnSort(put)[+b.dataset.i];put.splice(put.indexOf(k),1);sfx.tap();draw()});return tot};
+    view.querySelectorAll('.mntray .mnpick').forEach(b=>b.onclick=()=>{if(put.length>=15)return;put.push(b.dataset.k);tone([[1200,0,.05],[1500,.04,.06]],'triangle',0.05);draw()});
+    $('#mnClear').onclick=()=>{put=[];draw()};
+    $('#mnPay').onclick=()=>{const tot=draw();if(tot===price){sfx.yes();speakNow('Thank you! Here you go!');done($('#mnPay'))}
+      else{sfx.no();K.got.money=0;save();wrongNote(tot>price?`That's ${mnFmt(tot-price)} too much. Take some back!`:`You need ${mnFmt(price-tot)} more.`)}};return}
+  if(lv===5){const b=[];let d=rnd(1,4);if(Math.random()<.4){b.push(5);d=rnd(0,3)}if(Math.random()<.2)b.push(10);for(let i=0;i<d;i++)b.push(1);
+    const cents=pick([0,25,50,75,10,35,60,85,5]),ks=mnSort(mnPile(cents)),ans=b.reduce((s,v)=>s+v*100,0)+cents;
+    const stage=b.sort((x,y)=>y-x).map(v=>`<span class="mnc" data-v="${v*100}">${mnBill(v,Math.min(150,innerWidth/5))}</span>`).join('')+coinRow(ks);
+    return ask('How much money is this?',stage,ans,mnChoices(ans,pick([25,100,50])),mnFmt,true)}
+  // level 6: change
+  const [em,what]=pick(MN_ITEMS),pay=pick([100,500,500,1000]),price=pay===100?rnd(1,19)*5:rnd(Math.ceil(pay/400),Math.floor(pay/100)-1)*100+pick([0,25,50,75]),ans=pay-price;
+  ask(`${em} ${what[0].toUpperCase()+what.slice(1)} costs <b>${mnFmt(price)}</b>. You pay with ${mnFmt(pay)}. How much change do you get back?`,
+    `<span class="mnc">${pay>=100?mnBill(pay/100,Math.min(170,innerWidth/4)):''}</span><span class="mnarrow">→</span><span class="mntag">${em}<b>${mnFmt(price)}</b></span>`,
+    ans,mnChoices(ans,pay===100?5:25),mnFmt,false);
+  const n=$('#mnNote');if(n)n.textContent=`Tip: count up from ${mnFmt(price)} to ${mnFmt(pay)}.`;
+}
+
+/* =========================================================
+   STAR BANK: spend stars on real things with Mom or Dad. Every purchase needs the grown-up PIN.
+   25 stars = $1 (grown-ups can change it). Wishes show how close he is, so saving up means something.
+   ========================================================= */
+const sbRate=()=>K.rate||25;
+const sbCents=s=>Math.round(s*100/sbRate());
+const sbMoney=s=>{const c=sbCents(s);return `$${Math.floor(c/100)}.${String(c%100).padStart(2,'0')}`};
+function playBank(){
+  if(location.hash!=='#bank')return;
+  K.wishes=K.wishes||[];K.buys=K.buys||[];const w=K.wallet||0,bills=Math.floor(w/sbRate());
+  setHeader('Star Bank','Spend stars on real things');
+  view.innerHTML=`<div class="sbwrap">
+    <div class="sbcard"><div class="sbbig">⭐ ${w}<small>stars</small></div><div class="sbeq">=</div><div class="sbbig money">${sbMoney(w)}<small>real money</small></div></div>
+    <div class="sbbills">${bills?[...Array(Math.min(bills,30))].map(()=>mnBill(1,54)).join('')+(bills>30?`<b>+${bills-30} more</b>`:''):''}</div>
+    <p class="note" style="text-align:center">Every <b>${sbRate()} stars = $1</b>. ${bills?`That's ${bills} dollar${bills===1?'':'s'}${w%sbRate()?` and ${w%sbRate()} extra star${w%sbRate()===1?'':'s'}`:''}!`:`${sbRate()-w} more stars and you have your first dollar!`}</p>
+    <p class="hello">My wishes</p>
+    <div class="sbwishes">${K.wishes.map((x,i)=>{const need=Math.round(x.cents*sbRate()/100),pct=Math.min(100,Math.round(w/need*100));
+      return `<div class="sbwish"><div class="sbwhead"><b>${x.em||'🎁'} ${x.name}</b><span>${mnFmt(x.cents)} = ⭐ ${need}</span></div><div class="skbar"><i style="width:${pct}%"></i></div>
+        <div class="sbwfoot"><span>${w>=need?'You have enough! 🎉':`${need-w} more stars to go`}</span><span><button class="pbtn" data-del="${i}" aria-label="Remove wish">✕</button>${w>=need?`<button class="pbtn go" data-buy="${i}">Buy it</button>`:''}</span></div></div>`}).join('')||'<p class="note">No wishes yet. Add something you are saving up for!</p>'}</div>
+    <div class="row"><button class="pbtn" id="sbAdd">＋ Add a wish</button><button class="pbtn go" id="sbOther">🛍️ Buy something now</button></div>
+    ${K.buys.length?`<p class="hello">Things I bought</p><div class="sbhist">${K.buys.slice(0,12).map(b=>`<div><span>${new Date(b.t).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><b>${b.what}</b><span>⭐ ${b.stars} · ${mnFmt(b.cents)}</span></div>`).join('')}</div>`:''}</div>`;
+  view.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{const x=K.wishes[+b.dataset.buy];sbConfirm(x.name,Math.round(x.cents*sbRate()/100),x.cents,+b.dataset.buy)});
+  view.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{K.wishes.splice(+b.dataset.del,1);save();sfx.tap();playBank()});
+  $('#sbAdd').onclick=()=>sbForm('wish');$('#sbOther').onclick=()=>sbForm('buy');
+}
+function sbForm(kind){const EM=['🎁','🧸','🚗','🦖','🥷','🍭','🍦','📕','⚽','🎮','🧩','🎨'];let em='🎁';
+  setHeader('Star Bank',kind==='wish'?'Add a wish':'Buy something now');
+  view.innerHTML=`<div class="sbform"><label>What is it?<input id="sbName" maxlength="28" placeholder="Like: Lego car"></label>
+    <div class="sbems">${EM.map(e=>`<button data-em="${e}" aria-pressed="${e===em}">${e}</button>`).join('')}</div>
+    <label>How much does it cost? <span class="sbdollar">$<input id="sbCost" inputmode="decimal" placeholder="5.00"></span></label>
+    <p class="sbcalc" id="sbCalc">Type a price to see how many stars.</p>
+    <div class="row"><button class="pbtn" id="sbBack">◀ Back</button><button class="pbtn go" id="sbGo">${kind==='wish'?'Add wish':'Next ▶'}</button></div></div>`;
+  view.querySelectorAll('[data-em]').forEach(b=>b.onclick=()=>{em=b.dataset.em;view.querySelectorAll('[data-em]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
+  const cents=()=>{const v=parseFloat(($('#sbCost').value||'').replace(/[^0-9.]/g,''));return isFinite(v)&&v>0?Math.round(v*100):0};
+  $('#sbCost').oninput=()=>{const c=cents();$('#sbCalc').innerHTML=c?`${mnFmt(c)} × ${sbRate()} stars per dollar = <b>⭐ ${Math.round(c*sbRate()/100)}</b>`:'Type a price to see how many stars.'};
+  $('#sbBack').onclick=()=>playBank();
+  $('#sbGo').onclick=()=>{const name=$('#sbName').value.trim().replace(/[<>]/g,''),c=cents();if(!name||!c){sfx.no();$('#sbCalc').textContent='Fill in what it is and how much it costs.';return}
+    if(kind==='wish'){K.wishes=K.wishes||[];K.wishes.push({name,cents:c,em});save();sfx.up();playBank()}else sbConfirm(`${em} ${name}`,Math.round(c*sbRate()/100),c,-1)}}
+function sbConfirm(what,stars,cents,wishIdx){const w=K.wallet||0;setHeader('Star Bank','Time to pay');
+  view.innerHTML=`<div class="sbform"><p class="prompt">${what}</p>
+    <div class="sbmath"><div><span>You have</span><b>⭐ ${w}</b></div><div><span>It costs</span><b>− ⭐ ${stars}</b></div><div class="${w-stars<0?'neg':''}"><span>${w>=stars?'You will have':'Not enough yet'}</span><b>${w>=stars?'⭐ '+(w-stars):`need ${stars-w} more`}</b></div></div>
+    <p class="note" style="text-align:center">${mnFmt(cents)} in real money</p>
+    <div class="row"><button class="pbtn" id="sbBack">◀ Back</button>${w>=stars?'<button class="pbtn go" id="sbPay">🔒 Get a grown-up to pay</button>':''}</div></div>`;
+  speakNow(w>=stars?`You have ${w} stars. It costs ${stars}. You will have ${w-stars} left.`:`You need ${stars-w} more stars. Keep saving!`);
+  $('#sbBack').onclick=()=>playBank();
+  if($('#sbPay'))$('#sbPay').onclick=()=>pinPad('Grown-up: enter your PIN to pay',()=>{K.wallet=Math.max(0,(K.wallet||0)-stars);K.buys=K.buys||[];K.buys.unshift({t:Date.now(),what,stars,cents});K.buys=K.buys.slice(0,60);
+    if(wishIdx>=0&&K.wishes[wishIdx])K.wishes.splice(wishIdx,1);save();updateStars();log('bank buy',{what,stars});famPush&&famPush();sfx.up();
+    popup('🛍️','You bought it!',`${what} for ⭐ ${stars}. You have ⭐ ${K.wallet} left.`,'Yay!',playBank)})}
+
+/* =========================================================
+   FAMILY LINK: time tracking, grown-up PIN, notices, the time's-up lock, and syncing with the parent admin page.
+   Tracking is kept on the tablet (K.st) and, once Firebase is set up, copied to the parent's admin page every minute.
+   The admin page sends commands (message, countdown, lock, unlock, stars, spend) that run here once.
+   ========================================================= */
+const FB_CONFIG=null; // filled in once the Firebase project exists
+function stDay(){K.st=K.st||{days:{},movies:[]};const k=dayKey(0);if(!K.st.days[k]){K.st.days[k]={g:{},tv:0,earn:0,spent:0};
+    const keys=Object.keys(K.st.days).sort();while(keys.length>30)delete K.st.days[keys.shift()]}return K.st.days[k]}
+// what the tablet is doing right now, in words for the admin page
+function famDoing(){if(document.querySelector('.famlock'))return 'Locked';const r=location.hash.slice(1)||'home';
+  if(r==='tv'&&window.__tvNow&&document.querySelector('#tvv'))return 'Watching '+window.__tvNow.name;
+  const g=GAMES.find(x=>x.id===r);return g?g.name:{home:'Home screen',stickers:'Sticker Book',grownups:'Grown-ups',bank:'Star Bank'}[r]||r}
+let stLastStars=null,stLastWallet=null,stTick=0;
+setInterval(()=>{if(document.hidden||!K.mode)return;const D=stDay(),r=location.hash.slice(1);
+  if(stLastStars!==null&&K.stars>stLastStars)D.earn+=K.stars-stLastStars;if(stLastWallet!==null&&K.wallet<stLastWallet)D.spent+=stLastWallet-K.wallet;stLastStars=K.stars;stLastWallet=K.wallet;
+  if(document.querySelector('.famlock'))return;
+  const v=document.querySelector('#tvv');
+  if(r==='tv'&&v&&!v.paused&&window.__tvNow){D.tv+=5;const N=window.__tvNow;let m=K.st.movies.find(x=>x.id===N.id);
+    if(!m){m={id:N.id,name:N.name,secs:0};K.st.movies.unshift(m);K.st.movies=K.st.movies.slice(0,40)}else if(K.st.movies[0]!==m){K.st.movies.splice(K.st.movies.indexOf(m),1);K.st.movies.unshift(m)}
+    m.secs+=5;m.last=Date.now()}
+  else if(GAMES.some(g=>g.id===r))D.g[r]=(D.g[r]||0)+5;
+  if(++stTick%6===0)save()},5000);
+
+/* ---------- grown-up PIN ---------- */
+function pinPad(title,ok,cancel){let typed='',stage=K.pin?'enter':'new',first='';
+  const ov=document.createElement('div');ov.className='mhelp pinov';document.body.appendChild(ov);
+  const close=()=>ov.remove();
+  const draw=msg=>{ov.innerHTML=`<div class="mhcard pincard"><p class="mht" style="margin:0">${stage==='enter'?title:stage==='new'?'Grown-up: make a 4-number PIN':'Type the new PIN again'}</p>
+      <div class="pindots">${[0,1,2,3].map(i=>`<i class="${i<typed.length?'on':''}"></i>`).join('')}</div><p class="note pinmsg">${msg||''}</p>
+      <div class="pinkeys">${[1,2,3,4,5,6,7,8,9,'✕',0,'⌫'].map(k=>`<button data-k="${k}">${k}</button>`).join('')}</div></div>`;
+    ov.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{const k=b.dataset.k;
+      if(k==='✕'){close();cancel&&cancel();return}if(k==='⌫'){typed=typed.slice(0,-1);return draw()}
+      typed+=k;tone([[700,0,.04]],'sine',0.04);if(typed.length<4)return draw();
+      if(stage==='enter'){if(typed===K.pin){close();ok()}else{typed='';sfx.no();draw('Wrong PIN. Try again.')}}
+      else if(stage==='new'){first=typed;typed='';stage='again';draw()}
+      else{if(typed===first){K.pin=typed;save();close();ok()}else{typed='';first='';stage='new';sfx.no();draw("They didn't match. Start over.")}}})};
+  draw()}
+
+/* ---------- notices, countdown, lock ---------- */
+function famNotice(text,em){if(!text)return;const b=document.createElement('div');b.className='famnote';b.innerHTML=`<span>${em||'📣'}</span><b></b>`;b.querySelector('b').textContent=text;
+  document.body.appendChild(b);tone([[880,0,.15],[1175,.15,.25]],'sine',0.09);speakNow(text,true);b.onclick=()=>b.remove();setTimeout(()=>b.classList.add('out'),9000);setTimeout(()=>b.remove(),9800)}
+let famCdIv=null;
+function famCountdown(){clearInterval(famCdIv);let c=document.querySelector('.famcd');
+  if(!K.lockAt){c&&c.remove();return}
+  if(!c){c=document.createElement('div');c.className='famcd';document.body.appendChild(c)}
+  const tick=()=>{const left=Math.round((K.lockAt-Date.now())/1000);if(left<=0){clearInterval(famCdIv);c.remove();K.lockAt=null;famLock(K.lockText);return}
+    c.textContent=`⏳ ${Math.floor(left/60)}:${String(left%60).padStart(2,'0')} left`;c.classList.toggle('low',left<=60);
+    if(left===60)speakNow('One minute left!',true)};tick();famCdIv=setInterval(tick,1000)}
+function famLock(text){K.locked={at:Date.now(),text:text||''};K.lockAt=null;save();famCountdown();
+  if(window.__tvKill)window.__tvKill();if(location.hash&&location.hash!=='#home'){history.replaceState(null,'','#home');show()}
+  famLockShow();famPush(true)}
+function famLockShow(){if(!K.locked||document.querySelector('.famlock'))return;
+  const o=document.createElement('div');o.className='famlock';
+  o.innerHTML=`<div class="famlockin"><div class="famlockem">🌙</div><h2>Time's up!</h2><p></p><p class="famsmall">Great playing today${K.name?', '+K.name:''}! Ask a grown-up if you need the tablet.</p>
+    <button class="grownup" id="famUn">Grown-ups: press and hold<i></i></button></div>`;
+  o.querySelector('p').textContent=K.locked.text||'';document.body.appendChild(o);
+  speakNow(`Time's up! ${K.locked.text||''} Great playing today!`,true);
+  const g=o.querySelector('#famUn');let t=null;
+  g.addEventListener('pointerdown',e=>{e.preventDefault();g.classList.add('holding');t=setTimeout(()=>{g.classList.remove('holding');pinPad('Grown-up: enter your PIN to unlock',famUnlock)},2000)});
+  ['pointerup','pointerleave','pointercancel'].forEach(ev=>g.addEventListener(ev,()=>{clearTimeout(t);g.classList.remove('holding')}));g.oncontextmenu=e=>e.preventDefault()}
+function famUnlock(){K.locked=null;K.lockAt=null;save();famCountdown();const o=document.querySelector('.famlock');if(o)o.remove();sfx.up();famPush(true)}
+// one command from the admin page
+function famCmd(c){const age=c.at?Date.now()-c.at:0,stale=age>15*60*1000;log('family cmd',{type:c.type,stale});
+  switch(c.type){
+    case 'notice':if(!stale)famNotice(c.text);break;
+    case 'countdown':if(stale||K.locked)break;K.lockAt=Date.now()+Math.max(1,c.mins||5)*60000;K.lockText=c.text||'';save();famCountdown();
+      famNotice(c.text||`${c.mins||5} minute${(c.mins||5)===1?'':'s'} left!`,'⏳');break;
+    case 'cancel':K.lockAt=null;save();famCountdown();if(!stale)famNotice('Never mind, keep playing!','😊');break;
+    case 'lock':famLock(c.text);break;
+    case 'unlock':famUnlock();if(!stale)famNotice('The tablet is unlocked!','🔓');break;
+    case 'stars':{const n=Math.max(0,Math.min(1000,c.n|0));if(!n)break;const pops=awardBig(n);
+      popup('🎁',`${n} stars from Mom and Dad!`,c.text||'Great job!','Yay!',pops);break}
+    case 'spend':{const n=Math.max(0,c.n|0);if(!n)break;K.wallet=Math.max(0,(K.wallet||0)-n);K.buys=K.buys||[];K.buys.unshift({t:Date.now(),what:c.what||'Something from the store',stars:n,cents:sbCents(n)});save();updateStars();
+      if(!stale)famNotice(`You spent ⭐ ${n} on ${c.what||'something'}. You have ⭐ ${K.wallet} left.`,'🛍️');break}}
+  save();famPush(true)}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){famLockShow();if(K.lockAt)famCountdown()}else famPush(true)});
+setTimeout(()=>{famLockShow();if(K.lockAt)famCountdown()},300);
+
+/* ---------- Firebase sync ---------- */
+const FB={on:false,db:null,uid:null,lastPush:0,loading:false,err:''};
+function fbLoad(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('load '+src));document.head.appendChild(s)})}
+async function famStart(){if(!FB_CONFIG||FB.loading||FB.on||!/^https?:$/.test(location.protocol))return;FB.loading=true;
+  try{const V='https://www.gstatic.com/firebasejs/10.12.2/';await fbLoad(V+'firebase-app-compat.js');await fbLoad(V+'firebase-auth-compat.js');await fbLoad(V+'firebase-firestore-compat.js');
+    const app=firebase.apps.length?firebase.app():firebase.initializeApp(FB_CONFIG);
+    const cred=app.auth().currentUser?{user:app.auth().currentUser}:await new Promise((res,rej)=>{const un=app.auth().onAuthStateChanged(u=>{un();u?res({user:u}):app.auth().signInAnonymously().then(res,rej)})});
+    FB.uid=cred.user.uid;FB.db=app.firestore();FB.on=true;FB.err='';log('family link on');famPush(true);
+    K.cmdDone=K.cmdDone||[];
+    FB.db.collection('devices').doc(FB.uid).collection('cmds').where('done','==',false).onSnapshot(snap=>{
+      snap.docs.forEach(d=>{if(K.cmdDone.includes(d.id))return d.ref.update({done:true}).catch(()=>{});
+        K.cmdDone.push(d.id);K.cmdDone=K.cmdDone.slice(-80);save();const c=d.data();c.at=c.created&&c.created.toMillis?c.created.toMillis():Date.now();
+        try{famCmd(c)}catch(e){log('family cmd error',String(e))}d.ref.update({done:true,doneAt:firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>{})})},
+      e=>{FB.err=String(e&&e.message||e);log('family listen error',FB.err)});
+  }catch(e){FB.err=String(e&&e.message||e);log('family link failed',FB.err)}FB.loading=false}
+function famPush(force){if(!FB.on)return;const now=Date.now();if(!force&&now-FB.lastPush<20000)return;FB.lastPush=now;
+  const days={};Object.keys((K.st&&K.st.days)||{}).sort().slice(-14).forEach(k=>days[k]=K.st.days[k]);
+  FB.db.collection('devices').doc(FB.uid).set({name:K.name||'',mode:K.mode||'',stars:K.stars||0,wallet:K.wallet||0,rate:sbRate(),playSec:K.playSec||0,
+    locked:!!K.locked,lockAt:K.lockAt||null,doing:famDoing(),days,movies:((K.st&&K.st.movies)||[]).slice(0,25),buys:(K.buys||[]).slice(0,20),wishes:K.wishes||[],
+    stickers:skTotal(),seen:firebase.firestore.FieldValue.serverTimestamp(),seenMs:now,ua:navigator.userAgent.slice(0,120)},{merge:false}).catch(e=>{FB.err=String(e&&e.message||e)})}
+setInterval(()=>{if(!document.hidden)famPush()},60000);
+window.addEventListener('hashchange',()=>setTimeout(()=>famPush(true),1500));
+setTimeout(famStart,2500);
+function famGrownups(){return `<div class="prow" style="flex-wrap:wrap"><span>Grown-up PIN <small style="color:var(--muted)">(for Star Bank purchases and unlocking)</small></span><span class="ctl"><button class="pbtn" id="pinSet">${K.pin?'Change PIN':'Set PIN'}</button></span></div>
+  <div class="prow" style="flex-wrap:wrap"><span>Star Bank: stars per $1</span><span class="ctl">${[10,20,25,50].map(r=>`<button class="pbtn" data-rate="${r}" style="${sbRate()===r?'background:var(--ink);color:#fff':''}">${r}</button>`).join('')}</span></div>
+  <div class="prow" style="flex-wrap:wrap"><span>Family link <small style="color:var(--muted)">${FB_CONFIG?(FB.on?'Connected. Your admin page can see this tablet.':FB.err?'Not connected: '+FB.err.slice(0,80):'Connecting…'):'Not set up yet'}</small></span>${K.locked?'<span class="ctl"><button class="pbtn" id="famUnl">Unlock</button></span>':''}</div>`}
+function famGrownupsWire(re){const p=$('#pinSet');if(p)p.onclick=()=>{const old=K.pin;const setNew=()=>{K.pin=null;pinPad('',()=>re(),()=>{K.pin=old;save()})};old?pinPad('Enter your current PIN',setNew):setNew()};
+  view.querySelectorAll('[data-rate]').forEach(b=>b.onclick=()=>{K.rate=+b.dataset.rate;save();re()});const u=$('#famUnl');if(u)u.onclick=()=>{famUnlock();re()}}
+
+/* =========================================================
    HOME, STICKERS, GROWN-UPS
    ========================================================= */
 function home(){
@@ -3655,6 +3937,7 @@ function home(){
     <div class="tiles">${GAMES.filter(g=>g.play&&!g.little).map(tile).join('')}</div>
     <p class="hello">Learn</p>
     <div class="tiles">${GAMES.filter(g=>!g.play&&!g.little).map(tile).join('')}
+      <button class="tile" data-g="bank" style="background:#c7901a"><span class="em">🏦</span><span><b>Star Bank</b><br><small>⭐ ${K.wallet||0} = ${sbMoney(K.wallet||0)}</small></span></button>
       <button class="tile" data-g="stickers" style="background:#1d2b4f"><span class="em">${skTotal()?skAt(skTotal()-1):'📒'}</span><span><b>Sticker Book</b><br><small>Page ${skNow().page+1}: ${skNow().have} of ${SK_N}</small></span></button></div>
     <div class="home-foot"><p class="note">${gateOn()?`You have ⭐ ${K.wallet} to spend on Play games. Learn games earn more!`:`Every 10 stars earns a new sticker. ${10-K.stars%10} more to go!`}</p>
       <button class="grownup" id="grown">Grown-ups: press and hold<i></i></button></div>`;
@@ -3698,6 +3981,7 @@ function grownups(){
     ${K.mode!=='little'?`<div class="prow" style="flex-wrap:wrap"><span>Play games cost stars <small style="color:var(--muted)">(Fruit Pop, Bubble Pop, Dino Dash, Tower Builder, Brick Builder, Fishing Trip, Fruit Slice, Ninja Portal, Movies & Shows)</small></span><span class="ctl"><button class="pbtn" id="gateT">${K.gate===false?'Off':'On'}</button></span></div>
     ${K.gate!==false?`<div class="prow" style="flex-wrap:wrap"><span>Each star buys</span><span class="ctl">${[1,2,3,5].map(m=>`<button class="pbtn" data-mps="${m}" style="${minsPerStar()===m?'background:var(--ink);color:#fff':''}">${m} min</button>`).join('')}</span></div>
     <div class="prow" style="flex-wrap:wrap"><span>Stars to spend: <b>${K.wallet}</b> · Play time left: <b>${fmtSec(K.playSec||0)}</b></span><span class="ctl"><button class="pbtn" id="give5">+5 stars</button><button class="pbtn" id="time5">+5 min</button><button class="pbtn" id="time0">Clear time</button></span></div>`:''}`:''}
+    ${famGrownups()}
     ${tvGrownups()}
     ${logGrownups()}
     <div class="row" style="justify-content:flex-start"><button class="pbtn ${resetArm?'warn':''}" id="rst">${resetArm?'Tap again to erase everything':'Reset stars and stickers'}</button></div>
@@ -3721,13 +4005,13 @@ function grownups(){
   if($('#gateT')){$('#gateT').onclick=()=>{K.gate=K.gate===false;save();grownups()};
     view.querySelectorAll('[data-mps]').forEach(b=>b.onclick=()=>{K.minsPerStar=+b.dataset.mps;save();grownups()});
     if($('#give5')){$('#give5').onclick=()=>{K.wallet=(K.wallet||0)+5;save();grownups()};$('#time5').onclick=()=>{K.playSec=(K.playSec||0)+300;save();grownups()};$('#time0').onclick=()=>{K.playSec=0;save();grownups()}}}
-  tvGrownupsWire(grownups);logWire(grownups);
+  tvGrownupsWire(grownups);logWire(grownups);famGrownupsWire(grownups);
   $('#fs').onclick=()=>{K.full=K.full===false;save();if(K.full===false&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});grownups()};
-  $('#rst').onclick=()=>{if(!resetArm){resetArm=true;return grownups()}resetArm=false;const keep={jf:K.jf,jfDev:K.jfDev,jfLast:K.jfLast,mode:K.mode,name:K.name,voiceName:K.voiceName,voiceOn:K.voiceOn,gate:K.gate,minsPerStar:K.minsPerStar};K=Object.assign(blank(),keep,{wallet:0,playSec:0});save();updateStars();grownups()};
+  $('#rst').onclick=()=>{if(!resetArm){resetArm=true;return grownups()}resetArm=false;const keep={pin:K.pin,rate:K.rate,jf:K.jf,jfDev:K.jfDev,jfLast:K.jfLast,mode:K.mode,name:K.name,voiceName:K.voiceName,voiceOn:K.voiceOn,gate:K.gate,minsPerStar:K.minsPerStar};K=Object.assign(blank(),keep,{wallet:0,playSec:0});save();updateStars();grownups()};
 }
 
 /* ---------- navigation (plain #names so the back button works) ---------- */
-const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,times:playTimes,ninjaread:playRead,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),ninja:gated('ninja',playNinja),tv:gated('tv',()=>{TV.stack=[];playTv()}),mix:playMix,adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
+const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,times:playTimes,money:playMoney,bank:playBank,ninjaread:playRead,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),ninja:gated('ninja',playNinja),tv:gated('tv',()=>{TV.stack=[];playTv()}),mix:playMix,adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
 function go(name){if(location.hash.slice(1)!==name)location.hash=name;else show()}
 function show(){if(window.__tvKill)window.__tvKill();loopToken++;const r=location.hash.slice(1);resetArm=false;$('#timeChip').hidden=true;updateStars();$('#overlay').hidden=true;popQ.length=0;try{if(window.SQAndroid)SQAndroid.stop();else if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}
   view.scrollTop=0;(ROUTES[r]||home)()}
