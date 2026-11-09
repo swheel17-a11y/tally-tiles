@@ -681,6 +681,20 @@ html.little .tvp b,html.little .tve b{font-size:20px}
 .famlockin{display:flex;flex-direction:column;align-items:center;gap:8px;max-width:640px}.famlockem{font-size:120px;line-height:1}
 .famlockin h2{font-family:var(--f-display);font-size:clamp(40px,7vw,64px);margin:0}.famlockin p{font-size:clamp(20px,3vw,28px);margin:0}.famlockin .famsmall{opacity:.8;font-size:20px}
 .famlockin .grownup{margin-top:30px;color:#fff;opacity:.6}
+.chatwrap{width:min(900px,100%);margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.chatlog{display:flex;flex-direction:column;gap:8px;max-height:34vh;overflow:auto;background:var(--card);border-radius:20px;padding:12px;box-shadow:0 4px 0 var(--sky-2)}
+.chatmsg{align-self:flex-start;max-width:80%;background:#eef3ff;border-radius:18px 18px 18px 4px;padding:8px 12px;display:grid;grid-template-columns:auto 1fr;gap:2px 8px;align-items:center}
+.chatmsg.me{align-self:flex-end;background:#d6f5df;border-radius:18px 18px 4px 18px}
+.chatmsg span{font-size:28px;grid-row:span 2}.chatmsg p{margin:0;font-size:20px}.chatmsg small{color:var(--muted);font-size:13px}
+.chatquick{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.chatquick button{background:var(--card);border-radius:20px;padding:12px 8px;box-shadow:0 4px 0 var(--sky-2);display:flex;flex-direction:column;align-items:center;gap:4px;min-height:110px}
+.chatquick span{font-size:46px;line-height:1}.chatquick b{font-size:16px;line-height:1.2}
+.chatquick button[aria-pressed=true]{background:#fff1c9;box-shadow:0 0 0 4px #f2b705}
+.chattype{display:flex;gap:10px}.chattype input{flex:1;min-width:0;font:inherit;font-size:22px;padding:10px 14px;border-radius:16px;border:2px solid var(--sky-2);user-select:text;-webkit-user-select:text}
+.chatsend{height:66px;font-size:22px;padding:0 26px;animation:mxpulse 1.2s ease-in-out infinite}.chatsend[hidden]{display:none}
+.famnote div{display:flex;flex-direction:column;gap:8px}.famrep{display:flex;flex-wrap:wrap;gap:8px}
+.famrep button{background:rgba(255,255,255,.18);color:#fff;border-radius:14px;padding:8px 12px;font-size:17px;font-weight:700}
+.famask{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px}.famask .pbtn{background:rgba(255,255,255,.15);color:#fff;box-shadow:none}
 /* stickers + grown-ups */
 .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:12px}
 .sticker{height:100px;border-radius:22px;background:var(--card);display:grid;place-items:center;font-size:52px;box-shadow:0 5px 0 var(--sky-2)}
@@ -3822,7 +3836,7 @@ function stDay(){K.st=K.st||{days:{},movies:[]};const k=dayKey(0);if(!K.st.days[
 // what the tablet is doing right now, in words for the admin page
 function famDoing(){if(document.querySelector('.famlock'))return 'Locked';const r=location.hash.slice(1)||'home';
   if(r==='tv'&&window.__tvNow&&document.querySelector('#tvv'))return 'Watching '+window.__tvNow.name;
-  const g=GAMES.find(x=>x.id===r);return g?g.name:{home:'Home screen',stickers:'Sticker Book',grownups:'Grown-ups',bank:'Star Bank'}[r]||r}
+  const g=GAMES.find(x=>x.id===r);return g?g.name:{home:'Home screen',stickers:'Sticker Book',grownups:'Grown-ups',bank:'Star Bank',chat:'Writing a message'}[r]||r}
 let stLastStars=null,stLastWallet=null,stTick=0;
 setInterval(()=>{if(document.hidden||!K.mode)return;const D=stDay(),r=location.hash.slice(1);
   if(stLastStars!==null&&K.stars>stLastStars)D.earn+=K.stars-stLastStars;if(stLastWallet!==null&&K.wallet<stLastWallet)D.spent+=stLastWallet-K.wallet;stLastStars=K.stars;stLastWallet=K.wallet;
@@ -3850,8 +3864,12 @@ function pinPad(title,ok,cancel){let typed='',stage=K.pin?'enter':'new',first=''
   draw()}
 
 /* ---------- notices, countdown, lock ---------- */
-function famNotice(text,em){if(!text)return;const b=document.createElement('div');b.className='famnote';b.innerHTML=`<span>${em||'📣'}</span><b></b>`;b.querySelector('b').textContent=text;
-  document.body.appendChild(b);tone([[880,0,.15],[1175,.15,.25]],'sine',0.09);speakNow(text,true);b.onclick=()=>b.remove();setTimeout(()=>b.classList.add('out'),9000);setTimeout(()=>b.remove(),9800)}
+function famNotice(text,em,replies){if(!text)return;if(replies)chatInbox(text,em);const b=document.createElement('div');b.className='famnote';
+  b.innerHTML=`<span>${em||'📣'}</span><div><b></b>${replies?`<div class="famrep">${replies.map((r,i)=>`<button data-r="${i}">${r[0]} ${r[1]}</button>`).join('')}</div>`:''}</div>`;b.querySelector('b').textContent=text;
+  document.body.appendChild(b);tone([[880,0,.15],[1175,.15,.25]],'sine',0.09);speakNow(text,true);
+  const gone=()=>{b.classList.add('out');setTimeout(()=>b.remove(),800)};let t=setTimeout(gone,replies?20000:9000);
+  b.onclick=e=>{const r=e.target.closest('[data-r]');if(r){const q=replies[+r.dataset.r];chatSend(q[0],q[1]);b.querySelector('b').textContent='Sent: '+q[1];b.querySelector('.famrep').remove();clearTimeout(t);t=setTimeout(gone,2500);return}gone()}}
+const FAM_REPLY=[['👍','OK!'],['🙏','Can I have 5 more minutes?'],['❤️','I love you!']];
 let famCdIv=null;
 function famCountdown(){clearInterval(famCdIv);let c=document.querySelector('.famcd');
   if(!K.lockAt){c&&c.remove();return}
@@ -3865,9 +3883,12 @@ function famLock(text){K.locked={at:Date.now(),text:text||''};K.lockAt=null;save
 function famLockShow(){if(!K.locked||document.querySelector('.famlock'))return;
   const o=document.createElement('div');o.className='famlock';
   o.innerHTML=`<div class="famlockin"><div class="famlockem">🌙</div><h2>Time's up!</h2><p></p><p class="famsmall">Great playing today${K.name?', '+K.name:''}! Ask a grown-up if you need the tablet.</p>
+    <div class="famask"><button class="pbtn" id="famMore">🙏 Ask for 5 more minutes</button><button class="pbtn" id="famLove">❤️ Good night, I love you!</button></div><p class="famsmall" id="famAsked"></p>
     <button class="grownup" id="famUn">Grown-ups: press and hold<i></i></button></div>`;
   o.querySelector('p').textContent=K.locked.text||'';document.body.appendChild(o);
   speakNow(`Time's up! ${K.locked.text||''} Great playing today!`,true);
+  const ask=(em,t)=>{chatSend(em,t);o.querySelector('#famAsked').textContent=FB.on?'Sent to Mom and Dad ✓':'It will send when the internet is back.';speakNow('Sent!',true)};
+  o.querySelector('#famMore').onclick=()=>ask('🙏','Can I have 5 more minutes?');o.querySelector('#famLove').onclick=()=>ask('❤️','Good night, I love you!');
   const g=o.querySelector('#famUn');let t=null;
   g.addEventListener('pointerdown',e=>{e.preventDefault();g.classList.add('holding');t=setTimeout(()=>{g.classList.remove('holding');pinPad('Grown-up: enter your PIN to unlock',famUnlock)},2000)});
   ['pointerup','pointerleave','pointercancel'].forEach(ev=>g.addEventListener(ev,()=>{clearTimeout(t);g.classList.remove('holding')}));g.oncontextmenu=e=>e.preventDefault()}
@@ -3875,11 +3896,14 @@ function famUnlock(){K.locked=null;K.lockAt=null;save();famCountdown();const o=d
 // one command from the admin page
 function famCmd(c){const age=c.at?Date.now()-c.at:0,stale=age>15*60*1000;log('family cmd',{type:c.type,stale});
   switch(c.type){
-    case 'notice':if(!stale)famNotice(c.text);break;
+    case 'notice':if(!stale)famNotice(c.text,'📣',FAM_REPLY);else chatInbox(c.text);break;
     case 'countdown':if(stale||K.locked)break;K.lockAt=Date.now()+Math.max(1,c.mins||5)*60000;K.lockText=c.text||'';save();famCountdown();
-      famNotice(c.text||`${c.mins||5} minute${(c.mins||5)===1?'':'s'} left!`,'⏳');break;
+      famNotice(c.text||`${c.mins||5} minute${(c.mins||5)===1?'':'s'} left!`,'⏳',[['👍','OK!'],['🙏','Can I have 5 more minutes?']]);break;
     case 'cancel':K.lockAt=null;save();famCountdown();if(!stale)famNotice('Never mind, keep playing!','😊');break;
     case 'lock':famLock(c.text);break;
+    case 'extend':{const m=Math.max(1,Math.min(60,c.mins||5));if(K.locked){famUnlock();K.lockAt=Date.now()+m*60000}else if(K.lockAt)K.lockAt+=m*60000;else break;K.lockText='';save();famCountdown();
+      if(!stale)famNotice(`Yay! ${m} more minutes!`,'🎉');chatInbox(`Yes! ${m} more minutes.`,'🎉');break}
+    case 'seen':(K.outbox||[]).forEach(m=>{if(m.t<=(c.upTo||0))m.seen=true});break;
     case 'unlock':famUnlock();if(!stale)famNotice('The tablet is unlocked!','🔓');break;
     case 'stars':{const n=Math.max(0,Math.min(1000,c.n|0));if(!n)break;const pops=awardBig(n);
       popup('🎁',`${n} stars from Mom and Dad!`,c.text||'Great job!','Yay!',pops);break}
@@ -3907,7 +3931,7 @@ async function famStart(){if(!FB_CONFIG||FB.loading||FB.on||!/^https?:$/.test(lo
 function famPush(force){if(!FB.on)return;const now=Date.now();if(!force&&now-FB.lastPush<20000)return;FB.lastPush=now;
   const days={};Object.keys((K.st&&K.st.days)||{}).sort().slice(-14).forEach(k=>days[k]=K.st.days[k]);
   FB.db.collection('devices').doc(FB.uid).set({name:K.name||'',mode:K.mode||'',stars:K.stars||0,wallet:K.wallet||0,rate:sbRate(),playSec:K.playSec||0,
-    locked:!!K.locked,lockAt:K.lockAt||null,doing:famDoing(),days,movies:((K.st&&K.st.movies)||[]).slice(0,25),buys:(K.buys||[]).slice(0,20),wishes:K.wishes||[],
+    locked:!!K.locked,lockAt:K.lockAt||null,doing:famDoing(),days,movies:((K.st&&K.st.movies)||[]).slice(0,25),buys:(K.buys||[]).slice(0,20),wishes:K.wishes||[],msgs:(K.outbox||[]).slice(0,20),
     stickers:skTotal(),seen:firebase.firestore.FieldValue.serverTimestamp(),seenMs:now,ua:navigator.userAgent.slice(0,120)},{merge:false}).catch(e=>{FB.err=String(e&&e.message||e)})}
 setInterval(()=>{if(document.hidden)return;if(!FB.on)famStart();else famPush()},60000);
 window.addEventListener('hashchange',()=>setTimeout(()=>famPush(true),1500));
@@ -3919,6 +3943,37 @@ function famGrownupsWire(re){const p=$('#pinSet');if(p)p.onclick=()=>{const old=
   view.querySelectorAll('[data-rate]').forEach(b=>b.onclick=()=>{K.rate=+b.dataset.rate;save();re()});const u=$('#famUnl');if(u)u.onclick=()=>{famUnlock();re()}}
 
 /* =========================================================
+   MESSAGE MOM & DAD: kids send quick picture messages (read aloud so Eila can use them) or, for Noah, typed ones.
+   Messages ride along in the tablet's normal report to the parent page (no extra Firebase setup).
+   Parent notices are kept here too, so it reads like a little chat.
+   ========================================================= */
+const CHAT_QUICK=[['👍','OK!'],['🙏','Can I have 5 more minutes?'],['🍎',"I'm hungry"],['🥤',"I'm thirsty"],['🙋','Can you come here?'],['🆘','I need help'],
+  ['🚽','I need to go potty'],['❤️','I love you!'],['😴',"I'm tired"],['🎉','I did it!'],['😢',"I'm sad"],['🤗','Can I have a hug?']];
+function chatSend(em,text){text=String(text||'').trim().slice(0,140);if(!text)return;K.outbox=K.outbox||[];
+  K.outbox.unshift({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),t:Date.now(),em:em||'💬',text,seen:false});K.outbox=K.outbox.slice(0,30);
+  save();famPush(true);log('chat sent',text);tone([[660,0,.08],[990,.08,.14]],'sine',0.07)}
+function chatInbox(text,em){if(!text)return;K.inbox=K.inbox||[];K.inbox.unshift({t:Date.now(),em:em||'📣',text});K.inbox=K.inbox.slice(0,30);save()}
+function playChat(){
+  if(location.hash!=='#chat')return;
+  const little=K.mode==='little';let pick=null;setHeader(little?'Talk to Mom & Dad':'Message Mom & Dad',FB.on?'They will see it on their phone':'Waiting for internet…');
+  const thread=[...(K.outbox||[]).map(m=>({...m,me:1})),...(K.inbox||[])].sort((a,b)=>b.t-a.t).slice(0,8).reverse();
+  view.innerHTML=`<div class="chatwrap">
+    ${thread.length?`<div class="chatlog">${thread.map(m=>`<div class="chatmsg ${m.me?'me':''}"><span>${m.em}</span><p></p><small>${m.me?(m.seen?'Seen ✓✓':FB.on?'Sent ✓':'Waiting to send'):'Mom & Dad'} · ${new Date(m.t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}</small></div>`).join('')}</div>`:''}
+    <p class="prompt">${little?'Tap one. Then tap Send!':'Pick a message, or type your own'}</p>
+    <div class="chatquick">${CHAT_QUICK.map((q,i)=>`<button data-q="${i}" aria-label="${q[1]}"><span>${q[0]}</span><b>${q[1]}</b></button>`).join('')}</div>
+    ${little?'':`<div class="chattype"><input id="chatTx" maxlength="140" placeholder="Type a message…" autocomplete="off"><button class="pbtn go" id="chatGo">Send</button></div>`}
+    <div class="row"><button class="pbtn go chatsend" id="chatSend" hidden>📨 Send</button></div></div>`;
+  // fill text safely
+  const ps=view.querySelectorAll('.chatmsg p');thread.forEach((m,i)=>ps[i].textContent=m.text);
+  const log_=view.querySelector('.chatlog');if(log_)log_.scrollTop=log_.scrollHeight;
+  view.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{pick=CHAT_QUICK[+b.dataset.q];view.querySelectorAll('[data-q]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+    speakNow(pick[1],true);const s=$('#chatSend');s.hidden=false;s.textContent=`📨 Send "${pick[1]}"`});
+  const sent=()=>{sfx.up();popup('📨','Sent!',FB.on?'Mom and Dad will see it on their phone.':'It will send when the tablet is back on the internet.','OK',playChat);speakNow('Sent!',true)};
+  $('#chatSend').onclick=()=>{if(!pick)return;chatSend(pick[0],pick[1]);sent()};
+  const go_=$('#chatGo');if(go_){const send=()=>{const v=$('#chatTx').value.replace(/[<>]/g,'').trim();if(!v)return;chatSend('💬',v);sent()};go_.onclick=send;$('#chatTx').onkeydown=e=>{if(e.key==='Enter')send()}}
+}
+
+/* =========================================================
    HOME, STICKERS, GROWN-UPS
    ========================================================= */
 function home(){
@@ -3928,6 +3983,7 @@ function home(){
   const n=stickersEarned();
   if(K.mode==='little'){
     view.innerHTML=`<div class="tiles ltiles">${[...GAMES.filter(g=>g.little),...GAMES.filter(g=>g.both)].map(g=>`<button class="tile" data-g="${g.id}" data-say="${g.name}" style="background:${g.color}"><span class="em">${g.em}</span><span><b>${g.name}</b></span></button>`).join('')}
+      <button class="tile" data-g="chat" data-say="Talk to Mom and Dad" style="background:#2f9be0"><span class="em">💬</span><span><b>Talk to Mom & Dad</b></span></button>
       <button class="tile" data-g="stickers" data-say="Sticker book" style="background:#7a3a6e"><span class="em">${skTotal()?skAt(skTotal()-1):'📒'}</span><span><b>Stickers</b><br><small>Page ${skNow().page+1}: ${skNow().have} of ${SK_N}</small></span></button></div>
       <div class="home-foot"><span></span><button class="grownup" id="grown">Grown-ups: press and hold<i></i></button></div>`;
     view.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{sfx.tap();speakNow(b.dataset.say);go(b.dataset.g)});
@@ -3937,6 +3993,7 @@ function home(){
     <div class="tiles">${GAMES.filter(g=>g.play&&!g.little).map(tile).join('')}</div>
     <p class="hello">Learn</p>
     <div class="tiles">${GAMES.filter(g=>!g.play&&!g.little).map(tile).join('')}
+      <button class="tile" data-g="chat" style="background:#2f9be0"><span class="em">💬</span><span><b>Message Mom & Dad</b><br><small>Send a note to their phone</small></span></button>
       <button class="tile" data-g="bank" style="background:#c7901a"><span class="em">🏦</span><span><b>Star Bank</b><br><small>⭐ ${K.wallet||0} = ${sbMoney(K.wallet||0)}</small></span></button>
       <button class="tile" data-g="stickers" style="background:#1d2b4f"><span class="em">${skTotal()?skAt(skTotal()-1):'📒'}</span><span><b>Sticker Book</b><br><small>Page ${skNow().page+1}: ${skNow().have} of ${SK_N}</small></span></button></div>
     <div class="home-foot"><p class="note">${gateOn()?`You have ⭐ ${K.wallet} to spend on Play games. Learn games earn more!`:`Every 10 stars earns a new sticker. ${10-K.stars%10} more to go!`}</p>
@@ -4011,7 +4068,7 @@ function grownups(){
 }
 
 /* ---------- navigation (plain #names so the back button works) ---------- */
-const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,times:playTimes,money:playMoney,bank:playBank,ninjaread:playRead,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),ninja:gated('ninja',playNinja),tv:gated('tv',()=>{TV.stack=[];playTv()}),mix:playMix,adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
+const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,times:playTimes,money:playMoney,bank:playBank,chat:playChat,ninjaread:playRead,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),ninja:gated('ninja',playNinja),tv:gated('tv',()=>{TV.stack=[];playTv()}),mix:playMix,adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
 function go(name){if(location.hash.slice(1)!==name)location.hash=name;else show()}
 function show(){if(window.__tvKill)window.__tvKill();loopToken++;const r=location.hash.slice(1);resetArm=false;$('#timeChip').hidden=true;updateStars();$('#overlay').hidden=true;popQ.length=0;try{if(window.SQAndroid)SQAndroid.stop();else if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}
   view.scrollTop=0;(ROUTES[r]||home)()}

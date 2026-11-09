@@ -49,6 +49,10 @@ input.tx{flex:1;min-width:0;border:2px solid var(--line);border-radius:12px;padd
 details summary{cursor:pointer;font-weight:700;color:var(--muted);font-size:14px}
 .all{background:linear-gradient(135deg,#1d2b4f,#3b4f8a);color:#fff}.all h2{color:#fff}.all .btn{background:rgba(255,255,255,.15);color:#fff}.all input.tx{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:#fff}
 .all input.tx::placeholder{color:rgba(255,255,255,.6)}
+.msgs{display:flex;flex-direction:column;gap:8px}
+.msg{display:flex;gap:10px;align-items:flex-start;background:var(--bg);border-radius:14px;padding:10px}.msg.new{background:#fff3b0;color:#1d2b4f}
+.msg .me{font-size:26px;line-height:1}.msg b{display:block;font-size:16px}.msg small{color:var(--muted);font-size:12px}.msg.new small{color:#6b5a1a}
+.msg .rowc{margin-top:8px}
 </style>
 </head>
 <body>
@@ -71,12 +75,12 @@ const ago=ms=>{const s=(Date.now()-ms)/1000;return s<90?'just now':s<3600?`${Mat
 let toastT;function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),2600)}
 if(!FB_CONFIG){main.innerHTML='<div class="card"><h2>Almost ready</h2><p class="empty">This page connects once the Firebase project is set up.</p></div>';return}
 const app=firebase.initializeApp(FB_CONFIG,'parents'),auth=app.auth(),db=app.firestore(); // its own sign-in, separate from the kids app on the same phone
-let devs={},open=JSON.parse(localStorage.getItem('sqp-open')||'{}'),hidden=JSON.parse(localStorage.getItem('sqp-hidden')||'{}'),unsub=null;
+let devs={},seenT=JSON.parse(localStorage.getItem('sqp-seen')||'{}'),answered=JSON.parse(localStorage.getItem("sqp-ans")||"{}"),open=JSON.parse(localStorage.getItem('sqp-open')||'{}'),hidden=JSON.parse(localStorage.getItem('sqp-hidden')||'{}'),unsub=null;
 $('#out').onclick=()=>auth.signOut();
 auth.onAuthStateChanged(u=>{if(unsub){unsub();unsub=null}
   if(!u||u.isAnonymous){$('#out').hidden=true;return loginView()}
   $('#out').hidden=false;$('#sub').textContent=u.email;main.innerHTML='<p class="empty">Looking for tablets…</p>';
-  unsub=db.collection('devices').onSnapshot(s=>{devs={};s.forEach(d=>devs[d.id]=d.data());render()},e=>{main.innerHTML=`<div class="card"><h2>Can't read the tablets</h2><p class="empty">${esc(e.message)}</p><p class="empty">Check that the email in the Firestore rules matches the one you signed in with.</p></div>`})});
+  unsub=db.collection('devices').onSnapshot(s=>{devs={};s.forEach(d=>devs[d.id]=d.data());newMsgs();render()},e=>{main.innerHTML=`<div class="card"><h2>Can't read the tablets</h2><p class="empty">${esc(e.message)}</p><p class="empty">Check that the email in the Firestore rules matches the one you signed in with.</p></div>`})});
 function loginView(){main.innerHTML=`<div class="card login"><h2>Sign in</h2><p class="empty">Use the email and password you added in Firebase.</p>
   <input class="tx" id="em" type="email" autocomplete="username" placeholder="Email"><input class="tx" id="pw" type="password" autocomplete="current-password" placeholder="Password">
   <button class="btn go" id="li">Sign in</button><p class="empty" id="lerr"></p></div>`;
@@ -85,6 +89,22 @@ function loginView(){main.innerHTML=`<div class="card login"><h2>Sign in</h2><p 
 function send(uid,cmd,label){return db.collection('devices').doc(uid).collection('cmds').add(Object.assign({done:false,created:firebase.firestore.FieldValue.serverTimestamp()},cmd))
   .then(ref=>{toast(`Sent: ${label}`);const un=ref.onSnapshot(d=>{if(d.exists&&d.data().done){un();toast(`✓ ${label} (tablet got it)`)}});setTimeout(un,10*60*1000)}).catch(e=>toast('Could not send: '+e.message))}
 const name=d=>d.name||(d.mode==='little'?'Little kid tablet':'Big kid tablet');
+function chime(){try{const a=new (window.AudioContext||window.webkitAudioContext)(),t=a.currentTime;[[880,0],[1320,.12]].forEach(([f,s])=>{const o=a.createOscillator(),g=a.createGain();o.frequency.value=f;g.gain.setValueAtTime(.0001,t+s);g.gain.exponentialRampToValueAtTime(.2,t+s+.02);g.gain.exponentialRampToValueAtTime(.0001,t+s+.4);o.connect(g).connect(a.destination);o.start(t+s);o.stop(t+s+.45)})}catch(e){}}
+let markT={};
+function newMsgs(){let fresh=[];Object.entries(devs).forEach(([id,d])=>{const ms=(d.msgs||[]),last=seenT[id]||0;ms.filter(m=>m.t>last).forEach(m=>fresh.push([id,d,m]))});
+  const unread=fresh.length;document.title=(unread?`(${unread}) `:'')+'Star Quest Parents';
+  if(!fresh.length)return;
+  {const [id,d,m]=fresh.sort((a,b)=>b[2].t-a[2].t)[0];toast(`💬 ${name(d)}: ${m.text}`);chime();try{navigator.vibrate&&navigator.vibrate([120,60,120])}catch(e){}}
+  // mark as seen on the tablet after it has been on screen a few seconds
+  fresh.forEach(([id,d])=>{clearTimeout(markT[id]);markT[id]=setTimeout(()=>{if(document.hidden)return;const up=Math.max(...(devs[id].msgs||[]).map(m=>m.t));
+    if(up>(seenT[id]||0)){seenT[id]=up;localStorage.setItem('sqp-seen',JSON.stringify(seenT));db.collection('devices').doc(id).collection('cmds').add({type:'seen',upTo:up,done:false,created:firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>{});
+      document.title='Star Quest Parents'}},5000)})}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)newMsgs()});
+function msgBox(id,d){const ms=(d.msgs||[]).slice(0,open[id]?12:4);if(!ms.length)return '';const last=seenT[id]||0;
+  return `<h3>💬 Messages from ${esc(name(d))}</h3><div class="msgs">${ms.map(m=>{const more=/5 more minutes/.test(m.text)&&!answered[m.id]&&Date.now()-m.t<3600e3;
+    return `<div class="msg ${m.t>last?'new':''}"><span class="me">${esc(m.em)}</span><div><b>${esc(m.text)}</b><small>${ago(m.t)}</small>
+      ${more?`<div class="rowc"><button class="btn good" data-ext="${m.id}">Yes, 5 more</button><button class="btn warn" data-no="${m.id}">No</button></div>`:''}</div></div>`}).join('')}</div>
+    <div class="rowc"><button class="btn" data-quick="👍 OK!">👍 OK</button><button class="btn" data-quick="❤️ Love you too!">❤️ Love you</button><button class="btn" data-quick="I'm coming!">🏃 Coming!</button></div>`}
 const visible=()=>Object.entries(devs).filter(([id])=>!hidden[id]).sort((a,b)=>(b[1].seenMs||0)-(a[1].seenMs||0));
 function render(){const list=visible();
   if(!list.length){main.innerHTML='<div class="card"><h2>No tablets yet</h2><p class="empty">Open Star Quest on each tablet (with internet on). They show up here within a minute.</p></div>';return}
@@ -101,6 +121,7 @@ function devCard(id,d){const online=d.seenMs&&Date.now()-d.seenMs<150000,today=(
   return `<div class="card" data-id="${id}">
     <h2>${d.mode==='little'?'🧚':'🥷'} ${esc(name(d))} ${online?'<span class="pill on">● Online</span>':`<span class="pill">Seen ${d.seenMs?ago(d.seenMs):'never'}</span>`}${d.locked?'<span class="pill lock">🔒 Locked</span>':''}${lockIn?`<span class="pill cd">⏳ Locks in ${lockIn} min</span>`:''}</h2>
     <div class="doing">${online?'Now: '+esc(d.doing||''):'Last: '+esc(d.doing||'')}</div>
+    ${msgBox(id,d)}
     <div class="stats"><div class="stat"><b>${mins(gTot)}</b><span>games today</span></div><div class="stat"><b>${mins(today.tv)}</b><span>movies today</span></div>
       <div class="stat"><b>⭐ ${d.wallet||0}</b><span>to spend · ${money(Math.round((d.wallet||0)*100/rate))}</span></div></div>
     <div class="list"><div><b>Stars earned (all time)</b><span>⭐ ${d.stars||0} · 📒 ${d.stickers||0} stickers</span></div><div><b>Earned today</b><span>⭐ ${today.earn||0}</span></div></div>
@@ -111,7 +132,7 @@ function devCard(id,d){const online=d.seenMs&&Date.now()-d.seenMs<150000,today=(
     ${(d.buys||[]).length||(d.wishes||[]).length?`<h3>Star Bank</h3><div class="list">${(d.wishes||[]).map(w=>`<div><b>🎯 ${esc(w.name)}</b><span>${money(w.cents)} = ⭐ ${Math.round(w.cents*rate/100)}</span></div>`).join('')}${(d.buys||[]).slice(0,o?20:4).map(b=>`<div><b>🛍️ ${esc(b.what)}</b><span>⭐ ${b.stars} · ${new Date(b.t).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span></div>`).join('')}</div>`:''}
     <button class="btn" data-more>${o?'Show less':'Show more'}</button>
     <div class="ctl">
-      <div class="lbl">Send a message</div><div class="rowc"><input class="tx" id="msg-${id}" placeholder="Like: Dinner in 10 minutes!"><button class="btn go" data-c="notice">Send</button></div>
+      <div class="lbl">Send a message (they can tap a reply)</div><div class="rowc"><input class="tx" id="msg-${id}" placeholder="Like: Dinner in 10 minutes!"><button class="btn go" data-c="notice">Send</button></div>
       <div class="lbl">Time's up (warns, counts down, then locks)</div>
       <div class="rowc">${[1,5,10,15].map(m=>`<button class="btn" data-c="countdown" data-m="${m}">${m} min</button>`).join('')}${lockIn?'<button class="btn" data-c="cancel">Cancel timer</button>':''}</div>
       <div class="rowc"><button class="btn warn" data-c="lock">🔒 Lock now</button><button class="btn good" data-c="unlock">🔓 Unlock</button></div>
@@ -122,6 +143,9 @@ function devCard(id,d){const online=d.seenMs&&Date.now()-d.seenMs<150000,today=(
     </div></div>`}
 function wire(){
   main.querySelectorAll('[data-id]').forEach(card=>{const id=card.dataset.id,d=devs[id],nm=name(d),rate=d.rate||25;
+    card.querySelectorAll('[data-quick]').forEach(b=>b.onclick=()=>send(id,{type:'notice',text:b.dataset.quick},`reply to ${nm}`));
+    card.querySelectorAll('[data-ext]').forEach(b=>b.onclick=()=>{answered[b.dataset.ext]=1;localStorage.setItem('sqp-ans',JSON.stringify(answered));send(id,{type:'extend',mins:5},`+5 minutes for ${nm}`);render()});
+    card.querySelectorAll('[data-no]').forEach(b=>b.onclick=()=>{answered[b.dataset.no]=1;localStorage.setItem('sqp-ans',JSON.stringify(answered));send(id,{type:'notice',text:'Sorry, no more time right now.'},`said no to ${nm}`);render()});
     card.querySelector('[data-more]').onclick=()=>{open[id]=!open[id];localStorage.setItem('sqp-open',JSON.stringify(open));render()};
     card.querySelector('[data-hide]').onclick=()=>{hidden[id]=1;localStorage.setItem('sqp-hidden',JSON.stringify(hidden));render()};
     card.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const t=b.dataset.c;
