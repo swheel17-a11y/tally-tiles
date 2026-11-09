@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#1d2b4f">
+<title>Star Quest Parents</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef3fb;--card:#fff;--ink:#1d2b4f;--muted:#6b7795;--line:#e3e9f4;--good:#2e9e5b;--warn:#d9435b;--gold:#f2b705;--f:'Inter',system-ui,sans-serif;--fd:'Fredoka',var(--f)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1526;--card:#1a2238;--ink:#e8edf8;--muted:#9aa6c4;--line:#2a3452}}
+:root[data-theme="dark"]{--bg:#0f1526;--card:#1a2238;--ink:#e8edf8;--muted:#9aa6c4;--line:#2a3452}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f);-webkit-text-size-adjust:100%}
+button,input,select{font:inherit;color:inherit}
+header{position:sticky;top:0;z-index:5;background:#1d2b4f;color:#fff;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+header h1{font-family:var(--fd);font-size:22px;margin:0;font-weight:700}header small{opacity:.75;font-size:13px}
+main{max-width:720px;margin:0 auto;padding:14px 16px 60px;display:flex;flex-direction:column;gap:14px}
+.card{background:var(--card);border-radius:18px;padding:14px;box-shadow:0 2px 0 var(--line);display:flex;flex-direction:column;gap:12px}
+.card h2{font-family:var(--fd);font-size:20px;margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:4px 0 0}
+.pill{font-family:var(--f);font-size:12px;font-weight:700;border-radius:999px;padding:3px 9px;background:var(--line);color:var(--muted)}
+.pill.on{background:#d9f5e3;color:#1f7a45}.pill.lock{background:#ffe0dc;color:#b3263e}.pill.cd{background:#fff3b0;color:#7a5a00}
+.doing{color:var(--muted);font-size:14px;margin-top:-6px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--bg);border-radius:14px;padding:10px;text-align:center}.stat b{display:block;font-family:var(--fd);font-size:22px}.stat span{font-size:12px;color:var(--muted)}
+.bars{display:flex;flex-direction:column;gap:6px}
+.bar{display:grid;grid-template-columns:minmax(0,1fr) 54px;gap:8px;align-items:center;font-size:14px}
+.bar .t{position:relative;border-radius:8px;background:var(--bg);overflow:hidden;padding:5px 8px;white-space:nowrap;text-overflow:ellipsis}
+.bar .t i{position:absolute;left:0;top:0;bottom:0;background:#cfe0ff;z-index:0}.bar .t span{position:relative}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .bar .t i{background:#2c3f6e}}
+.bar .m{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;align-items:end;height:90px}
+.week div{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px;font-size:11px;color:var(--muted)}
+.week i{width:100%;border-radius:6px 6px 2px 2px;background:#5b8def;min-height:2px}.week i.tv{background:#e0953a}
+.legend{display:flex;gap:12px;font-size:12px;color:var(--muted)}.legend span::before{content:'';display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px;background:#5b8def}.legend span.tv::before{background:#e0953a}
+.list{display:flex;flex-direction:column}.list div{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}.list div:last-child{border:0}
+.list span{color:var(--muted);white-space:nowrap}.empty{color:var(--muted);font-size:14px}
+.ctl{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:12px}
+.rowc{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{border:0;border-radius:12px;padding:11px 14px;font-weight:700;background:var(--bg);min-height:44px;cursor:pointer}
+.btn.go{background:#1d2b4f;color:#fff}.btn.warn{background:#ffe0dc;color:#b3263e}.btn.good{background:#d9f5e3;color:#1f7a45}
+input.tx{flex:1;min-width:0;border:2px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card);min-height:44px;font-size:16px}
+.lbl{font-size:13px;font-weight:700;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#1d2b4f;color:#fff;border-radius:14px;padding:12px 18px;font-weight:600;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:92vw;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.on{opacity:1}
+.login{max-width:420px;margin:30px auto}
+details summary{cursor:pointer;font-weight:700;color:var(--muted);font-size:14px}
+.all{background:linear-gradient(135deg,#1d2b4f,#3b4f8a);color:#fff}.all h2{color:#fff}.all .btn{background:rgba(255,255,255,.15);color:#fff}.all input.tx{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:#fff}
+.all input.tx::placeholder{color:rgba(255,255,255,.6)}
+</style>
+</head>
+<body>
+<header><div><h1>⭐ Star Quest Parents</h1><small id="sub">Tablets, time and stars</small></div><button class="btn" id="out" hidden style="background:rgba(255,255,255,.15);color:#fff">Sign out</button></header>
+<main id="main"><p class="empty">Loading…</p></main>
+<div class="toast" id="toast"></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+const FB_CONFIG={apiKey:"AIzaSyCfCtl9eR7Eaw-lgnJ38IEbSHSgFRpvCwA",authDomain:"star-quest-2bc62.firebaseapp.com",projectId:"star-quest-2bc62",storageBucket:"star-quest-2bc62.firebasestorage.app",messagingSenderId:"376911159671",appId:"1:376911159671:web:c4898e343ed60d6bb0c172"}; // public web config; the Firestore rules decide who can read what
+const NAMES={"math":"🚀 Math Rockets","clock":"🕒 Clock Time","words":"🔤 Word Builder","rhyme":"🎵 Rhyme Time","memory":"🃏 Memory Match","pattern":"🔷 What Comes Next","fruit":"🍓 Fruit Pop","bubble":"🎯 Bubble Pop","runner":"🦖 Dino Dash","tower":"🏗️ Tower Builder","tv":"🍿 Browsing movies","ninja":"⚔️ Ninja Portal","slice":"🔪 Fruit Slice","fish":"🎣 Fishing Trip","brick":"🧱 Brick Builder","doodle":"🎨 Doodle Pad","mix":"🧪 Mix & Make","adventure":"🦄 Magic Adventure","butterfly":"🦋 Butterfly Garden","dressup":"👸 Princess Dress-Up","color":"🖍️ Coloring Book","sort":"🧺 Color Sort","trace":"✏️ Trace Letters","story":"📖 Story Time","playground":"🏰 Sticker Playground","puzzle":"🧩 Picture Puzzles","piano":"🎹 Pink Piano","robot":"🤖 Robot Path","boss":"👾 Boss Battle","money":"💰 Money Market","times":"✖️ Times Tables","ninjaread":"📖 Ninja Stories","daily":"📅 Daily Challenge"};
+const $=s=>document.querySelector(s),main=$('#main');
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const mins=s=>{const m=Math.round((s||0)/60);return m<60?`${m}m`:`${Math.floor(m/60)}h ${m%60}m`};
+const money=c=>`$${(c/100).toFixed(2)}`;
+const dk=o=>{const d=new Date();d.setDate(d.getDate()-o);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+const ago=ms=>{const s=(Date.now()-ms)/1000;return s<90?'just now':s<3600?`${Math.round(s/60)} min ago`:s<86400?`${Math.round(s/3600)} hr ago`:(Math.round(s/86400)===1?'1 day ago':`${Math.round(s/86400)} days ago`)};
+let toastT;function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),2600)}
+if(!FB_CONFIG){main.innerHTML='<div class="card"><h2>Almost ready</h2><p class="empty">This page connects once the Firebase project is set up.</p></div>';return}
+const app=firebase.initializeApp(FB_CONFIG,'parents'),auth=app.auth(),db=app.firestore(); // its own sign-in, separate from the kids app on the same phone
+let devs={},open=JSON.parse(localStorage.getItem('sqp-open')||'{}'),hidden=JSON.parse(localStorage.getItem('sqp-hidden')||'{}'),unsub=null;
+$('#out').onclick=()=>auth.signOut();
+auth.onAuthStateChanged(u=>{if(unsub){unsub();unsub=null}
+  if(!u||u.isAnonymous){$('#out').hidden=true;return loginView()}
+  $('#out').hidden=false;$('#sub').textContent=u.email;main.innerHTML='<p class="empty">Looking for tablets…</p>';
+  unsub=db.collection('devices').onSnapshot(s=>{devs={};s.forEach(d=>devs[d.id]=d.data());render()},e=>{main.innerHTML=`<div class="card"><h2>Can't read the tablets</h2><p class="empty">${esc(e.message)}</p><p class="empty">Check that the email in the Firestore rules matches the one you signed in with.</p></div>`})});
+function loginView(){main.innerHTML=`<div class="card login"><h2>Sign in</h2><p class="empty">Use the email and password you added in Firebase.</p>
+  <input class="tx" id="em" type="email" autocomplete="username" placeholder="Email"><input class="tx" id="pw" type="password" autocomplete="current-password" placeholder="Password">
+  <button class="btn go" id="li">Sign in</button><p class="empty" id="lerr"></p></div>`;
+  $('#li').onclick=()=>auth.signInWithEmailAndPassword($('#em').value.trim(),$('#pw').value).catch(e=>$('#lerr').textContent=e.message);
+  $('#pw').onkeydown=e=>{if(e.key==='Enter')$('#li').click()}}
+function send(uid,cmd,label){return db.collection('devices').doc(uid).collection('cmds').add(Object.assign({done:false,created:firebase.firestore.FieldValue.serverTimestamp()},cmd))
+  .then(ref=>{toast(`Sent: ${label}`);const un=ref.onSnapshot(d=>{if(d.exists&&d.data().done){un();toast(`✓ ${label} (tablet got it)`)}});setTimeout(un,10*60*1000)}).catch(e=>toast('Could not send: '+e.message))}
+const name=d=>d.name||(d.mode==='little'?'Little kid tablet':'Big kid tablet');
+const visible=()=>Object.entries(devs).filter(([id])=>!hidden[id]).sort((a,b)=>(b[1].seenMs||0)-(a[1].seenMs||0));
+function render(){const list=visible();
+  if(!list.length){main.innerHTML='<div class="card"><h2>No tablets yet</h2><p class="empty">Open Star Quest on each tablet (with internet on). They show up here within a minute.</p></div>';return}
+  const keep=document.activeElement&&document.activeElement.id;const vals={};main.querySelectorAll('input.tx').forEach(i=>vals[i.id]=i.value);
+  main.innerHTML=(list.length>1?allCard():'')+list.map(([id,d])=>devCard(id,d)).join('')+(Object.keys(hidden).length?`<button class="btn" id="unhide">Show hidden tablets (${Object.keys(hidden).length})</button>`:'');
+  Object.entries(vals).forEach(([k,v])=>{const i=document.getElementById(k);if(i)i.value=v});if(keep&&document.getElementById(keep))document.getElementById(keep).focus();
+  wire()}
+function allCard(){return `<div class="card all"><h2>📣 All tablets</h2><div class="rowc"><input class="tx" id="allMsg" placeholder="Message to everyone"><button class="btn" data-all="notice">Send</button></div>
+  <div class="rowc"><button class="btn" data-all="countdown" data-m="5">⏳ 5 min, then lock</button><button class="btn" data-all="lock">🔒 Lock now</button><button class="btn" data-all="unlock">🔓 Unlock</button></div></div>`}
+function devCard(id,d){const online=d.seenMs&&Date.now()-d.seenMs<150000,today=(d.days||{})[dk(0)]||{g:{},tv:0},o=open[id];
+  const gTot=Object.values(today.g||{}).reduce((a,b)=>a+b,0),games=Object.entries(today.g||{}).sort((a,b)=>b[1]-a[1]),maxG=games.length?games[0][1]:1;
+  const week=[6,5,4,3,2,1,0].map(i=>{const x=(d.days||{})[dk(i)]||{g:{},tv:0};return{lbl:'SMTWTFS'[new Date(Date.now()-i*864e5).getDay()],g:Object.values(x.g||{}).reduce((a,b)=>a+b,0),tv:x.tv||0}});
+  const wMax=Math.max(600,...week.map(w=>w.g+w.tv)),rate=d.rate||25,lockIn=d.lockAt&&d.lockAt>Date.now()?Math.ceil((d.lockAt-Date.now())/60000):0;
+  return `<div class="card" data-id="${id}">
+    <h2>${d.mode==='little'?'🧚':'🥷'} ${esc(name(d))} ${online?'<span class="pill on">● Online</span>':`<span class="pill">Seen ${d.seenMs?ago(d.seenMs):'never'}</span>`}${d.locked?'<span class="pill lock">🔒 Locked</span>':''}${lockIn?`<span class="pill cd">⏳ Locks in ${lockIn} min</span>`:''}</h2>
+    <div class="doing">${online?'Now: '+esc(d.doing||''):'Last: '+esc(d.doing||'')}</div>
+    <div class="stats"><div class="stat"><b>${mins(gTot)}</b><span>games today</span></div><div class="stat"><b>${mins(today.tv)}</b><span>movies today</span></div>
+      <div class="stat"><b>⭐ ${d.wallet||0}</b><span>to spend · ${money(Math.round((d.wallet||0)*100/rate))}</span></div></div>
+    <div class="list"><div><b>Stars earned (all time)</b><span>⭐ ${d.stars||0} · 📒 ${d.stickers||0} stickers</span></div><div><b>Earned today</b><span>⭐ ${today.earn||0}</span></div></div>
+    <h3>Today's games</h3>${games.length?`<div class="bars">${games.slice(0,o?40:6).map(([g,s])=>`<div class="bar"><div class="t"><i style="width:${s/maxG*100}%"></i><span>${esc(NAMES[g]||g)}</span></div><div class="m">${mins(s)}</div></div>`).join('')}</div>`:'<p class="empty">Nothing yet today.</p>'}
+    <h3>Last 7 days</h3><div class="week">${week.map(w=>`<div><i class="tv" style="height:${w.tv/wMax*70}%"></i><i style="height:${w.g/wMax*70}%"></i>${w.lbl}</div>`).join('')}</div>
+    <div class="legend"><span>Games</span><span class="tv">Movies</span><span style="margin-left:auto">${mins(week.reduce((a,w)=>a+w.g+w.tv,0))} this week</span></div>
+    <h3>Movies & shows</h3>${(d.movies||[]).length?`<div class="list">${d.movies.slice(0,o?25:5).map(m=>`<div><b>${esc(m.name)}</b><span>${mins(m.secs)} · ${m.last?ago(m.last):''}</span></div>`).join('')}</div>`:'<p class="empty">Nothing watched yet.</p>'}
+    ${(d.buys||[]).length||(d.wishes||[]).length?`<h3>Star Bank</h3><div class="list">${(d.wishes||[]).map(w=>`<div><b>🎯 ${esc(w.name)}</b><span>${money(w.cents)} = ⭐ ${Math.round(w.cents*rate/100)}</span></div>`).join('')}${(d.buys||[]).slice(0,o?20:4).map(b=>`<div><b>🛍️ ${esc(b.what)}</b><span>⭐ ${b.stars} · ${new Date(b.t).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span></div>`).join('')}</div>`:''}
+    <button class="btn" data-more>${o?'Show less':'Show more'}</button>
+    <div class="ctl">
+      <div class="lbl">Send a message</div><div class="rowc"><input class="tx" id="msg-${id}" placeholder="Like: Dinner in 10 minutes!"><button class="btn go" data-c="notice">Send</button></div>
+      <div class="lbl">Time's up (warns, counts down, then locks)</div>
+      <div class="rowc">${[1,5,10,15].map(m=>`<button class="btn" data-c="countdown" data-m="${m}">${m} min</button>`).join('')}${lockIn?'<button class="btn" data-c="cancel">Cancel timer</button>':''}</div>
+      <div class="rowc"><button class="btn warn" data-c="lock">🔒 Lock now</button><button class="btn good" data-c="unlock">🔓 Unlock</button></div>
+      <div class="lbl">Give stars</div><div class="rowc">${[5,10,25,100].map(n=>`<button class="btn" data-c="stars" data-n="${n}">+${n}</button>`).join('')}</div>
+      <div class="lbl">Spent stars in real life (${rate} stars = $1)</div>
+      <div class="rowc"><input class="tx" id="what-${id}" placeholder="What did they get?"><input class="tx" id="cost-${id}" inputmode="decimal" placeholder="$" style="max-width:90px"><button class="btn go" data-c="spend">Take stars</button></div>
+      <details><summary>Tablet options</summary><div class="rowc" style="margin-top:8px"><button class="btn" data-hide>Hide this tablet</button></div></details>
+    </div></div>`}
+function wire(){
+  main.querySelectorAll('[data-id]').forEach(card=>{const id=card.dataset.id,d=devs[id],nm=name(d),rate=d.rate||25;
+    card.querySelector('[data-more]').onclick=()=>{open[id]=!open[id];localStorage.setItem('sqp-open',JSON.stringify(open));render()};
+    card.querySelector('[data-hide]').onclick=()=>{hidden[id]=1;localStorage.setItem('sqp-hidden',JSON.stringify(hidden));render()};
+    card.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const t=b.dataset.c;
+      if(t==='notice'){const i=$('#msg-'+id),v=i.value.trim();if(!v)return toast('Type a message first');send(id,{type:'notice',text:v},`message to ${nm}`);i.value=''}
+      else if(t==='countdown'){const m=+b.dataset.m;send(id,{type:'countdown',mins:m,text:`${m} minute${m===1?'':'s'} left!`},`${m}-minute warning to ${nm}`)}
+      else if(t==='cancel')send(id,{type:'cancel'},`cancel timer on ${nm}`);
+      else if(t==='lock'){if(confirm(`Lock ${nm} now?`))send(id,{type:'lock',text:''},`lock ${nm}`)}
+      else if(t==='unlock')send(id,{type:'unlock'},`unlock ${nm}`);
+      else if(t==='stars'){const n=+b.dataset.n;send(id,{type:'stars',n,text:'Great job!'},`+${n} stars to ${nm}`)}
+      else if(t==='spend'){const what=$('#what-'+id).value.trim(),c=Math.round(parseFloat(($('#cost-'+id).value||'').replace(/[^0-9.]/g,''))*100);
+        if(!what||!(c>0))return toast('Fill in what it was and the price');const n=Math.round(c*rate/100);
+        if(n>(d.wallet||0)&&!confirm(`${nm} only has ⭐ ${d.wallet||0}. Take ⭐ ${n} anyway? (It stops at 0.)`))return;
+        if(confirm(`Take ⭐ ${n} (${money(c)}) for "${what}"?`)){send(id,{type:'spend',n,what},`⭐ ${n} for ${what}`);$('#what-'+id).value='';$('#cost-'+id).value=''}}})});
+  const u=$('#unhide');if(u)u.onclick=()=>{hidden={};localStorage.setItem('sqp-hidden','{}');render()};
+  main.querySelectorAll('[data-all]').forEach(b=>b.onclick=()=>{const t=b.dataset.all,ids=visible().map(([id])=>id);
+    if(t==='notice'){const v=$('#allMsg').value.trim();if(!v)return toast('Type a message first');ids.forEach(id=>send(id,{type:'notice',text:v},'message to all'));$('#allMsg').value=''}
+    else if(t==='countdown')ids.forEach(id=>send(id,{type:'countdown',mins:5,text:'5 minutes left!'},'5-minute warning to all'));
+    else if(t==='lock'){if(confirm('Lock all tablets now?'))ids.forEach(id=>send(id,{type:'lock',text:''},'lock all'))}
+    else ids.forEach(id=>send(id,{type:'unlock'},'unlock all'))})}
+setInterval(()=>{if(auth.currentUser&&!auth.currentUser.isAnonymous&&!document.querySelector('input.tx:focus'))render()},30000);
+})();
+</script>
+</body>
+</html>
