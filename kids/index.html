@@ -3822,7 +3822,7 @@ function sbConfirm(what,stars,cents,wishIdx){const w=K.wallet||0;setHeader('Star
   speakNow(w>=stars?`You have ${w} stars. It costs ${stars}. You will have ${w-stars} left.`:`You need ${stars-w} more stars. Keep saving!`);
   $('#sbBack').onclick=()=>playBank();
   if($('#sbPay'))$('#sbPay').onclick=()=>pinPad('Grown-up: enter your PIN to pay',()=>{K.wallet=Math.max(0,(K.wallet||0)-stars);K.buys=K.buys||[];K.buys.unshift({t:Date.now(),what,stars,cents});K.buys=K.buys.slice(0,60);
-    if(wishIdx>=0&&K.wishes[wishIdx])K.wishes.splice(wishIdx,1);save();updateStars();log('bank buy',{what,stars});famPush&&famPush();sfx.up();
+    if(wishIdx>=0&&K.wishes[wishIdx])K.wishes.splice(wishIdx,1);save();updateStars();log('bank buy',{what,stars});famAlert(`🛍️ ${kidName()} bought something`,`${what} for ${stars} stars (${mnFmt(cents)}). ${K.wallet} stars left.`,'shopping_bags');famPush&&famPush();sfx.up();
     popup('🛍️','You bought it!',`${what} for ⭐ ${stars}. You have ⭐ ${K.wallet} left.`,'Yay!',playBank)})}
 
 /* =========================================================
@@ -3874,10 +3874,10 @@ let famCdIv=null;
 function famCountdown(){clearInterval(famCdIv);let c=document.querySelector('.famcd');
   if(!K.lockAt){c&&c.remove();return}
   if(!c){c=document.createElement('div');c.className='famcd';document.body.appendChild(c)}
-  const tick=()=>{const left=Math.round((K.lockAt-Date.now())/1000);if(left<=0){clearInterval(famCdIv);c.remove();K.lockAt=null;famLock(K.lockText);return}
+  const tick=()=>{const left=Math.round((K.lockAt-Date.now())/1000);if(left<=0){clearInterval(famCdIv);c.remove();K.lockAt=null;famLock(K.lockText,true);return}
     c.textContent=`⏳ ${Math.floor(left/60)}:${String(left%60).padStart(2,'0')} left`;c.classList.toggle('low',left<=60);
     if(left===60)speakNow('One minute left!',true)};tick();famCdIv=setInterval(tick,1000)}
-function famLock(text){K.locked={at:Date.now(),text:text||''};K.lockAt=null;save();famCountdown();
+function famLock(text,auto){if(auto)famAlert(`🔒 ${kidName()}'s tablet locked`,'Time is up. The tablet is locked now.','lock');K.locked={at:Date.now(),text:text||''};K.lockAt=null;save();famCountdown();
   if(window.__tvKill)window.__tvKill();if(location.hash&&location.hash!=='#home'){history.replaceState(null,'','#home');show()}
   famLockShow();famPush(true)}
 function famLockShow(){if(!K.locked||document.querySelector('.famlock'))return;
@@ -3903,6 +3903,7 @@ function famCmd(c){const age=c.at?Date.now()-c.at:0,stale=age>15*60*1000;log('fa
     case 'lock':famLock(c.text);break;
     case 'extend':{const m=Math.max(1,Math.min(60,c.mins||5));if(K.locked){famUnlock();K.lockAt=Date.now()+m*60000}else if(K.lockAt)K.lockAt+=m*60000;else break;K.lockText='';save();famCountdown();
       if(!stale)famNotice(`Yay! ${m} more minutes!`,'🎉');chatInbox(`Yes! ${m} more minutes.`,'🎉');break}
+    case 'ntfy':K.ntfy=/^[A-Za-z0-9_-]{6,64}$/.test(c.topic||'')?c.topic:'';break;
     case 'seen':(K.outbox||[]).forEach(m=>{if(m.t<=(c.upTo||0))m.seen=true});break;
     case 'unlock':famUnlock();if(!stale)famNotice('The tablet is unlocked!','🔓');break;
     case 'stars':{const n=Math.max(0,Math.min(1000,c.n|0));if(!n)break;const pops=awardBig(n);
@@ -3931,7 +3932,7 @@ async function famStart(){if(!FB_CONFIG||FB.loading||FB.on||!/^https?:$/.test(lo
 function famPush(force){if(!FB.on)return;const now=Date.now();if(!force&&now-FB.lastPush<20000)return;FB.lastPush=now;
   const days={};Object.keys((K.st&&K.st.days)||{}).sort().slice(-14).forEach(k=>days[k]=K.st.days[k]);
   FB.db.collection('devices').doc(FB.uid).set({name:K.name||'',mode:K.mode||'',stars:K.stars||0,wallet:K.wallet||0,rate:sbRate(),playSec:K.playSec||0,
-    locked:!!K.locked,lockAt:K.lockAt||null,doing:famDoing(),days,movies:((K.st&&K.st.movies)||[]).slice(0,25),buys:(K.buys||[]).slice(0,20),wishes:K.wishes||[],msgs:(K.outbox||[]).slice(0,20),
+    locked:!!K.locked,lockAt:K.lockAt||null,doing:famDoing(),days,movies:((K.st&&K.st.movies)||[]).slice(0,25),buys:(K.buys||[]).slice(0,20),wishes:K.wishes||[],msgs:(K.outbox||[]).slice(0,20),alerts:!!K.ntfy,
     stickers:skTotal(),seen:firebase.firestore.FieldValue.serverTimestamp(),seenMs:now,ua:navigator.userAgent.slice(0,120)},{merge:false}).catch(e=>{FB.err=String(e&&e.message||e)})}
 setInterval(()=>{if(document.hidden)return;if(!FB.on)famStart();else famPush()},60000);
 window.addEventListener('hashchange',()=>setTimeout(()=>famPush(true),1500));
@@ -3951,7 +3952,11 @@ const CHAT_QUICK=[['👍','OK!'],['🙏','Can I have 5 more minutes?'],['🍎',"
   ['🚽','I need to go potty'],['❤️','I love you!'],['😴',"I'm tired"],['🎉','I did it!'],['😢',"I'm sad"],['🤗','Can I have a hug?']];
 function chatSend(em,text){text=String(text||'').trim().slice(0,140);if(!text)return;K.outbox=K.outbox||[];
   K.outbox.unshift({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),t:Date.now(),em:em||'💬',text,seen:false});K.outbox=K.outbox.slice(0,30);
-  save();famPush(true);log('chat sent',text);tone([[660,0,.08],[990,.08,.14]],'sine',0.07)}
+  save();famPush(true);log('chat sent',text);famAlert(`${em||'💬'} ${kidName()}`,text,'speech_balloon');tone([[660,0,.08],[990,.08,.14]],'sine',0.07)}
+// phone alerts: the channel name comes from the parent page (never stored in the website code)
+function famAlert(title,msg,tags){const t=K.ntfy;if(!t||!/^https?:$/.test(location.protocol))return;const q=new URLSearchParams({title,tags:tags||'speech_balloon',click:new URL('admin.html',location.href).href});
+  fetch(`https://ntfy.sh/${encodeURIComponent(t)}?${q}`,{method:'POST',body:msg}).catch(e=>log('alert failed',String(e)))}
+const kidName=()=>K.name||(K.mode==='little'?'Little one':'Big kid');
 function chatInbox(text,em){if(!text)return;K.inbox=K.inbox||[];K.inbox.unshift({t:Date.now(),em:em||'📣',text});K.inbox=K.inbox.slice(0,30);save()}
 function playChat(){
   if(location.hash!=='#chat')return;

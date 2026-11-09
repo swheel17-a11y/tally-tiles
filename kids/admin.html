@@ -109,9 +109,14 @@ const visible=()=>Object.entries(devs).filter(([id])=>!hidden[id]).sort((a,b)=>(
 function render(){const list=visible();
   if(!list.length){main.innerHTML='<div class="card"><h2>No tablets yet</h2><p class="empty">Open Star Quest on each tablet (with internet on). They show up here within a minute.</p></div>';return}
   const keep=document.activeElement&&document.activeElement.id;const vals={};main.querySelectorAll('input.tx').forEach(i=>vals[i.id]=i.value);
-  main.innerHTML=(list.length>1?allCard():'')+list.map(([id,d])=>devCard(id,d)).join('')+(Object.keys(hidden).length?`<button class="btn" id="unhide">Show hidden tablets (${Object.keys(hidden).length})</button>`:'');
+  main.innerHTML=(list.length>1?allCard():'')+list.map(([id,d])=>devCard(id,d)).join('')+alertCard(list)+(Object.keys(hidden).length?`<button class="btn" id="unhide">Show hidden tablets (${Object.keys(hidden).length})</button>`:'');
   Object.entries(vals).forEach(([k,v])=>{const i=document.getElementById(k);if(i)i.value=v});if(keep&&document.getElementById(keep))document.getElementById(keep).focus();
   wire()}
+function alertCard(list){const t=localStorage.getItem('sqp-ntfy')||'',on=list.filter(([,d])=>d.alerts).length;
+  return `<div class="card"><h2>📲 Phone alerts <span class="pill ${on===list.length&&on?'on':''}">${on} of ${list.length} tablets on</span></h2>
+    <p class="empty" style="margin:0">Get a buzz from the ntfy app when a kid sends a message, when time runs out and a tablet locks, or when Noah buys something with stars. Subscribe to this same channel in ntfy.</p>
+    <div class="rowc"><input class="tx" id="ntfyTopic" value="${esc(t)}" placeholder="Channel name" autocapitalize="off" autocomplete="off" spellcheck="false"></div>
+    <div class="rowc"><button class="btn go" id="ntfyOn">Turn on for all tablets</button><button class="btn" id="ntfyTest">Send a test</button><button class="btn" id="ntfyOff">Turn off</button></div></div>`}
 function allCard(){return `<div class="card all"><h2>📣 All tablets</h2><div class="rowc"><input class="tx" id="allMsg" placeholder="Message to everyone"><button class="btn" data-all="notice">Send</button></div>
   <div class="rowc"><button class="btn" data-all="countdown" data-m="5">⏳ 5 min, then lock</button><button class="btn" data-all="lock">🔒 Lock now</button><button class="btn" data-all="unlock">🔓 Unlock</button></div></div>`}
 function devCard(id,d){const online=d.seenMs&&Date.now()-d.seenMs<150000,today=(d.days||{})[dk(0)]||{g:{},tv:0},o=open[id];
@@ -159,6 +164,10 @@ function wire(){
         if(!what||!(c>0))return toast('Fill in what it was and the price');const n=Math.round(c*rate/100);
         if(n>(d.wallet||0)&&!confirm(`${nm} only has ⭐ ${d.wallet||0}. Take ⭐ ${n} anyway? (It stops at 0.)`))return;
         if(confirm(`Take ⭐ ${n} (${money(c)}) for "${what}"?`)){send(id,{type:'spend',n,what},`⭐ ${n} for ${what}`);$('#what-'+id).value='';$('#cost-'+id).value=''}}})});
+  const nt=()=>($('#ntfyTopic').value||'').trim(),okT=t=>/^[A-Za-z0-9_-]{6,64}$/.test(t);
+  $('#ntfyOn').onclick=()=>{const t=nt();if(!okT(t))return toast('Use letters, numbers and dashes (6+ characters)');localStorage.setItem('sqp-ntfy',t);visible().forEach(([id])=>send(id,{type:'ntfy',topic:t},'alerts on'))};
+  $('#ntfyOff').onclick=()=>{visible().forEach(([id])=>send(id,{type:'ntfy',topic:''},'alerts off'))};
+  $('#ntfyTest').onclick=()=>{const t=nt();if(!okT(t))return toast('Enter the channel name first');fetch(`https://ntfy.sh/${encodeURIComponent(t)}?title=${encodeURIComponent('⭐ Star Quest')}&tags=star`,{method:'POST',body:'Test alert: phone alerts are working!'}).then(r=>toast(r.ok?'Test sent. Check your phone!':'ntfy said '+r.status)).catch(e=>toast('Could not reach ntfy: '+e.message))};
   const u=$('#unhide');if(u)u.onclick=()=>{hidden={};localStorage.setItem('sqp-hidden','{}');render()};
   main.querySelectorAll('[data-all]').forEach(b=>b.onclick=()=>{const t=b.dataset.all,ids=visible().map(([id])=>id);
     if(t==='notice'){const v=$('#allMsg').value.trim();if(!v)return toast('Type a message first');ids.forEach(id=>send(id,{type:'notice',text:v},'message to all'));$('#allMsg').value=''}
