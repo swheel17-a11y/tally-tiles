@@ -3886,14 +3886,14 @@ function famCmd(c){const age=c.at?Date.now()-c.at:0,stale=age>15*60*1000;log('fa
     case 'spend':{const n=Math.max(0,c.n|0);if(!n)break;K.wallet=Math.max(0,(K.wallet||0)-n);K.buys=K.buys||[];K.buys.unshift({t:Date.now(),what:c.what||'Something from the store',stars:n,cents:sbCents(n)});save();updateStars();
       if(!stale)famNotice(`You spent ⭐ ${n} on ${c.what||'something'}. You have ⭐ ${K.wallet} left.`,'🛍️');break}}
   save();famPush(true)}
-document.addEventListener('visibilitychange',()=>{if(!document.hidden){famLockShow();if(K.lockAt)famCountdown()}else famPush(true)});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){famLockShow();if(K.lockAt)famCountdown();if(!FB.on)famStart()}else famPush(true)});
 setTimeout(()=>{famLockShow();if(K.lockAt)famCountdown()},300);
 
 /* ---------- Firebase sync ---------- */
 const FB={on:false,db:null,uid:null,lastPush:0,loading:false,err:''};
 function fbLoad(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('load '+src));document.head.appendChild(s)})}
 async function famStart(){if(!FB_CONFIG||FB.loading||FB.on||!/^https?:$/.test(location.protocol))return;FB.loading=true;
-  try{const V='https://www.gstatic.com/firebasejs/10.12.2/';await fbLoad(V+'firebase-app-compat.js');await fbLoad(V+'firebase-auth-compat.js');await fbLoad(V+'firebase-firestore-compat.js');
+  try{const V='https://www.gstatic.com/firebasejs/10.12.2/';if(!window.firebase||!firebase.firestore){await fbLoad(V+'firebase-app-compat.js');await fbLoad(V+'firebase-auth-compat.js');await fbLoad(V+'firebase-firestore-compat.js')}
     const app=firebase.apps.length?firebase.app():firebase.initializeApp(FB_CONFIG);
     const cred=app.auth().currentUser?{user:app.auth().currentUser}:await new Promise((res,rej)=>{const un=app.auth().onAuthStateChanged(u=>{un();u?res({user:u}):app.auth().signInAnonymously().then(res,rej)})});
     FB.uid=cred.user.uid;FB.db=app.firestore();FB.on=true;FB.err='';log('family link on');famPush(true);
@@ -3909,7 +3909,7 @@ function famPush(force){if(!FB.on)return;const now=Date.now();if(!force&&now-FB.
   FB.db.collection('devices').doc(FB.uid).set({name:K.name||'',mode:K.mode||'',stars:K.stars||0,wallet:K.wallet||0,rate:sbRate(),playSec:K.playSec||0,
     locked:!!K.locked,lockAt:K.lockAt||null,doing:famDoing(),days,movies:((K.st&&K.st.movies)||[]).slice(0,25),buys:(K.buys||[]).slice(0,20),wishes:K.wishes||[],
     stickers:skTotal(),seen:firebase.firestore.FieldValue.serverTimestamp(),seenMs:now,ua:navigator.userAgent.slice(0,120)},{merge:false}).catch(e=>{FB.err=String(e&&e.message||e)})}
-setInterval(()=>{if(!document.hidden)famPush()},60000);
+setInterval(()=>{if(document.hidden)return;if(!FB.on)famStart();else famPush()},60000);
 window.addEventListener('hashchange',()=>setTimeout(()=>famPush(true),1500));
 setTimeout(famStart,2500);
 function famGrownups(){return `<div class="prow" style="flex-wrap:wrap"><span>Grown-up PIN <small style="color:var(--muted)">(for Star Bank purchases and unlocking)</small></span><span class="ctl"><button class="pbtn" id="pinSet">${K.pin?'Change PIN':'Set PIN'}</button></span></div>
