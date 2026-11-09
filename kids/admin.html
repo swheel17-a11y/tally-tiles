@@ -112,7 +112,7 @@ function render(){const list=visible();
   main.innerHTML=(list.length>1?allCard():'')+list.map(([id,d])=>devCard(id,d)).join('')+alertCard(list)+(Object.keys(hidden).length?`<button class="btn" id="unhide">Show hidden tablets (${Object.keys(hidden).length})</button>`:'');
   Object.entries(vals).forEach(([k,v])=>{const i=document.getElementById(k);if(i)i.value=v});if(keep&&document.getElementById(keep))document.getElementById(keep).focus();
   wire()}
-function alertCard(list){const t=localStorage.getItem('sqp-ntfy')||'',on=list.filter(([,d])=>d.alerts).length;
+function alertCard(list){const fromTab=(list.find(([,d])=>d.alertTopic)||[,{}])[1].alertTopic||'',t=localStorage.getItem('sqp-ntfy')||fromTab,on=list.filter(([,d])=>d.alerts).length;
   return `<div class="card"><h2>📲 Phone alerts <span class="pill ${on===list.length&&on?'on':''}">${on} of ${list.length} tablets on</span></h2>
     <p class="empty" style="margin:0">Get a buzz from the ntfy app when a kid sends a message, when time runs out and a tablet locks, or when Noah buys something with stars. Subscribe to this same channel in ntfy.</p>
     <div class="rowc"><input class="tx" id="ntfyTopic" value="${esc(t)}" placeholder="Channel name" autocapitalize="off" autocomplete="off" spellcheck="false"></div>
