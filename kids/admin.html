@@ -167,7 +167,7 @@ function wire(){
   const nt=()=>($('#ntfyTopic').value||'').trim(),okT=t=>/^[A-Za-z0-9_-]{6,64}$/.test(t);
   $('#ntfyOn').onclick=()=>{const t=nt();if(!okT(t))return toast('Use letters, numbers and dashes (6+ characters)');localStorage.setItem('sqp-ntfy',t);visible().forEach(([id])=>send(id,{type:'ntfy',topic:t},'alerts on'))};
   $('#ntfyOff').onclick=()=>{visible().forEach(([id])=>send(id,{type:'ntfy',topic:''},'alerts off'))};
-  $('#ntfyTest').onclick=()=>{const t=nt();if(!okT(t))return toast('Enter the channel name first');fetch(`https://ntfy.sh/${encodeURIComponent(t)}?title=${encodeURIComponent('⭐ Star Quest')}&tags=star`,{method:'POST',body:'Test alert: phone alerts are working!'}).then(r=>toast(r.ok?'Test sent. Check your phone!':'ntfy said '+r.status)).catch(e=>toast('Could not reach ntfy: '+e.message))};
+  $('#ntfyTest').onclick=()=>{const t=nt();if(!okT(t))return toast('Enter the channel name first');fetch(`https://ntfy.sh/${encodeURIComponent(t)}?title=${encodeURIComponent('⭐ Star Quest')}&tags=star&priority=high`,{method:'POST',body:'Test alert: phone alerts are working!'}).then(r=>toast(r.ok?'Test sent. Check your phone!':'ntfy said '+r.status)).catch(e=>toast('Could not reach ntfy: '+e.message))};
   const u=$('#unhide');if(u)u.onclick=()=>{hidden={};localStorage.setItem('sqp-hidden','{}');render()};
   main.querySelectorAll('[data-all]').forEach(b=>b.onclick=()=>{const t=b.dataset.all,ids=visible().map(([id])=>id);
     if(t==='notice'){const v=$('#allMsg').value.trim();if(!v)return toast('Type a message first');ids.forEach(id=>send(id,{type:'notice',text:v},'message to all'));$('#allMsg').value=''}
