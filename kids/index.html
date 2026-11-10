@@ -692,7 +692,11 @@ html.little .tvp b,html.little .tve b{font-size:20px}
 .chatquick span{font-size:46px;line-height:1}.chatquick b{font-size:16px;line-height:1.2}
 .chatquick button[aria-pressed=true]{background:#fff1c9;box-shadow:0 0 0 4px #f2b705}
 .chattype{display:flex;gap:10px}.chattype input{flex:1;min-width:0;font:inherit;font-size:22px;padding:10px 14px;border-radius:16px;border:2px solid var(--sky-2);user-select:text;-webkit-user-select:text}
-.chatsend{height:66px;font-size:22px;padding:0 26px;animation:mxpulse 1.2s ease-in-out infinite}.chatsend[hidden]{display:none}
+.chatsend{height:70px;font-size:24px;padding:0 30px;animation:mxpulse 1.2s ease-in-out infinite;box-shadow:0 6px 24px rgba(0,0,0,.25)}.chatsend[hidden]{display:none}
+.chatbar{position:fixed;left:0;right:0;bottom:18px;display:flex;justify-content:center;z-index:30;pointer-events:none}.chatbar .chatsend{pointer-events:auto;max-width:92vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chatwrap{padding-bottom:100px}#view.typing{padding-bottom:60vh}
+.chatwrap.little{gap:8px}.chatwrap.little .chatlog{max-height:18vh}.chatwrap.little .chatquick{grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px}
+.chatwrap.little .chatquick button{min-height:92px;padding:8px 6px}.chatwrap.little .chatquick span{font-size:40px}.chatwrap.little .prompt{margin:4px 0}
 .famnote div{display:flex;flex-direction:column;gap:8px}.famrep{display:flex;flex-wrap:wrap;gap:8px}
 .famrep button{background:rgba(255,255,255,.18);color:#fff;border-radius:14px;padding:8px 12px;font-size:17px;font-weight:700}
 .famask{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px}.famask .pbtn{background:rgba(255,255,255,.15);color:#fff;box-shadow:none}
@@ -4009,13 +4013,13 @@ function chatInbox(text,em){if(!text)return;K.inbox=K.inbox||[];K.inbox.unshift(
 function playChat(){
   if(location.hash!=='#chat')return;
   const little=K.mode==='little';let pick=null;setHeader(little?'Talk to Mom & Dad':'Message Mom & Dad',FB.on?'They will see it on their phone':'Waiting for internet…');
-  const thread=[...(K.outbox||[]).map(m=>({...m,me:1})),...(K.inbox||[])].sort((a,b)=>b.t-a.t).slice(0,8).reverse();
-  view.innerHTML=`<div class="chatwrap">
+  const thread=[...(K.outbox||[]).map(m=>({...m,me:1})),...(K.inbox||[])].sort((a,b)=>b.t-a.t).slice(0,little?3:8).reverse();
+  view.innerHTML=`<div class="chatwrap ${little?'little':''}">
     ${thread.length?`<div class="chatlog">${thread.map(m=>`<div class="chatmsg ${m.me?'me':''}"><span>${m.em}</span><p></p><small>${m.me?(m.seen?'Seen ✓✓':FB.on?'Sent ✓':'Waiting to send'):'Mom & Dad'} · ${new Date(m.t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}</small></div>`).join('')}</div>`:''}
-    <p class="prompt">${little?'Tap one. Then tap Send!':'Pick a message, or type your own'}</p>
+    ${little?'':`<div class="chattype"><input id="chatTx" maxlength="140" placeholder="Type your own message…" autocomplete="off"><button class="pbtn go" id="chatGo">Send</button></div>`}
+    <p class="prompt">${little?'Tap one. Then tap Send!':'Or pick one'}</p>
     <div class="chatquick">${CHAT_QUICK.map((q,i)=>`<button data-q="${i}" aria-label="${q[1]}"><span>${q[0]}</span><b>${q[1]}</b></button>`).join('')}</div>
-    ${little?'':`<div class="chattype"><input id="chatTx" maxlength="140" placeholder="Type a message…" autocomplete="off"><button class="pbtn go" id="chatGo">Send</button></div>`}
-    <div class="row"><button class="pbtn go chatsend" id="chatSend" hidden>📨 Send</button></div></div>`;
+    <div class="chatbar"><button class="pbtn go chatsend" id="chatSend" hidden>📨 Send</button></div></div>`;
   // fill text safely
   const ps=view.querySelectorAll('.chatmsg p');thread.forEach((m,i)=>ps[i].textContent=m.text);
   const log_=view.querySelector('.chatlog');if(log_)log_.scrollTop=log_.scrollHeight;
@@ -4023,6 +4027,9 @@ function playChat(){
     speakNow(pick[1],true);const s=$('#chatSend');s.hidden=false;s.textContent=`📨 Send "${pick[1]}"`});
   const sent=()=>{sfx.up();popup('📨','Sent!',FB.on?'Mom and Dad will see it on their phone.':'It will send when the tablet is back on the internet.','OK',playChat);speakNow('Sent!',true)};
   $('#chatSend').onclick=()=>{if(!pick)return;chatSend(pick[0],pick[1]);sent()};
+  const tx=$('#chatTx');if(tx){const lift=()=>setTimeout(()=>{try{tx.scrollIntoView({block:'start',behavior:'smooth'})}catch(e){tx.scrollIntoView()}},350);
+    tx.addEventListener('focus',()=>{view.classList.add('typing');lift()});tx.addEventListener('blur',()=>view.classList.remove('typing'));
+    if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(document.activeElement===tx)lift()})}
   const go_=$('#chatGo');if(go_){const send=()=>{const v=$('#chatTx').value.replace(/[<>]/g,'').trim();if(!v)return;chatSend('💬',v);sent()};go_.onclick=send;$('#chatTx').onkeydown=e=>{if(e.key==='Enter')send()}}
 }
 

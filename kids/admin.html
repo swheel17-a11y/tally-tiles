@@ -53,8 +53,11 @@ details summary{cursor:pointer;font-weight:700;color:var(--muted);font-size:14px
 .msg{display:flex;gap:10px;align-items:flex-start;background:var(--bg);border-radius:14px;padding:10px}.msg.new{background:#fff3b0;color:#1d2b4f}
 .msg .me{font-size:26px;line-height:1}.msg b{display:block;font-size:16px}.msg small{color:var(--muted);font-size:12px}.msg.new small{color:#6b5a1a}
 .msg .rowc{margin-top:8px}
-.kids{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
-.kid{border:0;background:var(--card);border-radius:20px;padding:16px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;box-shadow:0 3px 0 var(--line);cursor:pointer;min-height:180px}
+.kids{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.kidwrap{display:flex;flex-direction:column;background:var(--card);border-radius:20px;box-shadow:0 3px 0 var(--line);overflow:hidden}
+.kmsg{display:flex;gap:6px;padding:0 10px 10px}.kmsg input.tx{min-height:40px;padding:8px 10px;font-size:15px}.kmsg .btn{min-height:40px;padding:8px 12px}
+.kid{border:0;background:var(--card);border-radius:20px 20px 0 0;padding:16px;display:grid;grid-template-columns:auto 1fr;column-gap:12px;row-gap:6px;align-items:center;text-align:left;cursor:pointer;width:100%}
+.kid .kem{grid-row:span 2}.kid .pill{justify-self:start}.kid .kline,.kid .kstats{grid-column:1/-1}
 .kid .kem{font-size:44px;line-height:1}.kid b{font-family:var(--fd);font-size:24px}.kline{font-size:13px;color:var(--muted);min-height:1.2em}
 .kstats{display:flex;flex-wrap:wrap;gap:6px}.kstats i{font-style:normal;font-size:13px;font-weight:700;background:var(--bg);border-radius:8px;padding:3px 7px}
 .kstats i.lock{background:#ffe0dc;color:#b3263e}.kstats i.cd{background:#fff3b0;color:#7a5a00}.kstats i.new{background:#2f9be0;color:#fff}
@@ -153,10 +156,11 @@ function alertCard(list){const fromTab=(list.find(([,d])=>d.alertTopic)||[,{}])[
     <div class="rowc"><button class="btn go" id="ntfyOn">Turn on for all tablets</button><button class="btn" id="ntfyTest">Send a test</button><button class="btn" id="ntfyOff">Turn off</button></div></div>`}
 function kidTile(id,d){const online=d.seenMs&&Date.now()-d.seenMs<150000,today=(d.days||{})[dk(0)]||{g:{},tv:0},gTot=Object.values(today.g||{}).reduce((a,b)=>a+b,0);
   const unread=(d.msgs||[]).filter(m=>m.t>(seenT[id]||0)).length,lockIn=d.lockAt&&d.lockAt>Date.now()?Math.ceil((d.lockAt-Date.now())/60000):0,W=d.words;
-  return `<button class="kid" data-k="${esc(id)}"><span class="kem">${d.mode==='little'?'🧚':'🥷'}</span><b>${esc(name(d))}</b>
+  return `<div class="kidwrap"><button class="kid" data-k="${esc(id)}"><span class="kem">${d.mode==='little'?'🧚':'🥷'}</span><b>${esc(name(d))}</b>
     <span class="pill ${online?'on':''}">${online?'● Online':'Seen '+(d.seenMs?ago(d.seenMs):'never')}</span>
     <span class="kline">${esc(online?d.doing||'':'')}</span>
-    <span class="kstats">${d.locked?'<i class="lock">🔒 Locked</i>':''}${lockIn?`<i class="cd">⏳ ${lockIn} min</i>`:''}${unread?`<i class="new">💬 ${unread} new</i>`:''}${W&&W.locked?`<i>📝 ${W.need} left</i>`:W&&W.doneToday?'<i>📝 Done ✓</i>':''}<i>🎮 ${mins(gTot)}</i>${today.tv?`<i>🍿 ${mins(today.tv)}</i>`:''}<i>⭐ ${d.wallet||0}</i></span></button>`}
+    <span class="kstats">${d.locked?'<i class="lock">🔒 Locked</i>':''}${lockIn?`<i class="cd">⏳ ${lockIn} min</i>`:''}${unread?`<i class="new">💬 ${unread} new</i>`:''}${W&&W.locked?`<i>📝 ${W.need} left</i>`:W&&W.doneToday?'<i>📝 Done ✓</i>':''}<i>🎮 ${mins(gTot)}</i>${today.tv?`<i>🍿 ${mins(today.tv)}</i>`:''}<i>⭐ ${d.wallet||0}</i></span></button>
+    <div class="kmsg"><input class="tx" id="qm-${esc(id)}" placeholder="Message ${esc(name(d))}…" enterkeyhint="send"><button class="btn go" data-qm="${esc(id)}">Send</button></div></div>`}
 function allCard(){return `<div class="card all"><h2>📣 All tablets</h2><div class="rowc"><input class="tx" id="allMsg" placeholder="Message to everyone"><button class="btn" data-all="notice">Send</button></div>
   <div class="rowc"><button class="btn" data-all="countdown" data-m="5">⏳ 5 min, then lock</button><button class="btn" data-all="lock">🔒 Lock now</button><button class="btn" data-all="unlock">🔓 Unlock</button></div></div>`}
 function devCard(id,d){const online=d.seenMs&&Date.now()-d.seenMs<150000,today=(d.days||{})[dk(0)]||{g:{},tv:0},o=open[id];
@@ -219,6 +223,7 @@ function wire(){
         if(n>(d.wallet||0)&&!confirm(`${nm} only has ⭐ ${d.wallet||0}. Take ⭐ ${n} anyway? (It stops at 0.)`))return;
         if(confirm(`Take ⭐ ${n} (${money(c)}) for "${what}"?`)){send(id,{type:'spend',n,what},`⭐ ${n} for ${what}`);$('#what-'+id).value='';$('#cost-'+id).value=''}}})});
   main.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{location.hash='k='+encodeURIComponent(b.dataset.k)});
+  main.querySelectorAll('[data-qm]').forEach(b=>{const id=b.dataset.qm,i=document.getElementById('qm-'+id),go=()=>{const v=i.value.trim();if(!v)return toast('Type a message first');send(id,{type:'notice',text:v},`message to ${name(devs[id])}`);i.value=''};b.onclick=go;i.onkeydown=e=>{if(e.key==='Enter')go()}});
   const ba=$('#backAll');if(ba)ba.onclick=()=>{history.length>1&&/^#k=/.test(location.hash)?history.back():(location.hash='')};if(!$('#ntfyOn'))return;
   const nt=()=>($('#ntfyTopic').value||'').trim(),okT=t=>/^[A-Za-z0-9_-]{6,64}$/.test(t);
   $('#ntfyOn').onclick=()=>{const t=nt();if(!okT(t))return toast('Use letters, numbers and dashes (6+ characters)');localStorage.setItem('sqp-ntfy',t);visible().forEach(([id])=>send(id,{type:'ntfy',topic:t},'alerts on'))};
