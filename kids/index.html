@@ -747,6 +747,41 @@ html.little .tvp b,html.little .tve b{font-size:20px}
 .fartpuff{position:fixed;left:50%;top:50%;z-index:125;pointer-events:none;display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-50%);animation:fartup 2.6s ease-out forwards}
 .fartpuff span{font-size:min(36vw,220px);line-height:1}.fartpuff b{font-family:var(--f-display);font-size:clamp(28px,6vw,52px);color:#5a3a1a;background:#fff3b0;border-radius:18px;padding:4px 18px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
 @keyframes fartup{0%{transform:translate(-50%,-30%) scale(.3);opacity:0}15%{transform:translate(-50%,-50%) scale(1.1);opacity:1}25%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{transform:translate(-50%,-90%) scale(1.15);opacity:0}}
+/* animated background */
+#bgfx{position:fixed;top:0;left:0;right:0;bottom:0;z-index:-1;overflow:hidden;pointer-events:none;display:none}
+html.bgfx-on #bgfx{display:block}
+#bgfx:not(.little){background:linear-gradient(180deg,#8ccdf5 0%,#bfe4fb 55%,#dff1ff 100%)}
+#bgfx.little{background:linear-gradient(180deg,#ffd3ea 0%,#ffe8f3 60%,#fff2f8 100%)}
+.cld{position:absolute;left:0;animation:cld linear infinite;will-change:transform}
+@keyframes cld{from{transform:translateX(-30vw)}to{transform:translateX(110vw)}}
+.twk,.spk{position:absolute;font-style:normal;animation:twk ease-in-out infinite}
+.twk{color:#fff7c2;text-shadow:0 0 6px #fff}.spk{color:#fff;text-shadow:0 0 8px #ff8ac4}
+@keyframes twk{0%,100%{opacity:.15;transform:scale(.7)}50%{opacity:1;transform:scale(1.1)}}
+.shoot{position:absolute;top:8%;left:70%;width:120px;height:3px;border-radius:3px;background:linear-gradient(90deg,rgba(255,255,255,0),#fff);opacity:0;transform:rotate(-20deg);animation:shoot 14s ease-in infinite 3s}
+@keyframes shoot{0%,90%{opacity:0;transform:translate(0,0) rotate(-20deg)}92%{opacity:1}100%{opacity:0;transform:translate(-45vw,16vw) rotate(-20deg)}}
+.bub{position:absolute;bottom:-100px;border-radius:50%;background:radial-gradient(circle at 32% 30%,rgba(255,255,255,.95) 0 10%,rgba(255,255,255,.25) 22%,rgba(255,170,215,.22) 60%,rgba(255,255,255,.55) 100%);box-shadow:inset 0 0 8px rgba(255,255,255,.7);animation:bub linear infinite;will-change:transform}
+@keyframes bub{from{transform:translate(0,0)}50%{transform:translate(18px,-55vh)}to{transform:translate(-10px,-115vh)}}
+.bfly{position:absolute;top:30%;left:0;font-size:40px;animation:bfly 26s linear infinite 4s;opacity:0}
+@keyframes bfly{0%{opacity:0;transform:translate(-10vw,10vh)}5%{opacity:1}25%{transform:translate(25vw,-4vh)}50%{transform:translate(55vw,12vh)}75%{transform:translate(85vw,-2vh)}95%{opacity:1}100%{opacity:0;transform:translate(110vw,8vh)}}
+html.bgfx-on body{background:transparent}
+/* fall: warm sky, tumbling leaves */
+#bgfx.fall:not(.little){background:linear-gradient(180deg,#f7c58a 0%,#fbe0bf 50%,#fdf0de 100%)}
+#bgfx.fall.little{background:linear-gradient(180deg,#ffcfc4 0%,#ffe3dc 55%,#fff1ec 100%)}
+.fall{position:absolute;top:-60px;line-height:1;animation-name:fallY,sway;animation-timing-function:linear,ease-in-out;animation-iteration-count:infinite,infinite;animation-direction:normal,alternate;will-change:transform}
+.fall i{display:block;font-style:normal;animation:spin 6s linear infinite}
+@keyframes fallY{to{top:105%}}@keyframes sway{from{transform:translateX(-30px)}to{transform:translateX(30px)}}@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+/* christmas: night sky and snow for Noah, soft pink snow for Eila, a sleigh passes over */
+#bgfx.christmas:not(.little){background:linear-gradient(180deg,#14305e 0%,#2b5c93 60%,#5f8fc0 100%)}
+#bgfx.christmas.little{background:linear-gradient(180deg,#ffd9ea 0%,#fff0f6 60%,#ffffff 100%)}
+html.bgfx-on.bgdark .top h1,html.bgfx-on.bgdark .hello,html.bgfx-on.bgdark .home-foot,html.bgfx-on.bgdark .home-foot span,html.bgfx-on.bgdark .home-foot small{color:#eaf2ff}
+html.bgfx-on.bgdark .home-foot *:not(.grownup):not(.grownup *){color:#eaf2ff}
+html.bgfx-on.bgdark .home-foot .grownup{color:#1d2b4f}
+.snow{position:absolute;top:-20px;border-radius:50%;background:#fff;opacity:.9;box-shadow:0 0 6px rgba(255,255,255,.8);animation-name:fallY,sway;animation-timing-function:linear,ease-in-out;animation-iteration-count:infinite,infinite;animation-direction:normal,alternate}
+#bgfx.christmas.little .snow{background:#fff;box-shadow:0 0 6px #ffb3d6}
+.flake i{color:#fff;text-shadow:0 0 8px #ff8ac4}
+.sleigh{position:absolute;top:9%;left:0;font-size:38px;white-space:nowrap;opacity:0;animation:sleigh 24s linear infinite 3s}
+@keyframes sleigh{0%{opacity:0;transform:translate(110vw,0)}4%{opacity:1}30%{transform:translate(50vw,-3vh)}55%{opacity:1;transform:translate(-20vw,2vh)}56%,100%{opacity:0;transform:translate(-30vw,2vh)}}
+@media (prefers-reduced-motion:reduce){#bgfx *{animation:none!important}.shoot,.bfly,.sleigh{display:none}}
 /* dark room for movies: no bright page around the video */
 html.watching,html.watching body{background:#000;color:#e8e8e8}
 html.watching .top h1,html.watching .top h1 small{color:#cfcfcf}
@@ -756,8 +791,6 @@ html.watching .tvvwrap{border-radius:12px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
-</head>
-<body>
 <div id="app">
   <header class="top">
     <button class="back" id="homeBtn" hidden>← Home</button>
@@ -1649,7 +1682,31 @@ function skPage(i){const B=SK_BOOK[K.mode==='little'?'little':'big'],P=B[i%B.len
 const skNow=()=>{const t=skTotal();return{page:Math.floor(t/SK_N),have:t%SK_N}};
 const skAt=t=>skPage(Math.floor(t/SK_N)).set[t%SK_N];
 const isLittle=()=>K.mode==='little';
-function applyMode(){document.documentElement.classList.toggle('little',isLittle())}
+function applyMode(){document.documentElement.classList.toggle('little',isLittle());bgfxBuild()}
+/* animated background on the calm screens only (home, sticker book, Star Bank, messages): CSS transforms, nothing else.
+   Noah: drifting clouds, twinkling stars, a shooting star now and then. Eila: rising bubbles, sparkles, a passing butterfly. */
+const BGFX_ON=['','home','stickers','bank','chat'];
+// seasons switch by date: fall from Sept 22 through Thanksgiving, Christmas from the next day through New Year's Day
+function bgfxSeason(d=new Date()){const q=(location.search.match(/[?&]season=(\w+)/)||[])[1];if(q)return q;
+  const y=d.getFullYear(),m=d.getMonth()+1,day=d.getDate(),nov1=new Date(y,10,1).getDay(),thanks=1+((4-nov1+7)%7)+21;
+  if(m===12||(m===1&&day===1)||(m===11&&day>thanks))return 'christmas';
+  if((m===9&&day>=22)||m===10||(m===11&&day<=thanks))return 'fall';return 'plain'}
+function bgfxBuild(){let el=document.getElementById('bgfx');if(!el){el=document.createElement('div');el.id='bgfx';el.setAttribute('aria-hidden','true');document.body.prepend(el)}
+  const r=(a,b)=>a+Math.random()*(b-a),little=isLittle(),season=bgfxSeason(),n=(k,f)=>[...Array(k)].map(f).join('');
+  const cloud=(w,o)=>`<svg viewBox="0 0 200 90" width="${w}" style="opacity:${o}"><path d="M30 80 Q0 80 8 58 Q10 38 38 42 Q44 14 78 18 Q100 0 124 22 Q156 10 166 42 Q198 44 192 66 Q190 82 166 80 Z" fill="#fff"/></svg>`;
+  const fall=(ems,k)=>n(k,()=>`<span class="fall" style="left:${r(0,97)}%;font-size:${r(22,44)}px;animation-duration:${r(12,22)}s,${r(3,6)}s;animation-delay:-${r(0,22)}s,-${r(0,6)}s"><i>${ems[Math.floor(r(0,ems.length))]}</i></span>`);
+  const twinkle=(cls,ch,k,top)=>n(k,()=>`<b class="${cls}" style="left:${r(2,96)}%;top:${r(3,top)}%;font-size:${r(12,24)}px;animation-duration:${r(2.5,5)}s;animation-delay:-${r(0,5)}s">${ch}</b>`);
+  el.className='bgfx '+(little?'little ':'')+season;document.documentElement.classList.toggle('bgdark',season==='christmas'&&!little);
+  if(season==='fall'){
+    el.innerHTML=(little?'':n(3,(_,i)=>`<span class="cld" style="top:${[10,30,55][i]}%;animation-duration:${[90,120,100][i]}s;animation-delay:-${r(0,90)}s">${cloud([240,320,200][i],.55)}</span>`))
+      +fall(little?['🍁','🍂','🌸','🍁','🍂']:['🍁','🍂','🍁','🍂','🌰'],little?14:16)+(little?twinkle('spk','✦',8,90):'')}
+  else if(season==='christmas'){
+    el.innerHTML=n(little?34:40,()=>{const s=r(4,11);return `<i class="snow" style="left:${r(0,99)}%;width:${s}px;height:${s}px;animation-duration:${r(9,18)}s,${r(3,6)}s;animation-delay:-${r(0,18)}s,-${r(0,6)}s"></i>`})
+      +(little?n(6,()=>`<span class="fall flake" style="left:${r(0,95)}%;font-size:${r(22,36)}px;animation-duration:${r(14,24)}s,${r(3,6)}s;animation-delay:-${r(0,24)}s,-${r(0,6)}s"><i>❄</i></span>`)+twinkle('spk','✦',8,90)
+        :twinkle('twk','★',12,45))+'<span class="sleigh">🦌🦌🛷</span>'}
+  else if(little){el.innerHTML=n(12,()=>{const s=r(24,90);return `<i class="bub" style="left:${r(0,96)}%;width:${s}px;height:${s}px;animation-duration:${r(16,30)}s;animation-delay:-${r(0,30)}s"></i>`})+twinkle('spk','✦',10,92)+'<span class="bfly">🦋</span>'}
+  else{el.innerHTML=[[260,.9,12,70],[180,.75,30,95],[340,.85,52,120],[150,.7,70,80],[220,.8,84,105]].map(([w,o,t,d])=>`<span class="cld" style="top:${t}%;animation-duration:${d}s;animation-delay:-${r(0,d)}s">${cloud(w,o)}</span>`).join('')+twinkle('twk','★',9,55)+'<i class="shoot"></i>'}}
+function bgfxRoute(r){document.documentElement.classList.toggle('bgfx-on',BGFX_ON.includes(r))}
 // speak with the tablet's own voice when running as the installed app
 function webVoices(){try{return speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang))}catch(e){return[]}}
 const voiceMode=()=>K.voiceMode||(K.mode==='little'?(K.voiceOn===false?'off':'all'):'some');
@@ -4248,7 +4305,7 @@ function grownups(){
 /* ---------- navigation (plain #names so the back button works) ---------- */
 const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,times:playTimes,money:playMoney,bank:playBank,chat:playChat,spelling:playSpelling,ninjaread:playRead,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),ninja:gated('ninja',playNinja),tv:gated('tv',()=>{TV.stack=[];playTv()}),mix:playMix,adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
 function go(name){if(location.hash.slice(1)!==name)location.hash=name;else show()}
-function show(){if(window.__tvKill)window.__tvKill();document.documentElement.classList.remove('watching');loopToken++;let r=location.hash.slice(1);if(wdLocked()&&!WD_FREE.includes(r)){history.replaceState(null,'','#home');r='home'}resetArm=false;$('#timeChip').hidden=true;updateStars();$('#overlay').hidden=true;popQ.length=0;try{netStop();if(window.SQAndroid)SQAndroid.stop();else if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}
+function show(){if(window.__tvKill)window.__tvKill();document.documentElement.classList.remove('watching');loopToken++;let r=location.hash.slice(1);if(wdLocked()&&!WD_FREE.includes(r)){history.replaceState(null,'','#home');r='home'}bgfxRoute(r);resetArm=false;$('#timeChip').hidden=true;updateStars();$('#overlay').hidden=true;popQ.length=0;try{netStop();if(window.SQAndroid)SQAndroid.stop();else if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}
   view.scrollTop=0;(ROUTES[r]||home)()}
 window.addEventListener('hashchange',show);
 $('#homeBtn').onclick=()=>{sfx.tap();go('home')};
@@ -4261,7 +4318,6 @@ document.addEventListener('pointerup',goFull,{passive:true});
 applyMode();updateStars();show();
 })();
 </script>
-
 <script>
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}
 // Hands-off updates: the tablet keeps the app open for days, so look for a new version when it wakes up and every 30 minutes,
