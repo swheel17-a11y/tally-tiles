@@ -694,7 +694,10 @@ html.little .tvp b,html.little .tve b{font-size:20px}
 .chattype{display:flex;gap:10px}.chattype input{flex:1;min-width:0;font:inherit;font-size:22px;padding:10px 14px;border-radius:16px;border:2px solid var(--sky-2);user-select:text;-webkit-user-select:text}
 .chatsend{height:70px;font-size:24px;padding:0 30px;animation:mxpulse 1.2s ease-in-out infinite;box-shadow:0 6px 24px rgba(0,0,0,.25)}.chatsend[hidden]{display:none}
 .chatbar{position:fixed;left:0;right:0;bottom:18px;display:flex;justify-content:center;z-index:30;pointer-events:none}.chatbar .chatsend{pointer-events:auto;max-width:92vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.chatwrap{padding-bottom:100px}#view.typing{padding-bottom:60vh}
+.chatwrap{padding-bottom:100px}
+.chatoff .chatquick button,.chattype.off input,.chattype.off .pbtn{opacity:.4;filter:grayscale(1)}.chattype.off input{background:#e9edf3}
+.chatnote{text-align:center;font-size:20px;font-weight:700;background:#eef1f6;color:#5b6475;border-radius:16px;padding:10px;margin:0}
+.tile.tileoff{filter:grayscale(1);opacity:.55}#view.typing{padding-bottom:60vh}
 .chatwrap.little{gap:8px}.chatwrap.little .chatlog{max-height:18vh}.chatwrap.little .chatquick{grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px}
 .chatwrap.little .chatquick button{min-height:92px;padding:8px 6px}.chatwrap.little .chatquick span{font-size:40px}.chatwrap.little .prompt{margin:4px 0}
 .famnote div{display:flex;flex-direction:column;gap:8px}.famrep{display:flex;flex-wrap:wrap;gap:8px}
@@ -3925,7 +3928,7 @@ function pinPad(title,ok,cancel){let typed='',stage=K.pin?'enter':'new',first=''
   draw()}
 
 /* ---------- notices, countdown, lock ---------- */
-function famNotice(text,em,replies){if(!text)return;if(replies)chatInbox(text,em);const b=document.createElement('div');b.className='famnote';
+function famNotice(text,em,replies){if(!text)return;if(replies)chatInbox(text,em);if(chatMode()==='off')replies=null;const b=document.createElement('div');b.className='famnote';
   b.innerHTML=`<span>${em||'📣'}</span><div><b></b>${replies?`<div class="famrep">${replies.map((r,i)=>`<button data-r="${i}">${r[0]} ${r[1]}</button>`).join('')}</div>`:''}</div>`;b.querySelector('b').textContent=text;
   document.body.appendChild(b);tone([[880,0,.15],[1175,.15,.25]],'sine',0.09);speakNow(text,'must');
   const gone=()=>{b.classList.add('out');setTimeout(()=>b.remove(),800)};let t=setTimeout(gone,replies?20000:9000);
@@ -3964,7 +3967,7 @@ function famLock(text,auto){if(auto)famAlert(`🔒 ${kidName()}'s tablet locked`
 function famLockShow(){if(!K.locked||document.querySelector('.famlock'))return;
   const o=document.createElement('div');o.className='famlock';
   o.innerHTML=`<div class="famlockin"><div class="famlockem">🌙</div><h2>Time's up!</h2><p></p><p class="famsmall">Great playing today${K.name?', '+K.name:''}! Ask a grown-up if you need the tablet.</p>
-    <div class="famask"><button class="pbtn" id="famMore">🙏 Ask for 5 more minutes</button><button class="pbtn" id="famLove">❤️ Good night, I love you!</button></div><p class="famsmall" id="famAsked"></p>
+    <div class="famask" ${chatMode()==='off'?'hidden':''}><button class="pbtn" id="famMore">🙏 Ask for 5 more minutes</button><button class="pbtn" id="famLove">❤️ Good night, I love you!</button></div><p class="famsmall" id="famAsked"></p>
     <button class="grownup" id="famUn">Grown-ups: press and hold<i></i></button></div>`;
   o.querySelector('p').textContent=K.locked.text||'';document.body.appendChild(o);
   speakNow(`Time's up! ${K.locked.text||''} Great playing today!`,'must');
@@ -3987,6 +3990,7 @@ function famCmd(c){const age=c.at?Date.now()-c.at:0,stale=age>15*60*1000;log('fa
     case 'ntfy':K.ntfy=/^[A-Za-z0-9_-]{6,64}$/.test(c.topic||'')?c.topic:'';break;
     case 'words':wdSet(c);if(location.hash===''||location.hash==='#home')show();if(!stale&&K.words&&!c.edit)famNotice(`New spelling words! ${K.words.list.length} words. Test on ${wdDay(K.words.test)}.`,'📝');break;
     case 'wordsSkip':if(K.words){wdPlan();K.words.skip[dayKey(0)]=true;save();if(location.hash===''||location.hash==='#home')show()}break;
+    case 'chatMode':K.chatMode=['all','pics','off'].includes(c.mode)?c.mode:'all';if(location.hash==='#chat'||!location.hash||location.hash==='#home')show();break;
     case 'fart':if(!stale)famFart();break;
     case 'seen':(K.outbox||[]).forEach(m=>{if(m.t<=(c.upTo||0))m.seen=true});break;
     case 'unlock':famUnlock();if(!stale)famNotice('The tablet is unlocked!','🔓');break;
@@ -4016,7 +4020,7 @@ async function famStart(){if(!FB_CONFIG||FB.loading||FB.on||!/^https?:$/.test(lo
 function famPush(force){if(!FB.on)return;const now=Date.now();if(!force&&now-FB.lastPush<20000)return;FB.lastPush=now;
   const days={};Object.keys((K.st&&K.st.days)||{}).sort().slice(-14).forEach(k=>days[k]=K.st.days[k]);
   FB.db.collection('devices').doc(FB.uid).set({name:K.name||'',mode:K.mode||'',stars:K.stars||0,wallet:K.wallet||0,rate:sbRate(),playSec:K.playSec||0,
-    locked:!!K.locked,lockAt:K.lockAt||null,doing:famDoing(),days,movies:((K.st&&K.st.movies)||[]).slice(0,25),buys:(K.buys||[]).slice(0,20),wishes:K.wishes||[],msgs:(K.outbox||[]).slice(0,20),diag:LOGB.slice(-40).map(e=>new Date(e.t).toLocaleTimeString()+' '+e.e+(e.d?' '+e.d:'')).join('\n'),alerts:!!K.ntfy,battery:famBat,words:wdSummary(),alertTopic:K.ntfy||'',
+    locked:!!K.locked,lockAt:K.lockAt||null,doing:famDoing(),days,movies:((K.st&&K.st.movies)||[]).slice(0,25),buys:(K.buys||[]).slice(0,20),wishes:K.wishes||[],msgs:(K.outbox||[]).slice(0,20),diag:LOGB.slice(-40).map(e=>new Date(e.t).toLocaleTimeString()+' '+e.e+(e.d?' '+e.d:'')).join('\n'),alerts:!!K.ntfy,battery:famBat,chatMode:chatMode(),words:wdSummary(),alertTopic:K.ntfy||'',
     stickers:skTotal(),seen:firebase.firestore.FieldValue.serverTimestamp(),seenMs:now,ua:navigator.userAgent.slice(0,120)},{merge:false}).catch(e=>{FB.err=String(e&&e.message||e)})}
 setInterval(()=>{if(document.hidden)return;if(!FB.on)famStart();else famPush()},60000);
 window.addEventListener('hashchange',()=>setTimeout(()=>famPush(true),1500));
@@ -4034,7 +4038,8 @@ function famGrownupsWire(re){const p=$('#pinSet');if(p)p.onclick=()=>{const old=
    ========================================================= */
 const CHAT_QUICK=[['👍','OK!'],['🙏','Can I have 5 more minutes?'],['🍎',"I'm hungry"],['🥤',"I'm thirsty"],['🙋','Can you come here?'],['🆘','I need help'],
   ['🚽','I need to go potty'],['❤️','I love you!'],['😴',"I'm tired"],['🎉','I did it!'],['😢',"I'm sad"],['🤗','Can I have a hug?']];
-function chatSend(em,text){text=String(text||'').trim().slice(0,140);if(!text)return;K.outbox=K.outbox||[];
+const chatMode=()=>K.chatMode||'all';
+function chatSend(em,text){if(chatMode()==='off')return;text=String(text||'').trim().slice(0,140);if(!text)return;K.outbox=K.outbox||[];
   K.outbox.unshift({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),t:Date.now(),em:em||'💬',text,seen:false});K.outbox=K.outbox.slice(0,30);
   save();famPush(true);log('chat sent',text);famAlert(`${em||'💬'} ${kidName()}`,text,'speech_balloon');tone([[660,0,.08],[990,.08,.14]],'sine',0.07)}
 // phone alerts: the channel name comes from the parent page (never stored in the website code)
@@ -4044,13 +4049,15 @@ const kidName=()=>K.name||(K.mode==='little'?'Little one':'Big kid');
 function chatInbox(text,em){if(!text)return;K.inbox=K.inbox||[];K.inbox.unshift({t:Date.now(),em:em||'📣',text});K.inbox=K.inbox.slice(0,30);save()}
 function playChat(){
   if(location.hash!=='#chat')return;
-  const little=K.mode==='little';let pick=null;setHeader(little?'Talk to Mom & Dad':'Message Mom & Dad',FB.on?'They will see it on their phone':'Waiting for internet…');
+  const little=K.mode==='little',cm=chatMode();let pick=null;setHeader(little?'Talk to Mom & Dad':'Message Mom & Dad',FB.on?'They will see it on their phone':'Waiting for internet…');
   const thread=[...(K.outbox||[]).map(m=>({...m,me:1})),...(K.inbox||[])].sort((a,b)=>b.t-a.t).slice(0,little?3:8).reverse();
-  view.innerHTML=`<div class="chatwrap ${little?'little':''}">
+  view.innerHTML=`<div class="chatwrap ${little?'little':''} ${cm==='off'?'chatoff':''}">
+    ${cm==='off'?'<p class="chatnote">🔕 Mom and Dad turned messages off for now.</p>':''}
     ${thread.length?`<div class="chatlog">${thread.map(m=>`<div class="chatmsg ${m.me?'me':''}"><span>${m.em}</span><p></p><small>${m.me?(m.seen?'Seen ✓✓':FB.on?'Sent ✓':'Waiting to send'):'Mom & Dad'} · ${new Date(m.t).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}</small></div>`).join('')}</div>`:''}
-    ${little?'':`<div class="chattype"><input id="chatTx" maxlength="140" placeholder="Type your own message…" autocomplete="off"><button class="pbtn go" id="chatGo">Send</button></div>`}
+    ${little?'':cm==='all'?`<div class="chattype"><input id="chatTx" maxlength="140" placeholder="Type your own message…" autocomplete="off"><button class="pbtn go" id="chatGo">Send</button></div>`
+      :`<div class="chattype off"><input disabled placeholder="${cm==='off'?'Messages are off':'Typing is off. Use the picture buttons.'}"><button class="pbtn" disabled>Send</button></div>`}
     <p class="prompt">${little?'Tap one. Then tap Send!':'Or pick one'}</p>
-    <div class="chatquick">${CHAT_QUICK.map((q,i)=>`<button data-q="${i}" aria-label="${q[1]}"><span>${q[0]}</span><b>${q[1]}</b></button>`).join('')}</div>
+    <div class="chatquick">${CHAT_QUICK.map((q,i)=>`<button data-q="${i}" aria-label="${q[1]}" ${cm==='off'?'disabled':''}><span>${q[0]}</span><b>${q[1]}</b></button>`).join('')}</div>
     <div class="chatbar"><button class="pbtn go chatsend" id="chatSend" hidden>📨 Send</button></div></div>`;
   // fill text safely
   const ps=view.querySelectorAll('.chatmsg p');thread.forEach((m,i)=>ps[i].textContent=m.text);
@@ -4152,7 +4159,7 @@ function home(){
   const n=stickersEarned();
   if(K.mode==='little'){
     view.innerHTML=`<div class="tiles ltiles">${[...GAMES.filter(g=>g.little),...GAMES.filter(g=>g.both)].map(g=>`<button class="tile" data-g="${g.id}" data-say="${g.name}" style="background:${g.color}"><span class="em">${g.em}</span><span><b>${g.name}</b></span></button>`).join('')}
-      <button class="tile" data-g="chat" data-say="Talk to Mom and Dad" style="background:#2f9be0"><span class="em">💬</span><span><b>Talk to Mom & Dad</b></span></button>
+      <button class="tile ${chatMode()==='off'?'tileoff':''}" data-g="chat" data-say="Talk to Mom and Dad" style="background:#2f9be0"><span class="em">💬</span><span><b>Talk to Mom & Dad</b></span></button>
       <button class="tile" data-g="stickers" data-say="Sticker book" style="background:#7a3a6e"><span class="em">${skTotal()?skAt(skTotal()-1):'📒'}</span><span><b>Stickers</b><br><small>Page ${skNow().page+1}: ${skNow().have} of ${SK_N}</small></span></button></div>
       <div class="home-foot"><span></span><button class="grownup" id="grown">Grown-ups: press and hold<i></i></button></div>`;
     view.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{sfx.tap();speakNow(b.dataset.say);go(b.dataset.g)});
@@ -4164,7 +4171,7 @@ function home(){
     <p class="hello">Learn</p>
     <div class="tiles">${GAMES.filter(g=>!g.play&&!g.little).map(tile).join('')}
       ${K.words&&K.words.list&&K.words.list.length?`<button class="tile" data-g="spelling" style="background:#e0533a"><span class="em">📝</span><span><b>Spelling Words</b><br><small>${wdPlan().learned} of ${K.words.list.length} · Test ${wdDay(K.words.test)}</small></span></button>`:''}
-      <button class="tile" data-g="chat" style="background:#2f9be0"><span class="em">💬</span><span><b>Message Mom & Dad</b><br><small>Send a note to their phone</small></span></button>
+      <button class="tile ${chatMode()==='off'?'tileoff':''}" data-g="chat" style="background:#2f9be0"><span class="em">💬</span><span><b>Message Mom & Dad</b><br><small>${chatMode()==='off'?'Messages are off':'Send a note to their phone'}</small></span></button>
       <button class="tile" data-g="bank" style="background:#c7901a"><span class="em">🏦</span><span><b>Star Bank</b><br><small>⭐ ${K.wallet||0} = ${sbMoney(K.wallet||0)}</small></span></button>
       <button class="tile" data-g="stickers" style="background:#1d2b4f"><span class="em">${skTotal()?skAt(skTotal()-1):'📒'}</span><span><b>Sticker Book</b><br><small>Page ${skNow().page+1}: ${skNow().have} of ${SK_N}</small></span></button></div>
     <div class="home-foot"><p class="note">${gateOn()?`You have ⭐ ${K.wallet} to spend on Play games. Learn games earn more!`:`Every 10 stars earns a new sticker. ${10-K.stars%10} more to go!`}</p>
