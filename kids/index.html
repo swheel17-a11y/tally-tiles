@@ -740,6 +740,10 @@ html.little .tvp b,html.little .tve b{font-size:20px}
 @keyframes popin{from{transform:scale(.6);opacity:0}}
 .fly{position:fixed;z-index:60;font-size:34px;pointer-events:none;transition:transform .7s cubic-bezier(.5,-0.3,.6,1),opacity .7s}
 @media (max-width:560px){.tile{min-height:128px}.tile .em{font-size:44px}.choice{min-height:80px}.letter{width:58px;height:66px;font-size:34px}.slot{width:52px;height:62px;font-size:34px}}
+/* fart from Mom & Dad */
+.fartpuff{position:fixed;left:50%;top:50%;z-index:125;pointer-events:none;display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-50%);animation:fartup 2.6s ease-out forwards}
+.fartpuff span{font-size:min(36vw,220px);line-height:1}.fartpuff b{font-family:var(--f-display);font-size:clamp(28px,6vw,52px);color:#5a3a1a;background:#fff3b0;border-radius:18px;padding:4px 18px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+@keyframes fartup{0%{transform:translate(-50%,-30%) scale(.3);opacity:0}15%{transform:translate(-50%,-50%) scale(1.1);opacity:1}25%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{transform:translate(-50%,-90%) scale(1.15);opacity:0}}
 /* dark room for movies: no bright page around the video */
 html.watching,html.watching body{background:#000;color:#e8e8e8}
 html.watching .top h1,html.watching .top h1 small{color:#cfcfcf}
@@ -3927,6 +3931,19 @@ function famNotice(text,em,replies){if(!text)return;if(replies)chatInbox(text,em
   const gone=()=>{b.classList.add('out');setTimeout(()=>b.remove(),800)};let t=setTimeout(gone,replies?20000:9000);
   b.onclick=e=>{const r=e.target.closest('[data-r]');if(r){const q=replies[+r.dataset.r];chatSend(q[0],q[1]);b.querySelector('b').textContent='Sent: '+q[1];b.querySelector('.famrep').remove();clearTimeout(t);t=setTimeout(gone,2500);return}gone()}}
 const FAM_REPLY=[['👍','OK!'],['🙏','Can I have 5 more minutes?'],['❤️','I love you!']];
+// a fart from Mom & Dad: made with sound synthesis, different every time (plays even if game sounds are off)
+function famFart(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();
+  const t=ac.currentTime+0.05,dur=0.45+Math.random()*0.9,base=65+Math.random()*55;
+  const o=ac.createOscillator();o.type='sawtooth';o.frequency.setValueAtTime(base*1.35,t);o.frequency.exponentialRampToValueAtTime(base*0.65,t+dur);
+  const lfo=ac.createOscillator(),lg=ac.createGain();lfo.type='square';lfo.frequency.value=16+Math.random()*24;lg.gain.value=base*0.4;lfo.connect(lg);lg.connect(o.frequency);
+  const n=Math.floor(ac.sampleRate*(dur+0.1)),buf=ac.createBuffer(1,n,ac.sampleRate),d=buf.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;
+  const ns=ac.createBufferSource();ns.buffer=buf;const ng=ac.createGain();ng.gain.value=0.35;
+  const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=320+Math.random()*320;lp.Q.value=7;
+  const g=ac.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.7,t+0.03);
+  for(let k=1;k<7;k++)g.gain.linearRampToValueAtTime(0.25+Math.random()*0.45,t+dur*k/7);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(lp);ns.connect(ng);ng.connect(lp);lp.connect(g);g.connect(ac.destination);
+  [o,lfo,ns].forEach(x=>{x.start(t);x.stop(t+dur+0.1)})}catch(e){log('fart failed',String(e))}
+  const p=document.createElement('div');p.className='fartpuff';p.innerHTML='<span>💨</span><b>Pfffft! 😆</b>';document.body.appendChild(p);setTimeout(()=>p.remove(),2600)}
 let famCdIv=null;
 function famCountdown(){clearInterval(famCdIv);let c=document.querySelector('.famcd');
   if(!K.lockAt){c&&c.remove();return}
@@ -3963,6 +3980,7 @@ function famCmd(c){const age=c.at?Date.now()-c.at:0,stale=age>15*60*1000;log('fa
     case 'ntfy':K.ntfy=/^[A-Za-z0-9_-]{6,64}$/.test(c.topic||'')?c.topic:'';break;
     case 'words':wdSet(c);if(location.hash===''||location.hash==='#home')show();if(!stale&&K.words&&!c.edit)famNotice(`New spelling words! ${K.words.list.length} words. Test on ${wdDay(K.words.test)}.`,'📝');break;
     case 'wordsSkip':if(K.words){wdPlan();K.words.skip[dayKey(0)]=true;save();if(location.hash===''||location.hash==='#home')show()}break;
+    case 'fart':if(!stale)famFart();break;
     case 'seen':(K.outbox||[]).forEach(m=>{if(m.t<=(c.upTo||0))m.seen=true});break;
     case 'unlock':famUnlock();if(!stale)famNotice('The tablet is unlocked!','🔓');break;
     case 'stars':{const n=Math.max(0,Math.min(1000,c.n|0));if(!n)break;const pops=awardBig(n);

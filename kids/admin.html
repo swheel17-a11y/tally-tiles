@@ -160,9 +160,9 @@ function kidTile(id,d){const online=d.seenMs&&Date.now()-d.seenMs<150000,today=(
     <span class="pill ${online?'on':''}">${online?'● Online':'Seen '+(d.seenMs?ago(d.seenMs):'never')}</span>
     <span class="kline">${esc(online?d.doing||'':'')}</span>
     <span class="kstats">${d.locked?'<i class="lock">🔒 Locked</i>':''}${lockIn?`<i class="cd">⏳ ${lockIn} min</i>`:''}${unread?`<i class="new">💬 ${unread} new</i>`:''}${W&&W.locked?`<i>📝 ${W.need} left</i>`:W&&W.doneToday?'<i>📝 Done ✓</i>':''}<i>🎮 ${mins(gTot)}</i>${today.tv?`<i>🍿 ${mins(today.tv)}</i>`:''}<i>⭐ ${d.wallet||0}</i></span></button>
-    <div class="kmsg"><input class="tx" id="qm-${esc(id)}" placeholder="Message ${esc(name(d))}…" enterkeyhint="send"><button class="btn go" data-qm="${esc(id)}">Send</button></div></div>`}
+    <div class="kmsg"><input class="tx" id="qm-${esc(id)}" placeholder="Message ${esc(name(d))}…" enterkeyhint="send"><button class="btn go" data-qm="${esc(id)}">Send</button><button class="btn" data-fart="${esc(id)}" aria-label="Send a fart">💨</button></div></div>`}
 function allCard(){return `<div class="card all"><h2>📣 All tablets</h2><div class="rowc"><input class="tx" id="allMsg" placeholder="Message to everyone"><button class="btn" data-all="notice">Send</button></div>
-  <div class="rowc"><button class="btn" data-all="countdown" data-m="5">⏳ 5 min, then lock</button><button class="btn" data-all="lock">🔒 Lock now</button><button class="btn" data-all="unlock">🔓 Unlock</button></div></div>`}
+  <div class="rowc"><button class="btn" data-all="countdown" data-m="5">⏳ 5 min, then lock</button><button class="btn" data-all="lock">🔒 Lock now</button><button class="btn" data-all="unlock">🔓 Unlock</button><button class="btn" data-all="fart">💨 Fart</button></div></div>`}
 function devCard(id,d){const online=d.seenMs&&Date.now()-d.seenMs<150000,today=(d.days||{})[dk(0)]||{g:{},tv:0},o=open[id];
   const gTot=Object.values(today.g||{}).reduce((a,b)=>a+b,0),games=Object.entries(today.g||{}).sort((a,b)=>b[1]-a[1]),maxG=games.length?games[0][1]:1;
   const week=[6,5,4,3,2,1,0].map(i=>{const x=(d.days||{})[dk(i)]||{g:{},tv:0};return{lbl:'SMTWTFS'[new Date(Date.now()-i*864e5).getDay()],g:Object.values(x.g||{}).reduce((a,b)=>a+b,0),tv:x.tv||0}});
@@ -182,7 +182,7 @@ function devCard(id,d){const online=d.seenMs&&Date.now()-d.seenMs<150000,today=(
     ${(d.buys||[]).length||(d.wishes||[]).length?`<h3>Star Bank</h3><div class="list">${(d.wishes||[]).map(w=>`<div><b>🎯 ${esc(w.name)}</b><span>${money(w.cents)} = ⭐ ${Math.round(w.cents*rate/100)}</span></div>`).join('')}${(d.buys||[]).slice(0,o?20:4).map(b=>`<div><b>🛍️ ${esc(b.what)}</b><span>⭐ ${b.stars} · ${new Date(b.t).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span></div>`).join('')}</div>`:''}
     <button class="btn" data-more>${o?'Show less':'Show more'}</button>
     <div class="ctl">
-      <div class="lbl">Send a message (they can tap a reply)</div><div class="rowc"><input class="tx" id="msg-${id}" placeholder="Like: Dinner in 10 minutes!"><button class="btn go" data-c="notice">Send</button></div>
+      <div class="lbl">Send a message (they can tap a reply)</div><div class="rowc"><input class="tx" id="msg-${id}" placeholder="Like: Dinner in 10 minutes!"><button class="btn go" data-c="notice">Send</button><button class="btn" data-fart="${id}" aria-label="Send a fart">💨</button></div>
       <div class="lbl">Time's up (warns, counts down, then locks)</div>
       <div class="rowc">${[1,5,10,15].map(m=>`<button class="btn" data-c="countdown" data-m="${m}">${m} min</button>`).join('')}${lockIn?'<button class="btn" data-c="cancel">Cancel timer</button>':''}</div>
       <div class="rowc"><button class="btn warn" data-c="lock">🔒 Lock now</button><button class="btn good" data-c="unlock">🔓 Unlock</button></div>
@@ -223,6 +223,7 @@ function wire(){
         if(n>(d.wallet||0)&&!confirm(`${nm} only has ⭐ ${d.wallet||0}. Take ⭐ ${n} anyway? (It stops at 0.)`))return;
         if(confirm(`Take ⭐ ${n} (${money(c)}) for "${what}"?`)){send(id,{type:'spend',n,what},`⭐ ${n} for ${what}`);$('#what-'+id).value='';$('#cost-'+id).value=''}}})});
   main.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{location.hash='k='+encodeURIComponent(b.dataset.k)});
+  main.querySelectorAll('[data-fart]').forEach(b=>b.onclick=()=>send(b.dataset.fart,{type:'fart'},`💨 to ${name(devs[b.dataset.fart])}`));
   main.querySelectorAll('[data-qm]').forEach(b=>{const id=b.dataset.qm,i=document.getElementById('qm-'+id),go=()=>{const v=i.value.trim();if(!v)return toast('Type a message first');send(id,{type:'notice',text:v},`message to ${name(devs[id])}`);i.value=''};b.onclick=go;i.onkeydown=e=>{if(e.key==='Enter')go()}});
   const ba=$('#backAll');if(ba)ba.onclick=()=>{history.length>1&&/^#k=/.test(location.hash)?history.back():(location.hash='')};if(!$('#ntfyOn'))return;
   const nt=()=>($('#ntfyTopic').value||'').trim(),okT=t=>/^[A-Za-z0-9_-]{6,64}$/.test(t);
@@ -234,6 +235,7 @@ function wire(){
     if(t==='notice'){const v=$('#allMsg').value.trim();if(!v)return toast('Type a message first');ids.forEach(id=>send(id,{type:'notice',text:v},'message to all'));$('#allMsg').value=''}
     else if(t==='countdown')ids.forEach(id=>send(id,{type:'countdown',mins:5,text:'5 minutes left!'},'5-minute warning to all'));
     else if(t==='lock'){if(confirm('Lock all tablets now?'))ids.forEach(id=>send(id,{type:'lock',text:''},'lock all'))}
+    else if(t==='fart')ids.forEach(id=>send(id,{type:'fart'},'💨 to everyone'));
     else ids.forEach(id=>send(id,{type:'unlock'},'unlock all'))})}
 setInterval(()=>{if(auth.currentUser&&!auth.currentUser.isAnonymous&&!document.querySelector('.tx:focus'))render()},30000);
 })();
