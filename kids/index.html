@@ -3950,7 +3950,7 @@ function famCmd(c){const age=c.at?Date.now()-c.at:0,stale=age>15*60*1000;log('fa
     case 'extend':{const m=Math.max(1,Math.min(60,c.mins||5));if(K.locked){famUnlock();K.lockAt=Date.now()+m*60000}else if(K.lockAt)K.lockAt+=m*60000;else break;K.lockText='';save();famCountdown();
       if(!stale)famNotice(`Yay! ${m} more minutes!`,'🎉');chatInbox(`Yes! ${m} more minutes.`,'🎉');break}
     case 'ntfy':K.ntfy=/^[A-Za-z0-9_-]{6,64}$/.test(c.topic||'')?c.topic:'';break;
-    case 'words':wdSet(c);if(location.hash===''||location.hash==='#home')show();if(!stale&&K.words)famNotice(`New spelling words! ${K.words.list.length} words. Test on ${wdDay(K.words.test)}.`,'📝');break;
+    case 'words':wdSet(c);if(location.hash===''||location.hash==='#home')show();if(!stale&&K.words&&!c.edit)famNotice(`New spelling words! ${K.words.list.length} words. Test on ${wdDay(K.words.test)}.`,'📝');break;
     case 'wordsSkip':if(K.words){wdPlan();K.words.skip[dayKey(0)]=true;save();if(location.hash===''||location.hash==='#home')show()}break;
     case 'seen':(K.outbox||[]).forEach(m=>{if(m.t<=(c.upTo||0))m.seen=true});break;
     case 'unlock':famUnlock();if(!stale)famNotice('The tablet is unlocked!','🔓');break;
@@ -4044,7 +4044,7 @@ function wdLocked(){if(K.mode!=='big')return false;const P=wdPlan();return !!(P&
 const WD_FREE=['','home','spelling','chat','grownups'];
 function wdSummary(){const P=wdPlan();if(!P)return null;const W=P.W;
   return{n:W.list.length,test:W.test,start:W.start,learned:P.learned,need:P.need.length,locked:wdLocked(),doneToday:!!W.done[P.today],skipped:!!W.skip[P.today],
-    tricky:Object.entries(W.miss).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([w,c])=>w+' ('+c+')'),list:W.list.map(x=>x.w)}}
+    tricky:Object.entries(W.miss).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([w,c])=>w+' ('+c+')'),items:W.list.map(x=>({w:x.w,s:x.s||'',ok:!!W.got[x.w],m:W.miss[x.w]||0}))}}
 // gate screen on Noah's home
 function wdHome(){const P=wdPlan(),W=P.W;setHeader('Star Quest','Spelling words first!');
   view.innerHTML=`<div class="wdgate"><div class="wdcard"><div class="wdem">📝</div><h2>Spelling words first!</h2>
@@ -4098,6 +4098,9 @@ function playSpelling(){
 function wdSet(c){const list=(c.list||[]).map(x=>({w:String(x.w||'').toLowerCase().replace(/[^a-z']/g,'').slice(0,20),s:String(x.s||'').slice(0,160)})).filter(x=>x.w);
   if(!list.length){K.words=null;save();return}
   const today=dayKey(0),start=c.start&&c.start>today?c.start:today;
+  // an edit of this week's list keeps his progress on the words that stayed
+  if(c.edit&&K.words&&K.words.list){const O=K.words,keep=o=>Object.fromEntries(Object.entries(o||{}).filter(([w])=>list.some(x=>x.w===w)));
+    K.words={id:O.id,list,start:O.start,test:c.test&&c.test>O.start?c.test:O.test,got:keep(O.got),fin:keep(O.fin),miss:keep(O.miss),skip:O.skip||{},done:O.done||{}};save();return}
   K.words={id:c.id||Date.now(),list,start,test:c.test&&c.test>start?c.test:wdAdd(start,3),got:{},fin:{},miss:{},skip:{},done:{}};save()}
 
 /* =========================================================

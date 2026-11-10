@@ -53,6 +53,7 @@ details summary{cursor:pointer;font-weight:700;color:var(--muted);font-size:14px
 .msg{display:flex;gap:10px;align-items:flex-start;background:var(--bg);border-radius:14px;padding:10px}.msg.new{background:#fff3b0;color:#1d2b4f}
 .msg .me{font-size:26px;line-height:1}.msg b{display:block;font-size:16px}.msg small{color:var(--muted);font-size:12px}.msg.new small{color:#6b5a1a}
 .msg .rowc{margin-top:8px}
+.wchips{display:flex;flex-wrap:wrap;gap:6px}.wchips span{background:var(--bg);border-radius:10px;padding:5px 9px;font-size:14px}.wchips span.ok{background:#d9f5e3;color:#1f7a45}.wchips b{color:#d9435b}
 </style>
 </head>
 <body>
@@ -108,23 +109,27 @@ function msgBox(id,d){const ms=(d.msgs||[]).slice(0,open[id]?12:4);if(!ms.length
 const visible=()=>Object.entries(devs).filter(([id])=>!hidden[id]).sort((a,b)=>(b[1].seenMs||0)-(a[1].seenMs||0));
 function render(){const list=visible();
   if(!list.length){main.innerHTML='<div class="card"><h2>No tablets yet</h2><p class="empty">Open Star Quest on each tablet (with internet on). They show up here within a minute.</p></div>';return}
-  const keep=document.activeElement&&document.activeElement.id;const vals={};main.querySelectorAll('.tx').forEach(i=>vals[i.id]=i.value);
+  const keep=document.activeElement&&document.activeElement.id;const vals={},opened=[...main.querySelectorAll('details[id]')].map(d=>[d.id,d.open]);main.querySelectorAll('.tx').forEach(i=>vals[i.id]=i.value);
   main.innerHTML=(list.length>1?allCard():'')+list.map(([id,d])=>devCard(id,d)).join('')+alertCard(list)+(Object.keys(hidden).length?`<button class="btn" id="unhide">Show hidden tablets (${Object.keys(hidden).length})</button>`:'');
-  Object.entries(vals).forEach(([k,v])=>{const i=document.getElementById(k);if(i)i.value=v});if(keep&&document.getElementById(keep))document.getElementById(keep).focus();
+  Object.entries(vals).forEach(([k,v])=>{const i=document.getElementById(k);if(i)i.value=v});opened.forEach(([k,o])=>{const e=document.getElementById(k);if(e)e.open=o});if(keep&&document.getElementById(keep))document.getElementById(keep).focus();
   wire()}
 const nextThu=()=>{const d=new Date();d.setDate(d.getDate()+((4-d.getDay()+7)%7||7));return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const wday=k=>{const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})};
 function parseWords(t){let lines=t.split(/\n/).map(x=>x.trim()).filter(Boolean);if(lines.length===1&&!/ [-–:|] /.test(lines[0])&&/,/.test(lines[0]))lines=lines[0].split(',').map(x=>x.trim()).filter(Boolean);
   return lines.map(l=>{const m=l.match(/^([A-Za-z']+)\s*(?:[-–:|]\s*(.*))?$/);return m?{w:m[1].toLowerCase(),s:(m[2]||'').trim()}:null}).filter(Boolean)}
-function wordsBox(id,d){if(d.mode==='little')return '';const W=d.words;
+const wNew={};
+function wordsBox(id,d){if(d.mode==='little')return '';const W=d.words,items=W?(W.items||(W.list||[]).map(w=>({w}))):[];
+  const asText=items.map(x=>x.s?`${x.w} - ${x.s}`:x.w).join('\n');
   return `<h3>📝 Spelling words</h3>${W?`<div class="list"><div><b>${W.learned} of ${W.n} learned</b><span>Test ${wday(W.test)}</span></div>
-      <div><b>Today</b><span>${W.doneToday?'Done ✓':W.skipped?'Skipped':W.locked?`${W.need} left · app locked`:'No words due'}</span></div>
-      ${W.tricky&&W.tricky.length?`<div><b>Tricky</b><span style="white-space:normal;text-align:right">${esc(W.tricky.join(', '))}</span></div>`:''}</div>`:'<p class="empty">No list yet.</p>'}
-    <details ${W?'':'open'}><summary>${W?'New list / change':'Add this week\'s list'}</summary>
+      <div><b>Today</b><span>${W.doneToday?'Done ✓':W.skipped?'Skipped':W.locked?`${W.need} left · app locked`:'No words due'}</span></div></div>
+      <div class="wchips">${items.map(x=>`<span class="${x.ok?'ok':''}">${x.ok?'✓ ':''}${esc(x.w)}${x.m?` <b>×${x.m}</b>`:''}</span>`).join('')}</div>
+      <p class="empty" style="margin:0;font-size:12px">✓ = spelled right from memory · ×2 = missed twice</p>`:'<p class="empty">No list yet.</p>'}
+    <details id="wd-${id}" ${W?'':'open'}><summary>${W?'Edit words / sentences':'Add this week\'s list'}</summary>
       <p class="empty" style="margin:8px 0">One word per line. Add a sentence after a dash if you want: <i>friend - My friend came over to play.</i></p>
-      <textarea class="tx" id="wl-${id}" rows="8" placeholder="because - I smiled because it was sunny.&#10;friend&#10;school" style="width:100%;font-family:inherit"></textarea>
-      <div class="rowc"><span class="lbl">Test day</span><input class="tx" type="date" id="wt-${id}" value="${nextThu()}" style="max-width:180px"></div>
-      <div class="rowc"><button class="btn" data-fill>✨ Fill in sentences</button><button class="btn go" data-wsend>Send to tablet</button></div></details>
+      <textarea class="tx" id="wl-${id}" rows="${Math.min(14,Math.max(6,items.length+1))}" placeholder="because - I smiled because it was sunny.&#10;friend&#10;school" style="width:100%;font-family:inherit">${esc(asText)}</textarea>
+      <div class="rowc"><span class="lbl">Test day</span><input class="tx" type="date" id="wt-${id}" value="${W&&W.test&&W.test>dk(0)?W.test:nextThu()}" style="max-width:180px"></div>
+      <div class="rowc"><button class="btn" data-fill>✨ Fill in sentences</button>${W?'<button class="btn go" data-wsave>Save changes</button>':'<button class="btn go" data-wsend>Send to tablet</button>'}</div>
+      ${W?`<div class="rowc"><button class="btn" data-wnew>${wNew[id]?'📅 Send new week\'s list':'📅 Start a new week (new list, resets progress)'}</button></div>`:''}</details>
     ${W?`<div class="rowc"><button class="btn" data-wskip>Skip today</button><button class="btn warn" data-wclear>Clear list</button></div>`:''}`}
 async function fillSentences(ta){const items=parseWords(ta.value);if(!items.length)return toast('Type the words first');let n=0;toast('Looking up sentences…');
   for(const it of items){if(it.s)continue;try{const r=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(it.w));if(!r.ok)continue;const j=await r.json();
@@ -171,7 +176,13 @@ function wire(){
   main.querySelectorAll('[data-id]').forEach(card=>{const id=card.dataset.id,d=devs[id],nm=name(d),rate=d.rate||25;
     const fb=card.querySelector('[data-fill]');if(fb)fb.onclick=()=>fillSentences($('#wl-'+id));
     const ws=card.querySelector('[data-wsend]');if(ws)ws.onclick=()=>{const list=parseWords($('#wl-'+id).value),test=$('#wt-'+id).value;if(!list.length)return toast('Type the words first');
-      if(confirm(`Send ${list.length} words to ${nm}? Test on ${wday(test)}.`)){send(id,{type:'words',list,test,id:Date.now()},`${list.length} spelling words to ${nm}`);$('#wl-'+id).value=''}};
+      if(confirm(`Send ${list.length} words to ${nm}? Test on ${wday(test)}.`))send(id,{type:'words',list,test,id:Date.now()},`${list.length} spelling words to ${nm}`)};
+    const wsv=card.querySelector('[data-wsave]');if(wsv)wsv.onclick=()=>{const list=parseWords($('#wl-'+id).value),test=$('#wt-'+id).value;if(!list.length)return toast('The list is empty. Use Clear list to remove it.');
+      send(id,{type:'words',list,test,edit:true},`changes to ${nm}'s words`)};
+    const wn=card.querySelector('[data-wnew]');if(wn)wn.onclick=()=>{const ta=$('#wl-'+id);
+      if(!wNew[id]){ta.value='';wNew[id]=1;ta.focus();toast('Type the new list, then tap the button again');wn.textContent='📅 Send new week\'s list';return}
+      const list=parseWords(ta.value),test=$('#wt-'+id).value;if(!list.length)return toast('Type the new words first');
+      if(confirm(`Start a new week with ${list.length} words? Test on ${wday(test)}. This resets ${nm}'s progress.`)){send(id,{type:'words',list,test,id:Date.now()},`new week: ${list.length} words`);wNew[id]=0}};
     const wk=card.querySelector('[data-wskip]');if(wk)wk.onclick=()=>{if(confirm(`Let ${nm} skip today's spelling?`))send(id,{type:'wordsSkip'},`skip today for ${nm}`)};
     const wc=card.querySelector('[data-wclear]');if(wc)wc.onclick=()=>{if(confirm('Clear the spelling list? This unlocks the app.'))send(id,{type:'words',list:[]},'clear list')};
     card.querySelectorAll('[data-quick]').forEach(b=>b.onclick=()=>send(id,{type:'notice',text:b.dataset.quick},`reply to ${nm}`));
