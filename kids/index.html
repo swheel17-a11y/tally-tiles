@@ -1636,7 +1636,16 @@ function applyMode(){document.documentElement.classList.toggle('little',isLittle
 function webVoices(){try{return speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang))}catch(e){return[]}}
 const voiceOn=()=>K.voiceOn!==undefined?K.voiceOn:K.mode==='little';
 // force: a speaker button the child tapped on purpose still talks when the voice is off
-function speakNow(t,force){if(!force&&!voiceOn())return;try{if(window.SQAndroid){SQAndroid.speak(t);return}if('speechSynthesis' in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.rate=K.vrate||0.95;u.pitch=K.vpitch||1;const v=webVoices().find(x=>x.name===K.voiceName);if(v)u.voice=v;speechSynthesis.speak(u)}}catch(e){}}
+// Android browsers (like Silk) can drop a sentence started right after cancel(), lose an utterance that gets garbage-collected,
+// or leave the speech engine paused. So: keep a reference, wait a moment after cancel, nudge resume(), and log errors.
+let sqUtt=null,sqSpeakT=null;
+function speakNow(t,force){if(!force&&!voiceOn())return;try{if(window.SQAndroid){SQAndroid.speak(t);return}
+  if(!('speechSynthesis' in window)){log('speech: not supported');return}const S=speechSynthesis;clearTimeout(sqSpeakT);
+  const go=()=>{if(!t)return;const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=K.vrate||0.95;u.pitch=K.vpitch||1;
+    const vs=webVoices(),v=vs.find(x=>x.name===K.voiceName)||vs.find(x=>x.localService&&/en.US/i.test(x.lang))||vs.find(x=>x.localService)||vs[0];if(v)u.voice=v;
+    u.onerror=e=>{if(e.error!=='interrupted'&&e.error!=='canceled')log('speech error',{err:e.error,voices:vs.length})};sqUtt=u;S.speak(u);try{S.resume()}catch(e){}};
+  if(S.speaking||S.pending){S.cancel();sqSpeakT=setTimeout(go,150)}else go()}catch(e){log('speech fail',String(e))}}
+try{if('speechSynthesis' in window){const lv=()=>log('speech voices',webVoices().length);speechSynthesis.onvoiceschanged=lv;setTimeout(lv,3000)}}catch(e){}
 
 /* ---------- BUTTERFLY GARDEN: catch and count ---------- */
 const BF_COL=[['#ff7eb6','#ffb3d6'],['#c48bff','#e3c9ff'],['#ffd75e','#ffe9a3'],['#7cc4ff','#bfe3ff'],['#ff9f6b','#ffd0b3']];
