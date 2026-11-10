@@ -338,17 +338,6 @@ button:disabled{opacity:.35;cursor:default}
 .bonk b{font-size:15px}
 .minebtns .btn{padding:6px 10px;font-size:13px}
 
-/* fish tanks */
-.ftsea{--slot:calc(min(50px,(min(488px,100vw - 32px) - (var(--per) - 1)*8px)/var(--per) - 8px));display:grid;grid-template-columns:repeat(var(--per),minmax(0,1fr));gap:14px 8px;align-content:center;justify-items:center;padding:10px 0}
-.fttank{width:100%;max-width:70px;display:flex;flex-direction:column-reverse;align-items:center;gap:2px;padding:8px 2px 8px;border-radius:6px 6px 20px 20px;background:linear-gradient(180deg,rgba(150,205,245,.18),rgba(40,130,210,.35));border:2px solid #8fc3e8;border-top:4px solid #b9dcf3;min-height:calc(var(--slot)*4 + 26px);transition:transform .15s,box-shadow .15s}
-.ftslot{width:100%;height:var(--slot);display:grid;place-items:center;font-size:calc(var(--slot)*.82);line-height:1;transition:transform .15s}
-.ftslot.lift{transform:translateY(-16px)}
-.fttank.sel{border-color:var(--brass);box-shadow:0 0 0 3px var(--brass)}
-.fttank.full{background:linear-gradient(180deg,rgba(120,220,160,.2),rgba(40,170,100,.35));border-color:#3fbf7f}
-.fttank.hinted{box-shadow:0 0 0 4px #3fbf7f;animation:fthint 1s ease-in-out infinite}@keyframes fthint{50%{transform:scale(1.05)}}
-.fttank.nope{animation:ftnope .3s}@keyframes ftnope{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-.fttank.splash{animation:ftsplash .35s}@keyframes ftsplash{40%{transform:scale(1.06,.96)}}
-.fttank.win{animation:suwin .6s ease both}
 /* sudoku */
 .sugrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));aspect-ratio:1/1;width:100%;max-width:min(100%,calc(100dvh - 380px));min-width:260px;align-self:center;border:3px solid #0b1022;border-radius:10px;overflow:hidden;background:#0b1022;gap:3px}
 .subox{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:1px;background:#8a95b0;min-width:0;min-height:0}
@@ -454,7 +443,6 @@ td.h{padding-top:14px;font-size:11px;letter-spacing:.12em;text-transform:upperca
     <button role="tab" id="tab-solitaire" aria-selected="false" data-mode="solitaire">Solitaire</button>
     <button role="tab" id="tab-cats" aria-selected="false" data-mode="cats">Cats</button>
     <button role="tab" id="tab-sudoku" aria-selected="false" data-mode="sudoku">Sudoku</button>
-    <button role="tab" id="tab-fish" aria-selected="false" data-mode="fish">Fish</button>
   </div>
   <div class="stage" id="stage"></div>
   <div class="controls" id="controls"></div>
@@ -490,7 +478,7 @@ const addPts=p=>{S.dayPts+=p;save();};
 /* ---------- clocks: one per tab, paused while you're on another tab ---------- */
 const R=26,C=2*Math.PI*R,LIMIT=30;
 const mkClock=()=>({elapsed:0,since:null,running:false,timed:false,onEnd:null});
-const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock(),sand:mkClock(),yard:mkClock(),cats:mkClock(),offcut:mkClock(),trade:mkClock(),mine:mkClock(),sudoku:mkClock(),fish:mkClock()};
+const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock(),sand:mkClock(),yard:mkClock(),cats:mkClock(),offcut:mkClock(),trade:mkClock(),mine:mkClock(),sudoku:mkClock()};
 const el=c=>c.elapsed+(c.since?(performance.now()-c.since)/1000:0);
 let looping=false;
 function clockHTML(){return `<div class="clock" id="clock"><svg viewBox="0 0 64 64"><circle class="track" cx="32" cy="32" r="${R}" fill="none" stroke-width="6"/><circle class="arc" id="arc" cx="32" cy="32" r="${R}" fill="none" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg><div class="t" id="clockT"></div></div>`}
@@ -2311,72 +2299,8 @@ function suMenu(){const today=ctDayKey();
   controls.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>suNew(b.dataset.lv,false));
   $('#suDaily').onclick=()=>suNew('hard',true);$('#suErr').onclick=()=>{SU.showErr=!SU.showErr;suSave();suDraw();suMenu()};$('#suBack').onclick=()=>suDraw()}
 
-/* ---------- FISH TANKS: sort the sea creatures so each tank holds one kind ----------
-   Tap a tank, then another: the top fish swim over if that tank is empty or its top fish is the same kind.
-   Every level is checked by a solver before you get it; 💡 asks the solver for a good next move. */
-const FT_KEY='tally-tiles-fish-v1',FT_CAP=4;
-const FT_KINDS=['🐟','🐠','🐡','🦈','🐙','🦀','🐬','🐳','🦑','🦐','🐢','🪼'];
-let FT=null,ftSel=-1,ftMsg='';
-function ftLoad(){try{FT=JSON.parse(localStorage.getItem(FT_KEY)||'null')}catch(e){FT=null}FT=Object.assign({lv:1,best:0,solved:0,p:null},FT||{})}
-function ftSave(){try{localStorage.setItem(FT_KEY,JSON.stringify(FT))}catch(e){}}
-const ftDone=t=>t.every(x=>!x.length||(x.length===FT_CAP&&x.every(f=>f===x[0])));
-const ftTopRun=x=>{if(!x.length)return 0;let n=1;while(n<x.length&&x[x.length-1-n]===x[x.length-1])n++;return n};
-function ftCanMove(t,a,b){const A=t[a],B=t[b];if(a===b||!A.length||B.length>=FT_CAP)return 0;const f=A[A.length-1];if(B.length&&B[B.length-1]!==f)return 0;return Math.min(ftTopRun(A),FT_CAP-B.length)}
-function ftApply(t,a,b){const n=ftCanMove(t,a,b);if(!n)return null;const u=t.map(x=>x.slice());for(let i=0;i<n;i++)u[b].push(u[a].pop());return u}
-// depth-first search with memory of seen layouts; returns the move list or null
-function ftSolve(t0,limit=150000){const seen=new Set(),path=[];let nodes=0;const key=t=>t.map(x=>x.join('')).sort().join('|');
-  const go=t=>{if(ftDone(t))return true;if(++nodes>limit)return false;const k=key(t);if(seen.has(k))return false;seen.add(k);
-    const moves=[];for(let a=0;a<t.length;a++){const A=t[a];if(!A.length)continue;const full=A.length===FT_CAP&&A.every(f=>f===A[0]);if(full)continue;
-      let triedEmpty=false;for(let b=0;b<t.length;b++){const n=ftCanMove(t,a,b);if(!n)continue;const B=t[b];
-        if(!B.length){if(triedEmpty||ftTopRun(A)===A.length)continue;triedEmpty=true}
-        moves.push([a,b,(B.length?2:0)+(n===ftTopRun(A)?1:0)])}}
-    moves.sort((x,y)=>y[2]-x[2]);
-    for(const [a,b] of moves){path.push([a,b]);if(go(ftApply(t,a,b)))return true;path.pop()}return false};
-  return go(t0)?path.slice():null}
-function ftLevelSize(lv){const kinds=Math.min(FT_KINDS.length,3+Math.floor((lv-1)/3));return{kinds,empty:kinds>=9?2:2}}
-function ftGenerate(lv){const {kinds,empty}=ftLevelSize(lv);
-  for(let tries=0;tries<60;tries++){const R=ctRng(lv*7919+tries*104729+13),fish=[];for(let k=0;k<kinds;k++)for(let i=0;i<FT_CAP;i++)fish.push(k);
-    for(let i=fish.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[fish[i],fish[j]]=[fish[j],fish[i]]}
-    const t=[];for(let k=0;k<kinds;k++)t.push(fish.slice(k*FT_CAP,(k+1)*FT_CAP));for(let e=0;e<empty;e++)t.push([]);
-    if(t.some(x=>x.length===FT_CAP&&x.every(f=>f===x[0])))continue;   // no tank already finished
-    if(ftSolve(t))return t}
-  return null}
-function ftNew(lv){const t=ftGenerate(lv)||ftGenerate(lv+1000);FT.lv=lv;FT.p={lv,start:t.map(x=>x.slice()),t,undo:[],moves:0,extra:false,hints:0,done:false};ftSel=-1;ftMsg='';ftSave();renderFish()}
-function ftMove(a,b){const P=FT.p,u=ftApply(P.t,a,b);if(!u)return false;P.undo.push(P.t);if(P.undo.length>200)P.undo.shift();P.t=u;P.moves++;
-  if(ftDone(P.t)){P.done=true;FT.solved++;FT.best=Math.max(FT.best,P.lv);addPts(Math.max(1,Math.min(12,2+Math.floor(P.lv/3))-Math.min(3,P.hints)));try{navigator.vibrate&&navigator.vibrate([20,40,20])}catch(e){}}
-  ftSave();return true}
-function renderFish(){if(!FT)ftLoad();if(!FT.p)return ftNew(FT.lv);const P=FT.p,n=P.t.length,perRow=n<=6?n:Math.ceil(n/2),rows=Math.ceil(n/perRow);
-  stage.innerHTML=`<div class="headline mhead"><div class="mstat"><div class="eyebrow">Level</div><div class="mnum">${P.lv}</div></div>
-      <div class="mstat"><div class="eyebrow">Moves</div><div class="mnum dim">${P.moves}</div></div>
-      <div class="mstat"><div class="eyebrow">Best</div><div class="mnum dim">${FT.best||'–'}</div></div></div>
-    <div class="ftsea" style="--per:${perRow};--rows:${rows}">${P.t.map((x,i)=>{const run=i===ftSel?ftTopRun(x):0;
-      return `<button class="fttank ${i===ftSel?'sel':''} ${P.done?'win':''} ${x.length===FT_CAP&&x.every(f=>f===x[0])?'full':''}" data-t="${i}" aria-label="Tank ${i+1}">${[...Array(FT_CAP)].map((_,s)=>{const f=x[s];
-        return `<span class="ftslot ${f!=null&&s>=x.length-run?'lift':''}">${f!=null?FT_KINDS[f]:''}</span>`}).join('')}</button>`}).join('')}</div>
-    <div class="hint" id="ftMsg">${P.done?`Level ${P.lv} sorted in ${P.moves} moves!`:ftMsg||'Tap a tank, then tap where the fish should swim.'}</div>`;
-  stage.querySelector('.ftsea').onclick=e=>{const b=e.target.closest('.fttank');if(!b||P.done)return;const i=+b.dataset.t;
-    if(ftSel<0){if(!P.t[i].length)return;ftSel=i;ftMsg='';return renderFish()}
-    if(ftSel===i){ftSel=-1;return renderFish()}
-    if(ftMove(ftSel,i)){ftSel=-1;ftMsg='';renderFish();const nb=stage.querySelector(`[data-t="${i}"]`);nb&&nb.classList.add('splash')}
-    else if(P.t[i].length){ftSel=i;ftMsg='';renderFish()}
-    else{b.classList.remove('nope');void b.offsetWidth;b.classList.add('nope')}};
-  controls.innerHTML=P.done?`<div class="row"><button class="btn primary tall" id="ftNext">Level ${P.lv+1} ▶</button><button class="btn tall" id="ftAgain">Replay</button></div>`
-    :`<div class="sutools"><button id="ftUndo" ${P.undo.length?'':'disabled'}>↶<small>Undo</small></button><button id="ftRestart" ${P.moves?'':'disabled'}>⟲<small>Restart</small></button>
-      <button id="ftTank" ${P.extra?'disabled':''}>＋<small>${P.extra?'Used':'Extra tank'}</small></button><button id="ftHint">💡<small>Hint</small></button><button id="ftLv">☰<small>Levels</small></button></div>`;
-  const on=(id,f)=>{const e=$(id);if(e)e.onclick=f};
-  on('#ftNext',()=>ftNew(P.lv+1));on('#ftAgain',()=>ftNew(P.lv));
-  on('#ftUndo',()=>{const u=P.undo.pop();if(!u)return;P.t=u;P.moves=Math.max(0,P.moves-1);ftSel=-1;ftMsg='';ftSave();renderFish()});
-  on('#ftRestart',()=>{P.t=P.start.map(x=>x.slice());P.undo=[];P.moves=0;if(P.extra)P.t.push([]);ftSel=-1;ftMsg='';ftSave();renderFish()});
-  on('#ftTank',()=>{if(P.extra)return;P.extra=true;P.t.push([]);P.undo.forEach(u=>u.push([]));ftMsg='An extra empty tank was added.';ftSave();renderFish()});
-  on('#ftHint',()=>{const sol=ftSolve(P.t,200000);if(!sol){ftMsg=P.extra?'This one is stuck. Try Undo or Restart.':'Stuck. Try Undo, Restart, or an extra tank.';return renderFish()}
-    const [a,b]=sol[0];P.hints++;ftSel=a;ftMsg='Move these fish to the glowing tank.';ftSave();renderFish();const t=stage.querySelector(`[data-t="${b}"]`);t&&t.classList.add('hinted')});
-  on('#ftLv',ftLevels)}
-function ftLevels(){const top=Math.max(FT.best+1,FT.lv),start=Math.max(1,top-11);
-  controls.innerHTML=`<div class="sulv" style="grid-template-columns:repeat(6,1fr)">${[...Array(top-start+1)].map((_,i)=>{const l=start+i;return `<button data-l="${l}" aria-pressed="${l===FT.p.lv}">${l}<small>${l<=FT.best?'✓':''}</small></button>`}).join('')}</div>
-    <div class="row"><button class="btn" id="ftBack">Back</button></div>`;
-  controls.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>ftNew(+b.dataset.l));$('#ftBack').onclick=renderFish}
-
 function render(){
-  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else if(S.mode==='sand')return renderSand(true);else if(S.mode==='yard')return renderYard(true);else if(S.mode==='cats')return renderCats(true);else if(S.mode==='offcut')return renderOffcut();else if(S.mode==='trade')return renderTrade();else if(S.mode==='mine')return renderMine(true);else if(S.mode==='sudoku')return renderSudoku();else if(S.mode==='fish')return renderFish();else renderCon();
+  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else if(S.mode==='sand')return renderSand(true);else if(S.mode==='yard')return renderYard(true);else if(S.mode==='cats')return renderCats(true);else if(S.mode==='offcut')return renderOffcut();else if(S.mode==='trade')return renderTrade();else if(S.mode==='mine')return renderMine(true);else if(S.mode==='sudoku')return renderSudoku();else renderCon();
   paintClock();
 }
 function setMode(m){
@@ -2508,7 +2432,7 @@ function drawQR(cv,text){
 }
 
 /* ---------- boot ---------- */
-const m0=['merge','solitaire','cats','sudoku','fish'].includes(S.mode)?S.mode:'solitaire';S.mode='';setMode(m0);
+const m0=['merge','solitaire','cats','sudoku'].includes(S.mode)?S.mode:'solitaire';S.mode='';setMode(m0);
 })();
 </script>
 
