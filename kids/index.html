@@ -3944,6 +3944,13 @@ function famFart(){try{ac=ac||new (window.AudioContext||window.webkitAudioContex
   o.connect(lp);ns.connect(ng);ng.connect(lp);lp.connect(g);g.connect(ac.destination);
   [o,lfo,ns].forEach(x=>{x.start(t);x.stop(t+dur+0.1)})}catch(e){log('fart failed',String(e))}
   const p=document.createElement('div');p.className='fartpuff';p.innerHTML='<span>💨</span><b>Pfffft! 😆</b>';document.body.appendChild(p);setTimeout(()=>p.remove(),2600)}
+// battery level for the parent page (Silk supports the browser battery API); one alert when it gets low and isn't charging
+let famBat=null;
+try{if(navigator.getBattery)navigator.getBattery().then(b=>{const up=()=>{const lv=Math.round(b.level*100),was=famBat;famBat={level:lv,charging:!!b.charging};
+    if(!b.charging&&lv<=15&&!K.batWarned){K.batWarned=true;save();famAlert(`🪫 ${kidName()}'s tablet is low`,`Battery is at ${lv}%. Time to plug it in.`,'battery')}
+    if(b.charging||lv>25){if(K.batWarned){K.batWarned=false;save()}}
+    if(!was||was.charging!==famBat.charging||Math.abs(was.level-lv)>=5)famPush(true)};
+  up();b.addEventListener('levelchange',up);b.addEventListener('chargingchange',up)}).catch(()=>{})}catch(e){}
 let famCdIv=null;
 function famCountdown(){clearInterval(famCdIv);let c=document.querySelector('.famcd');
   if(!K.lockAt){c&&c.remove();return}
@@ -4009,7 +4016,7 @@ async function famStart(){if(!FB_CONFIG||FB.loading||FB.on||!/^https?:$/.test(lo
 function famPush(force){if(!FB.on)return;const now=Date.now();if(!force&&now-FB.lastPush<20000)return;FB.lastPush=now;
   const days={};Object.keys((K.st&&K.st.days)||{}).sort().slice(-14).forEach(k=>days[k]=K.st.days[k]);
   FB.db.collection('devices').doc(FB.uid).set({name:K.name||'',mode:K.mode||'',stars:K.stars||0,wallet:K.wallet||0,rate:sbRate(),playSec:K.playSec||0,
-    locked:!!K.locked,lockAt:K.lockAt||null,doing:famDoing(),days,movies:((K.st&&K.st.movies)||[]).slice(0,25),buys:(K.buys||[]).slice(0,20),wishes:K.wishes||[],msgs:(K.outbox||[]).slice(0,20),diag:LOGB.slice(-40).map(e=>new Date(e.t).toLocaleTimeString()+' '+e.e+(e.d?' '+e.d:'')).join('\n'),alerts:!!K.ntfy,words:wdSummary(),alertTopic:K.ntfy||'',
+    locked:!!K.locked,lockAt:K.lockAt||null,doing:famDoing(),days,movies:((K.st&&K.st.movies)||[]).slice(0,25),buys:(K.buys||[]).slice(0,20),wishes:K.wishes||[],msgs:(K.outbox||[]).slice(0,20),diag:LOGB.slice(-40).map(e=>new Date(e.t).toLocaleTimeString()+' '+e.e+(e.d?' '+e.d:'')).join('\n'),alerts:!!K.ntfy,battery:famBat,words:wdSummary(),alertTopic:K.ntfy||'',
     stickers:skTotal(),seen:firebase.firestore.FieldValue.serverTimestamp(),seenMs:now,ua:navigator.userAgent.slice(0,120)},{merge:false}).catch(e=>{FB.err=String(e&&e.message||e)})}
 setInterval(()=>{if(document.hidden)return;if(!FB.on)famStart();else famPush()},60000);
 window.addEventListener('hashchange',()=>setTimeout(()=>famPush(true),1500));
