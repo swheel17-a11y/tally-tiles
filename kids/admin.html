@@ -164,7 +164,8 @@ function devCard(id,d){const online=d.seenMs&&Date.now()-d.seenMs<150000,today=(
       <div class="lbl">Give stars</div><div class="rowc">${[5,10,25,100].map(n=>`<button class="btn" data-c="stars" data-n="${n}">+${n}</button>`).join('')}</div>
       <div class="lbl">Spent stars in real life (${rate} stars = $1)</div>
       <div class="rowc"><input class="tx" id="what-${id}" placeholder="What did they get?"><input class="tx" id="cost-${id}" inputmode="decimal" placeholder="$" style="max-width:90px"><button class="btn go" data-c="spend">Take stars</button></div>
-      <details><summary>Tablet options</summary><div class="rowc" style="margin-top:8px"><button class="btn" data-hide>Hide this tablet</button></div></details>
+      <details><summary>Tablet options & diagnostics</summary><div class="rowc" style="margin-top:8px"><button class="btn" data-hide>Hide this tablet</button><button class="btn" data-diag>📋 Copy diagnostics</button></div>
+        <pre style="white-space:pre-wrap;font-size:11px;max-height:240px;overflow:auto;background:var(--bg);border-radius:10px;padding:8px;margin:8px 0 0">${esc(d.diag||'No diagnostics yet.')}</pre></details>
     </div></div>`}
 function wire(){
   main.querySelectorAll('[data-id]').forEach(card=>{const id=card.dataset.id,d=devs[id],nm=name(d),rate=d.rate||25;
@@ -177,6 +178,7 @@ function wire(){
     card.querySelectorAll('[data-ext]').forEach(b=>b.onclick=()=>{answered[b.dataset.ext]=1;localStorage.setItem('sqp-ans',JSON.stringify(answered));send(id,{type:'extend',mins:5},`+5 minutes for ${nm}`);render()});
     card.querySelectorAll('[data-no]').forEach(b=>b.onclick=()=>{answered[b.dataset.no]=1;localStorage.setItem('sqp-ans',JSON.stringify(answered));send(id,{type:'notice',text:'Sorry, no more time right now.'},`said no to ${nm}`);render()});
     card.querySelector('[data-more]').onclick=()=>{open[id]=!open[id];localStorage.setItem('sqp-open',JSON.stringify(open));render()};
+    card.querySelector('[data-diag]').onclick=()=>{const t=`${nm} · ${d.ua||''}\n${d.diag||''}`;(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Copied. Paste it to Claude.'),()=>{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('Copied. Paste it to Claude.')}catch(e){toast('Copy failed: long-press the text to copy it')}ta.remove()})};
     card.querySelector('[data-hide]').onclick=()=>{hidden[id]=1;localStorage.setItem('sqp-hidden',JSON.stringify(hidden));render()};
     card.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const t=b.dataset.c;
       if(t==='notice'){const i=$('#msg-'+id),v=i.value.trim();if(!v)return toast('Type a message first');send(id,{type:'notice',text:v},`message to ${nm}`);i.value=''}

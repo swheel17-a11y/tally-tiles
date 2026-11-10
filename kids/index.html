@@ -1648,8 +1648,9 @@ function netSpeak(t){const seq=++netSeq;if(netA){try{netA.pause()}catch(e){}netA
   const parts=[];t.split(/(?<=[.!?])\s+/).forEach(x=>{while(x.length>180){const i=x.lastIndexOf(' ',180);parts.push(x.slice(0,i>0?i:180));x=x.slice(i>0?i+1:180)}if(x)parts.push(x)});
   const play=(i,src,tries)=>{if(seq!==netSeq||i>=parts.length)return;const a=new Audio(NET_TTS[src](parts[i]));netA=a;
     a.onended=()=>play(i+1,src,0);
-    a.onerror=()=>{if(seq!==netSeq)return;if(tries<NET_TTS.length-1){const n=(src+1)%NET_TTS.length;netSrc=n;try{localStorage.setItem('sq-tts-src',n)}catch(e){}log('online voice switch',n);play(i,n,tries+1)}else log('online voice failed',parts[i].slice(0,40))};
-    const pr=a.play();if(pr&&pr.catch)pr.catch(e=>{if(e&&e.name==='NotAllowedError')log('online voice needs a tap first');else a.onerror()})};
+    a.onerror=()=>{if(seq!==netSeq)return;log('online voice error',{src,code:a.error&&a.error.code,msg:a.error&&a.error.message,net:a.networkState,ready:a.readyState,on:navigator.onLine});if(tries<NET_TTS.length-1){const n=(src+1)%NET_TTS.length;netSrc=n;try{localStorage.setItem('sq-tts-src',n)}catch(e){}log('online voice switch',n);play(i,n,tries+1)}else log('online voice failed',parts[i].slice(0,40))};
+    a.onplaying=()=>{if(i===0)log('online voice playing',src)};
+    const pr=a.play();if(pr&&pr.catch)pr.catch(e=>{log('online voice play() refused',{name:e&&e.name,msg:e&&String(e.message).slice(0,120),src});if(!(e&&e.name==='NotAllowedError'))a.onerror()})};
   play(0,netSrc,0)}
 function netStop(){netSeq++;if(netA){try{netA.pause()}catch(e){}netA=null}}
 function speakNow(t,force){if(!force&&!voiceOn())return;try{if(window.SQAndroid){SQAndroid.speak(t);return}
@@ -3975,7 +3976,7 @@ async function famStart(){if(!FB_CONFIG||FB.loading||FB.on||!/^https?:$/.test(lo
 function famPush(force){if(!FB.on)return;const now=Date.now();if(!force&&now-FB.lastPush<20000)return;FB.lastPush=now;
   const days={};Object.keys((K.st&&K.st.days)||{}).sort().slice(-14).forEach(k=>days[k]=K.st.days[k]);
   FB.db.collection('devices').doc(FB.uid).set({name:K.name||'',mode:K.mode||'',stars:K.stars||0,wallet:K.wallet||0,rate:sbRate(),playSec:K.playSec||0,
-    locked:!!K.locked,lockAt:K.lockAt||null,doing:famDoing(),days,movies:((K.st&&K.st.movies)||[]).slice(0,25),buys:(K.buys||[]).slice(0,20),wishes:K.wishes||[],msgs:(K.outbox||[]).slice(0,20),alerts:!!K.ntfy,words:wdSummary(),alertTopic:K.ntfy||'',
+    locked:!!K.locked,lockAt:K.lockAt||null,doing:famDoing(),days,movies:((K.st&&K.st.movies)||[]).slice(0,25),buys:(K.buys||[]).slice(0,20),wishes:K.wishes||[],msgs:(K.outbox||[]).slice(0,20),diag:LOGB.slice(-40).map(e=>new Date(e.t).toLocaleTimeString()+' '+e.e+(e.d?' '+e.d:'')).join('\n'),alerts:!!K.ntfy,words:wdSummary(),alertTopic:K.ntfy||'',
     stickers:skTotal(),seen:firebase.firestore.FieldValue.serverTimestamp(),seenMs:now,ua:navigator.userAgent.slice(0,120)},{merge:false}).catch(e=>{FB.err=String(e&&e.message||e)})}
 setInterval(()=>{if(document.hidden)return;if(!FB.on)famStart();else famPush()},60000);
 window.addEventListener('hashchange',()=>setTimeout(()=>famPush(true),1500));
