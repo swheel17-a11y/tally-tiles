@@ -1639,8 +1639,21 @@ const voiceOn=()=>K.voiceOn!==undefined?K.voiceOn:K.mode==='little';
 // Android browsers (like Silk) can drop a sentence started right after cancel(), lose an utterance that gets garbage-collected,
 // or leave the speech engine paused. So: keep a reference, wait a moment after cancel, nudge resume(), and log errors.
 let sqUtt=null,sqSpeakT=null;
+// Online voice for tablets with no built-in voices (Fire tablets' Silk browser has none): play spoken audio from a web voice,
+// in short pieces, one after another. Google's voice first; if it fails, Amazon's Joanna voice through StreamElements.
+const NET_TTS=[q=>`https://translate.google.com/translate_tts?ie=UTF-8&tl=en-US&client=tw-ob&ttsspeed=${K.vrate&&K.vrate<0.9?'0.8':'1'}&q=${encodeURIComponent(q)}`,
+  q=>`https://api.streamelements.com/kappa/v2/speech?voice=Joanna&text=${encodeURIComponent(q)}`];
+let netA=null,netSeq=0,netSrc=+(localStorage.getItem('sq-tts-src')||0);
+function netSpeak(t){const seq=++netSeq;if(netA){try{netA.pause()}catch(e){}netA=null}t=String(t||'').replace(/[\u{1F000}-\u{1FFFF}\u2600-\u27BF]/gu,'').replace(/\s+/g,' ').trim();if(!t)return;
+  const parts=[];t.split(/(?<=[.!?])\s+/).forEach(x=>{while(x.length>180){const i=x.lastIndexOf(' ',180);parts.push(x.slice(0,i>0?i:180));x=x.slice(i>0?i+1:180)}if(x)parts.push(x)});
+  const play=(i,src,tries)=>{if(seq!==netSeq||i>=parts.length)return;const a=new Audio(NET_TTS[src](parts[i]));netA=a;
+    a.onended=()=>play(i+1,src,0);
+    a.onerror=()=>{if(seq!==netSeq)return;if(tries<NET_TTS.length-1){const n=(src+1)%NET_TTS.length;netSrc=n;try{localStorage.setItem('sq-tts-src',n)}catch(e){}log('online voice switch',n);play(i,n,tries+1)}else log('online voice failed',parts[i].slice(0,40))};
+    const pr=a.play();if(pr&&pr.catch)pr.catch(e=>{if(e&&e.name==='NotAllowedError')log('online voice needs a tap first');else a.onerror()})};
+  play(0,netSrc,0)}
+function netStop(){netSeq++;if(netA){try{netA.pause()}catch(e){}netA=null}}
 function speakNow(t,force){if(!force&&!voiceOn())return;try{if(window.SQAndroid){SQAndroid.speak(t);return}
-  if(!('speechSynthesis' in window)){log('speech: not supported');return}const S=speechSynthesis;clearTimeout(sqSpeakT);
+  if(!('speechSynthesis' in window)||!webVoices().length)return netSpeak(t);const S=speechSynthesis;clearTimeout(sqSpeakT);
   const go=()=>{if(!t)return;const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=K.vrate||0.95;u.pitch=K.vpitch||1;
     const vs=webVoices(),v=vs.find(x=>x.name===K.voiceName)||vs.find(x=>x.localService&&/en.US/i.test(x.lang))||vs.find(x=>x.localService)||vs[0];if(v)u.voice=v;
     u.onerror=e=>{if(e.error!=='interrupted'&&e.error!=='canceled')log('speech error',{err:e.error,voices:vs.length})};sqUtt=u;S.speak(u);try{S.resume()}catch(e){}};
@@ -4162,7 +4175,7 @@ function grownups(){
     if(window.SQAndroid&&SQAndroid.voices){try{list=JSON.parse(SQAndroid.voices()).map(v=>({id:v.name,label:v.name.replace(/[-_]/g,' ')+(v.q>=400?' ★':'')+(v.net?' (needs internet)':''),on:v.on}))}catch(e){}}
     else list=webVoices().map(v=>({id:v.name,label:v.name+(v.localService?'':' (needs internet)'),on:v.name===K.voiceName}));
     list.sort((a,b)=>(b.label.includes('★')-a.label.includes('★'))||a.label.localeCompare(b.label));
-    if(!list.length){$('#vrow').querySelector('span').textContent='Voice (this tablet has no voices to choose from)';sel.hidden=true}
+    if(!list.length){$('#vrow').querySelector('span').textContent='Voice: online voice (this tablet has no built-in voices, so it needs internet)';sel.hidden=true}
     sel.innerHTML=list.map(v=>`<option value="${v.id.replace(/"/g,'')}" ${v.on||v.id===K.voiceName?'selected':''}>${v.label}</option>`).join('');
     $('#vonoff').onclick=()=>{K.voiceOn=!voiceOn();save();grownups();if(K.voiceOn)speakNow('Voice is on!')};
     const test=()=>speakNow(K.name?`Hi ${K.name}! Let's catch some butterflies!`:`Hi! Let's play Star Quest!`,true);
@@ -4181,7 +4194,7 @@ function grownups(){
 /* ---------- navigation (plain #names so the back button works) ---------- */
 const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,times:playTimes,money:playMoney,bank:playBank,chat:playChat,spelling:playSpelling,ninjaread:playRead,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),ninja:gated('ninja',playNinja),tv:gated('tv',()=>{TV.stack=[];playTv()}),mix:playMix,adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
 function go(name){if(location.hash.slice(1)!==name)location.hash=name;else show()}
-function show(){if(window.__tvKill)window.__tvKill();loopToken++;let r=location.hash.slice(1);if(wdLocked()&&!WD_FREE.includes(r)){history.replaceState(null,'','#home');r='home'}resetArm=false;$('#timeChip').hidden=true;updateStars();$('#overlay').hidden=true;popQ.length=0;try{if(window.SQAndroid)SQAndroid.stop();else if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}
+function show(){if(window.__tvKill)window.__tvKill();loopToken++;let r=location.hash.slice(1);if(wdLocked()&&!WD_FREE.includes(r)){history.replaceState(null,'','#home');r='home'}resetArm=false;$('#timeChip').hidden=true;updateStars();$('#overlay').hidden=true;popQ.length=0;try{netStop();if(window.SQAndroid)SQAndroid.stop();else if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}
   view.scrollTop=0;(ROUTES[r]||home)()}
 window.addEventListener('hashchange',show);
 $('#homeBtn').onclick=()=>{sfx.tap();go('home')};
