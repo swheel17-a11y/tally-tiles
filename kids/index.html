@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1641,16 +1642,17 @@ const voiceOn=()=>K.voiceOn!==undefined?K.voiceOn:K.mode==='little';
 let sqUtt=null,sqSpeakT=null;
 // Online voice for tablets with no built-in voices (Fire tablets' Silk browser has none): play spoken audio from a web voice,
 // in short pieces, one after another. Google's voice first; if it fails, Amazon's Joanna voice through StreamElements.
-const NET_TTS=[q=>`https://translate.google.com/translate_tts?ie=UTF-8&tl=en-US&client=tw-ob&ttsspeed=${K.vrate&&K.vrate<0.9?'0.8':'1'}&q=${encodeURIComponent(q)}`,
+const NET_TTS=[q=>`https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=en-US&ttsspeed=1&q=${encodeURIComponent(q)}`,
+  q=>`https://translate.google.com/translate_tts?ie=UTF-8&tl=en-US&client=tw-ob&ttsspeed=1&q=${encodeURIComponent(q)}`,
   q=>`https://api.streamelements.com/kappa/v2/speech?voice=Joanna&text=${encodeURIComponent(q)}`];
-let netA=null,netSeq=0,netSrc=+(localStorage.getItem('sq-tts-src')||0);
+let netA=null,netSeq=0,netSrc=0;try{localStorage.removeItem('sq-tts-src')}catch(e){}
 function netSpeak(t){const seq=++netSeq;if(netA){try{netA.pause()}catch(e){}netA=null}t=String(t||'').replace(/[\u{1F000}-\u{1FFFF}\u2600-\u27BF]/gu,'').replace(/\s+/g,' ').trim();if(!t)return;
   const parts=[];t.split(/(?<=[.!?])\s+/).forEach(x=>{while(x.length>180){const i=x.lastIndexOf(' ',180);parts.push(x.slice(0,i>0?i:180));x=x.slice(i>0?i+1:180)}if(x)parts.push(x)});
   const play=(i,src,tries)=>{if(seq!==netSeq||i>=parts.length)return;const a=new Audio(NET_TTS[src](parts[i]));netA=a;
     a.onended=()=>play(i+1,src,0);
-    a.onerror=()=>{if(seq!==netSeq)return;log('online voice error',{src,code:a.error&&a.error.code,msg:a.error&&a.error.message,net:a.networkState,ready:a.readyState,on:navigator.onLine});if(tries<NET_TTS.length-1){const n=(src+1)%NET_TTS.length;netSrc=n;try{localStorage.setItem('sq-tts-src',n)}catch(e){}log('online voice switch',n);play(i,n,tries+1)}else log('online voice failed',parts[i].slice(0,40))};
+    a.onerror=()=>{if(seq!==netSeq||a.__err)return;a.__err=1;log('online voice error',{src,code:a.error&&a.error.code,msg:a.error&&a.error.message,net:a.networkState,ready:a.readyState,on:navigator.onLine});if(tries<NET_TTS.length-1){const n=(src+1)%NET_TTS.length;netSrc=n;try{localStorage.setItem('sq-tts-src',n)}catch(e){}log('online voice switch',n);play(i,n,tries+1)}else log('online voice failed',parts[i].slice(0,40))};
     a.onplaying=()=>{if(i===0)log('online voice playing',src)};
-    const pr=a.play();if(pr&&pr.catch)pr.catch(e=>{log('online voice play() refused',{name:e&&e.name,msg:e&&String(e.message).slice(0,120),src});if(!(e&&e.name==='NotAllowedError'))a.onerror()})};
+    const pr=a.play();if(pr&&pr.catch)pr.catch(e=>{if(e&&e.name==='NotAllowedError')log('online voice needs a tap first')})};
   play(0,netSrc,0)}
 function netStop(){netSeq++;if(netA){try{netA.pause()}catch(e){}netA=null}}
 function speakNow(t,force){if(!force&&!voiceOn())return;try{if(window.SQAndroid){SQAndroid.speak(t);return}
