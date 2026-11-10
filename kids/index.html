@@ -1635,7 +1635,8 @@ const isLittle=()=>K.mode==='little';
 function applyMode(){document.documentElement.classList.toggle('little',isLittle())}
 // speak with the tablet's own voice when running as the installed app
 function webVoices(){try{return speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang))}catch(e){return[]}}
-const voiceOn=()=>K.voiceOn!==undefined?K.voiceOn:K.mode==='little';
+const voiceMode=()=>K.voiceMode||(K.mode==='little'?(K.voiceOn===false?'off':'all'):'some');
+const voiceOn=()=>voiceMode()==='all';
 // force: a speaker button the child tapped on purpose still talks when the voice is off
 // Android browsers (like Silk) can drop a sentence started right after cancel(), lose an utterance that gets garbage-collected,
 // or leave the speech engine paused. So: keep a reference, wait a moment after cancel, nudge resume(), and log errors.
@@ -1655,7 +1656,8 @@ function netSpeak(t){const seq=++netSeq;if(netA){try{netA.pause()}catch(e){}netA
     const pr=a.play();if(pr&&pr.catch)pr.catch(e=>{if(e&&e.name==='NotAllowedError')log('online voice needs a tap first')})};
   play(0,netSrc,0)}
 function netStop(){netSeq++;if(netA){try{netA.pause()}catch(e){}netA=null}}
-function speakNow(t,force){if(!force&&!voiceOn())return;try{if(window.SQAndroid){SQAndroid.speak(t);return}
+// Noah's tablet defaults to 'some': only his spelling words and messages from Mom & Dad are read aloud.
+function speakNow(t,force){const vm=voiceMode();if(vm==='off'&&!(K.mode==='little'&&force))return;if(vm==='some'&&force!=='must')return;try{if(window.SQAndroid){SQAndroid.speak(t);return}
   if(!('speechSynthesis' in window)||!webVoices().length)return netSpeak(t);const S=speechSynthesis;clearTimeout(sqSpeakT);
   const go=()=>{if(!t)return;const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=K.vrate||0.95;u.pitch=K.vpitch||1;
     const vs=webVoices(),v=vs.find(x=>x.name===K.voiceName)||vs.find(x=>x.localService&&/en.US/i.test(x.lang))||vs.find(x=>x.localService)||vs[0];if(v)u.voice=v;
@@ -3910,7 +3912,7 @@ function pinPad(title,ok,cancel){let typed='',stage=K.pin?'enter':'new',first=''
 /* ---------- notices, countdown, lock ---------- */
 function famNotice(text,em,replies){if(!text)return;if(replies)chatInbox(text,em);const b=document.createElement('div');b.className='famnote';
   b.innerHTML=`<span>${em||'📣'}</span><div><b></b>${replies?`<div class="famrep">${replies.map((r,i)=>`<button data-r="${i}">${r[0]} ${r[1]}</button>`).join('')}</div>`:''}</div>`;b.querySelector('b').textContent=text;
-  document.body.appendChild(b);tone([[880,0,.15],[1175,.15,.25]],'sine',0.09);speakNow(text,true);
+  document.body.appendChild(b);tone([[880,0,.15],[1175,.15,.25]],'sine',0.09);speakNow(text,'must');
   const gone=()=>{b.classList.add('out');setTimeout(()=>b.remove(),800)};let t=setTimeout(gone,replies?20000:9000);
   b.onclick=e=>{const r=e.target.closest('[data-r]');if(r){const q=replies[+r.dataset.r];chatSend(q[0],q[1]);b.querySelector('b').textContent='Sent: '+q[1];b.querySelector('.famrep').remove();clearTimeout(t);t=setTimeout(gone,2500);return}gone()}}
 const FAM_REPLY=[['👍','OK!'],['🙏','Can I have 5 more minutes?'],['❤️','I love you!']];
@@ -3920,7 +3922,7 @@ function famCountdown(){clearInterval(famCdIv);let c=document.querySelector('.fa
   if(!c){c=document.createElement('div');c.className='famcd';document.body.appendChild(c)}
   const tick=()=>{const left=Math.round((K.lockAt-Date.now())/1000);if(left<=0){clearInterval(famCdIv);c.remove();K.lockAt=null;famLock(K.lockText,true);return}
     c.textContent=`⏳ ${Math.floor(left/60)}:${String(left%60).padStart(2,'0')} left`;c.classList.toggle('low',left<=60);
-    if(left===60)speakNow('One minute left!',true)};tick();famCdIv=setInterval(tick,1000)}
+    if(left===60)speakNow('One minute left!','must')};tick();famCdIv=setInterval(tick,1000)}
 function famLock(text,auto){if(auto)famAlert(`🔒 ${kidName()}'s tablet locked`,'Time is up. The tablet is locked now.','lock');K.locked={at:Date.now(),text:text||''};K.lockAt=null;save();famCountdown();
   if(window.__tvKill)window.__tvKill();if(location.hash&&location.hash!=='#home'){history.replaceState(null,'','#home');show()}
   famLockShow();famPush(true)}
@@ -3930,7 +3932,7 @@ function famLockShow(){if(!K.locked||document.querySelector('.famlock'))return;
     <div class="famask"><button class="pbtn" id="famMore">🙏 Ask for 5 more minutes</button><button class="pbtn" id="famLove">❤️ Good night, I love you!</button></div><p class="famsmall" id="famAsked"></p>
     <button class="grownup" id="famUn">Grown-ups: press and hold<i></i></button></div>`;
   o.querySelector('p').textContent=K.locked.text||'';document.body.appendChild(o);
-  speakNow(`Time's up! ${K.locked.text||''} Great playing today!`,true);
+  speakNow(`Time's up! ${K.locked.text||''} Great playing today!`,'must');
   const ask=(em,t)=>{chatSend(em,t);o.querySelector('#famAsked').textContent=FB.on?'Sent to Mom and Dad ✓':'It will send when the internet is back.';speakNow('Sent!',true)};
   o.querySelector('#famMore').onclick=()=>ask('🙏','Can I have 5 more minutes?');o.querySelector('#famLove').onclick=()=>ask('❤️','Good night, I love you!');
   const g=o.querySelector('#famUn');let t=null;
@@ -4052,7 +4054,7 @@ function wdHome(){const P=wdPlan(),W=P.W;setHeader('Star Quest','Spelling words 
       <div class="skbar" style="--pc:#2f9be0"><i style="width:${P.learned/W.list.length*100}%"></i></div><small>${P.learned} of ${W.list.length} words learned this week</small></div>
     <div class="row"><button class="pbtn" id="wdChat">💬 Message Mom & Dad</button><button class="pbtn" id="wdSkip">Grown-up: skip today</button></div>
     <div class="home-foot"><span></span><button class="grownup" id="grown">Grown-ups: press and hold<i></i></button></div></div>`;
-  speakNow(P.last?'Practice test day! Let\'s spell all your words.':`Spelling words first! You have ${P.need.length} words today.`);
+  speakNow(P.last?'Practice test day! Let\'s spell all your words.':`Spelling words first! You have ${P.need.length} word${P.need.length===1?'':'s'} today.`,'must');
   $('#wdGo').onclick=()=>{sfx.tap();go('spelling')};$('#wdChat').onclick=()=>go('chat');
   $('#wdSkip').onclick=()=>pinPad('Grown-up: enter your PIN to skip today',()=>{W.skip[P.today]=true;save();famPush(true);home()});
   holdGrownups()}
@@ -4063,7 +4065,7 @@ function playSpelling(){
   const W=P.W,tok=loopToken,today=P.today,gated=P.active&&P.need.length&&!W.done[today];
   // today's queue, or (no gate) extra practice on the whole list
   let queue=(gated?P.need:W.list).map(x=>({...x})),total=queue.length,doneN=0,typed='',mode='spell',helped=false;
-  const say=x=>speakNow(`${x.w}. ${x.s?x.s.replace(/[.!?]?$/,'.'):''} ${x.w}.`,true);
+  const say=x=>speakNow(`${x.w}. ${x.s?x.s.replace(/[.!?]?$/,'.'):''} ${x.w}.`,'must');
   const cur=()=>queue[0];
   const draw=(msg)=>{if(tok!==loopToken)return;const x=cur();setHeader('Spelling Words',gated?`${total-doneN} left today`:'Extra practice');
     view.innerHTML=`<div class="wdwrap"><div class="wdtop"><button class="pbtn wdhear" id="wdHear">🔊 Hear it again</button><div class="wdprog"><i style="width:${doneN/total*100}%"></i></div><span>${doneN} / ${total}</span></div>
@@ -4074,7 +4076,7 @@ function playSpelling(){
     $('#wdHear').onclick=()=>say(x);
     view.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{const k=b.dataset.k;
       if(k==='del'){typed=typed.slice(0,-1);return draw(msg)}
-      if(k==='hint'){helped=true;if(!typed)typed=x.w[0];draw(`It starts with "${x.w[0]}".`);speakNow(`It starts with ${x.w[0]}.`,true);return}
+      if(k==='hint'){helped=true;if(!typed)typed=x.w[0];draw(`It starts with "${x.w[0]}".`);speakNow(`It starts with ${x.w[0]}.`,'must');return}
       if(k==='ok')return check();
       if(typed.length<20){typed+=k;tone([[600+typed.length*30,0,.04]],'sine',0.03);draw(msg)}})};
   const check=()=>{const x=cur(),ok=typed.trim().toLowerCase()===x.w.toLowerCase();
@@ -4084,7 +4086,7 @@ function playSpelling(){
     else if(ok&&helped){sfx.yes();typed='';helped=false;queue.push(queue.shift());next('Right! You had help, so it will come back for you to try alone.')}
     else{sfx.no();W.miss[x.w]=(W.miss[x.w]||0)+1;save();const wrong=typed;typed='';helped=false;mode='copy';
       draw();const m=view.querySelector('.wdmsg');m.innerHTML=`You wrote <b class="wdbad">${wrong.split('').map((c,i)=>`<span class="${c===x.w[i]?'':'x'}">${c}</span>`).join('')||'nothing'}</b>. Here is how to spell it. Now type it while you look.`;
-      speakNow(`Almost! ${x.w} is spelled ${x.w.split('').join(', ')}.`,true)}};
+      speakNow(`Almost! ${x.w} is spelled ${x.w.split('').join(', ')}.`,'must')}};
   const next=msg=>{helped=false;typed='';draw(msg);setTimeout(()=>{if(tok===loopToken&&queue.length)say(cur())},700)};
   const finish=()=>{if(gated){W.done[today]=true;save();addStars(5,view,'spelling');famPush(true);
       const tricky=Object.keys(W.miss).filter(w=>P.need.some(x=>x.w===w));famAlert(`📝 ${kidName()} finished spelling`,`${total} word${total===1?'':'s'} done${tricky.length?`. Tricky: ${tricky.slice(0,6).join(', ')}`:'. No misses!'}`,'pencil')}
@@ -4160,7 +4162,7 @@ function grownups(){
     <div class="row" style="justify-content:flex-start">
       <button class="pbtn" id="snd">Sound: ${K.sound?'On':'Off'}</button>
       <button class="pbtn" id="fs">Full screen: ${K.full===false?'Off':'On'}</button></div>
-    <div class="prow" id="vrow" style="flex-wrap:wrap"><span>Voice</span><span class="ctl" style="flex-wrap:wrap"><button class="pbtn" id="vonoff" style="${voiceOn()?'background:var(--ink);color:#fff':''}">${voiceOn()?'On':'Off'}</button><select id="vsel" style="font:inherit;font-size:17px;padding:8px;border-radius:12px;border:2px solid var(--sky-2);max-width:16em"></select>
+    <div class="prow" id="vrow" style="flex-wrap:wrap"><span>Voice</span><span class="ctl" style="flex-wrap:wrap"><button class="pbtn" id="vonoff" style="background:var(--ink);color:#fff">${{all:'Reads everything',some:'Spelling & messages only',off:'Off'}[voiceMode()]}</button><select id="vsel" style="font:inherit;font-size:17px;padding:8px;border-radius:12px;border:2px solid var(--sky-2);max-width:16em"></select>
       <button class="pm" id="vslow" aria-label="Slower">🐢</button><button class="pm" id="vfast" aria-label="Faster">🐇</button><button class="pbtn" id="vtest">▶ Test</button></span></div>
     ${K.mode!=='little'?`<div class="prow" style="flex-wrap:wrap"><span>Play games cost stars <small style="color:var(--muted)">(Fruit Pop, Bubble Pop, Dino Dash, Tower Builder, Brick Builder, Fishing Trip, Fruit Slice, Ninja Portal, Movies & Shows)</small></span><span class="ctl"><button class="pbtn" id="gateT">${K.gate===false?'Off':'On'}</button></span></div>
     ${K.gate!==false?`<div class="prow" style="flex-wrap:wrap"><span>Each star buys</span><span class="ctl">${[1,2,3,5].map(m=>`<button class="pbtn" data-mps="${m}" style="${minsPerStar()===m?'background:var(--ink);color:#fff':''}">${m} min</button>`).join('')}</span></div>
@@ -4180,7 +4182,7 @@ function grownups(){
     list.sort((a,b)=>(b.label.includes('★')-a.label.includes('★'))||a.label.localeCompare(b.label));
     if(!list.length){$('#vrow').querySelector('span').textContent='Voice: online voice (this tablet has no built-in voices, so it needs internet)';sel.hidden=true}
     sel.innerHTML=list.map(v=>`<option value="${v.id.replace(/"/g,'')}" ${v.on||v.id===K.voiceName?'selected':''}>${v.label}</option>`).join('');
-    $('#vonoff').onclick=()=>{K.voiceOn=!voiceOn();save();grownups();if(K.voiceOn)speakNow('Voice is on!')};
+    $('#vonoff').onclick=()=>{const order=K.mode==='little'?['all','off']:['some','all','off'];K.voiceMode=order[(order.indexOf(voiceMode())+1)%order.length];save();grownups();speakNow('Voice is on!','must')};
     const test=()=>speakNow(K.name?`Hi ${K.name}! Let's catch some butterflies!`:`Hi! Let's play Star Quest!`,true);
     sel.onchange=()=>{K.voiceName=sel.value;save();if(window.SQAndroid&&SQAndroid.setVoice)SQAndroid.setVoice(sel.value);test()};
     const pace=d=>{K.vrate=Math.max(0.6,Math.min(1.4,(K.vrate||0.95)+d));save();if(window.SQAndroid&&SQAndroid.setPace)SQAndroid.setPace(K.vrate,K.vpitch||1);test()};
