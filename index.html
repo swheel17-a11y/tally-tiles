@@ -377,6 +377,17 @@ button:disabled{opacity:.35;cursor:default}
 .ctsizes small{display:block;font-size:10px;font-weight:500;opacity:.8}
 .ctsizes button[aria-pressed="true"]{background:var(--tile);color:var(--tile-ink)}
 #ctAuto[aria-pressed="false"]{color:var(--mist)}
+/* sort */
+.soscene{position:relative;flex:1;width:100%;border-radius:18px;overflow:hidden;background:#120c08;border:1px solid #3a2a1c}
+.sobg{position:absolute;inset:0;background-repeat:no-repeat}
+.soglow,.soglow2{position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen}
+.soglow{animation:soflick 2.7s infinite}
+.soglow2{animation:soflick 1.9s infinite reverse}
+@keyframes soflick{0%{opacity:.85}12%{opacity:1}23%{opacity:.78}37%{opacity:.95}48%{opacity:.82}61%{opacity:1}74%{opacity:.8}88%{opacity:.93}100%{opacity:.85}}
+.soshelf{position:absolute;left:0;right:0;height:15px;background-repeat:no-repeat;box-shadow:0 6px 10px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,200,140,.25)}
+.sorack{position:absolute;inset:0}
+.socv{position:absolute;left:0;display:block;width:100%;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.sosizes{grid-template-columns:1fr 1fr}
 
 /* yard */
 .ycard{background:var(--board);border:1px solid var(--board-line);border-radius:18px;padding:12px 14px}
@@ -443,6 +454,7 @@ td.h{padding-top:14px;font-size:11px;letter-spacing:.12em;text-transform:upperca
     <button role="tab" id="tab-solitaire" aria-selected="false" data-mode="solitaire">Solitaire</button>
     <button role="tab" id="tab-cats" aria-selected="false" data-mode="cats">Cats</button>
     <button role="tab" id="tab-sudoku" aria-selected="false" data-mode="sudoku">Sudoku</button>
+    <button role="tab" id="tab-sort" aria-selected="false" data-mode="sort">Sort</button>
   </div>
   <div class="stage" id="stage"></div>
   <div class="controls" id="controls"></div>
@@ -478,7 +490,7 @@ const addPts=p=>{S.dayPts+=p;save();};
 /* ---------- clocks: one per tab, paused while you're on another tab ---------- */
 const R=26,C=2*Math.PI*R,LIMIT=30;
 const mkClock=()=>({elapsed:0,since:null,running:false,timed:false,onEnd:null});
-const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock(),sand:mkClock(),yard:mkClock(),cats:mkClock(),offcut:mkClock(),trade:mkClock(),mine:mkClock(),sudoku:mkClock()};
+const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock(),sand:mkClock(),yard:mkClock(),cats:mkClock(),offcut:mkClock(),trade:mkClock(),mine:mkClock(),sudoku:mkClock(),sort:mkClock()};
 const el=c=>c.elapsed+(c.since?(performance.now()-c.since)/1000:0);
 let looping=false;
 function clockHTML(){return `<div class="clock" id="clock"><svg viewBox="0 0 64 64"><circle class="track" cx="32" cy="32" r="${R}" fill="none" stroke-width="6"/><circle class="arc" id="arc" cx="32" cy="32" r="${R}" fill="none" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg><div class="t" id="clockT"></div></div>`}
@@ -1743,6 +1755,273 @@ function ctBind(){
 }
 
 /* ==========================================================
+   SORT: pour colours between tubes until every tube holds one colour.
+   Tap a tube to pick it up, tap another to pour. You can pour onto the same colour or into an empty tube.
+   ========================================================== */
+const SORT_KEY='tally-tiles-sort-v1';
+const SO_COL=['#e5484d','#f59f24','#f5d90a','#94d82d','#2b9a48','#1fc7a6','#4cc3f0','#3b6ff5','#9b5de5','#f06aa8','#9c5a33','#e6e9f2'];
+let SO=null,soSel=-1,soMsg='',soMsgT=0,soHintTo=-1;
+/* SORT core: tubes are arrays of colour ids, bottom first; capacity 4 */
+const SO_CAP=4;
+const soTop=t=>t[t.length-1];
+const soRun=t=>{if(!t.length)return 0;let k=1;while(k<t.length&&t[t.length-1-k]===soTop(t))k++;return k};
+const soDoneTube=t=>!t.length||(t.length===SO_CAP&&t.every(c=>c===t[0]));
+const soWon=T=>T.every(soDoneTube);
+function soCanPour(T,i,j){const a=T[i],b=T[j];if(i===j||!a.length||b.length>=SO_CAP)return false;return !b.length||soTop(b)===soTop(a)}
+function soPour(T,i,j){const a=T[i],b=T[j],n=Math.min(soRun(a),SO_CAP-b.length);for(let k=0;k<n;k++)b.push(a.pop());return n}
+// depth-first search for a solution; returns list of [from,to] or null
+function soSolve(T0,budget){const seen=new Set(),path=[];let nodes=0;
+  const key=T=>T.map(t=>t.join(',')).sort().join('|');
+  const go=T=>{if(soWon(T))return true;if(++nodes>budget)return false;const k=key(T);if(seen.has(k))return false;seen.add(k);
+    const mv=[];
+    for(let i=0;i<T.length;i++){const a=T[i];if(!a.length||soDoneTube(a))continue;const run=soRun(a);let emptyTried=false;
+      for(let j=0;j<T.length;j++){if(!soCanPour(T,i,j))continue;const b=T[j];
+        if(!b.length){if(run===a.length||emptyTried)continue;emptyTried=true;mv.push([i,j,0])}
+        else mv.push([i,j,(SO_CAP-b.length>=run?2:1)+(b.every(c=>c===b[0])?1:0)])}}
+    mv.sort((x,y)=>y[2]-x[2]);
+    for(const [i,j] of mv){const U=T.map(t=>t.slice());soPour(U,i,j);path.push([i,j]);if(go(U))return true;path.pop()}
+    return false};
+  return go(T0.map(t=>t.slice()))?path.slice():null}
+function soGenerate(colors,seed){const R=ctRng(seed);
+  for(let tries=0;tries<60;tries++){const bag=[];for(let c=0;c<colors;c++)for(let k=0;k<SO_CAP;k++)bag.push(c);ctShuf(bag,R);
+    const T=[];for(let c=0;c<colors;c++)T.push(bag.slice(c*SO_CAP,c*SO_CAP+SO_CAP));T.push([],[]);
+    if(T.some(t=>t.length&&soDoneTube(t)))continue;
+    // no tube that starts with 3+ of one colour on top: keeps the first moves interesting
+    if(T.some(t=>t.length&&soRun(t)>=3))continue;
+    if(soSolve(T,60000))return T}
+  return null}
+const soColors=lv=>Math.min(12,4+Math.floor((lv-1)/2));
+function soLoad(){try{SO=JSON.parse(localStorage.getItem(SORT_KEY)||'null')}catch(e){SO=null}
+  SO=Object.assign({level:1,solved:0,streak:0,lastDaily:'',p:null},SO||{})}
+function soSave(){try{localStorage.setItem(SORT_KEY,JSON.stringify(SO))}catch(e){}}
+function soNew(daily){const key=ctDayKey(),k=daily?10:soColors(SO.level),seed=daily?ctDaySeed('sort'+key):(Math.random()*4294967296)>>>0;
+  let T=soGenerate(k,seed);for(let s=1;!T&&s<6;s++)T=soGenerate(k,seed+s);
+  SO.p={tubes:T,start:T.map(t=>t.slice()),undo:[],moves:0,extra:false,hints:0,done:false,daily:daily?key:'',level:SO.level,k};
+  soSel=-1;soMsg='';soHintTo=-1;if(SR.anim)srFinish();SR.vis=[];SR.cele=false;SR.parts=[];soSave();renderSort(true)}
+function soSay(m){soMsg=m;soMsgT=Date.now();clearTimeout(soSay.t);soSay.t=setTimeout(()=>{if(S.mode==='sort')renderSort(false)},3100)}
+function soTap(i){const P=SO.p;if(P.done)return;const T=P.tubes;soHintTo=-1;if(SR.anim)srFinish();
+  if(soSel<0){if(!T[i].length||soDoneTube(T[i]))return;soSel=i;return renderSort(false)}
+  if(soSel===i){soSel=-1;return renderSort(false)}
+  if(soCanPour(T,soSel,i)){P.undo.push(T.map(t=>t.slice()));if(P.undo.length>300)P.undo.shift();
+    const from=soSel,c=soTop(T[from]),n=soPour(T,from,i);P.moves++;soSel=-1;buzz(8);srStartPour(from,i,c,n);
+    if(soWon(T)){P.done=true;SO.solved++;
+      if(P.daily){const y=new Date();y.setDate(y.getDate()-1);const yk=`${y.getFullYear()}-${y.getMonth()+1}-${y.getDate()}`;SO.streak=SO.lastDaily===yk?SO.streak+1:SO.lastDaily===P.daily?SO.streak:1;SO.lastDaily=P.daily}
+      else SO.level++;
+      addPts(Math.max(1,P.k*2-P.hints*2));buzz([20,40,20])}
+    soSave();return renderSort(false)}
+  // can't pour there: pick that tube up instead, or nudge
+  if(T[i].length&&!soDoneTube(T[i])){soSel=i;return renderSort(false)}
+  buzz(30);srShake(i)}
+function soHint(){const P=SO.p;if(P.done)return;const path=soSolve(P.tubes,80000);
+  if(!path){soSay(P.extra?'No way out from here. Undo a few moves or restart.':'No way out from here. Undo a few moves, or add a spare tube.');return renderSort(false)}
+  if(!path.length)return;P.hints++;const [a,b]=path[0];soSel=a;soHintTo=b;soSay('Pour the lifted tube into the glowing one.');soSave();renderSort(false)}
+function renderSort(full){
+  if(!SO)soLoad();if(!SO.p)return soNew(false);
+  const P=SO.p,T=P.tubes;
+  if(full||!$('#soRack')){
+    stage.innerHTML=`<div class="headline mhead">
+        <div class="mstat"><div class="eyebrow">${P.daily?'Daily':'Level'}</div><div class="mnum dim" id="soLv"></div></div>
+        <div class="mstat"><div class="eyebrow">Sorted</div><div class="mnum" id="soSorted"></div></div>
+        <div class="mstat"><div class="eyebrow">Moves</div><div class="mnum dim" id="soMoves"></div></div></div>
+      <div class="soscene" id="soScene"><div class="sobg"></div><div class="soglow"></div><div class="soglow2"></div><div class="soshelf" hidden></div><div class="sorack" id="soRack"></div></div>
+      <div class="hint" id="soHintTxt"></div>`;
+    srSetup($('#soRack'));
+  }
+  srSync();if(SR.L&&SR.L.n!==T.length)srResize();srKick();
+  const sorted=T.filter(t=>t.length===SO_CAP&&soDoneTube(t)).length;
+  $('#soLv').textContent=P.daily?'10 colours':P.level;$('#soSorted').textContent=`${sorted}/${P.k}`;$('#soMoves').textContent=P.moves;
+  $('#soHintTxt').textContent=P.done?`Sorted in ${P.moves} moves${P.hints?` with ${P.hints} hint${P.hints>1?'s':''}`:''}! ${P.daily?`Daily streak: ${SO.streak} 🔥`:''}`
+    :(Date.now()-soMsgT<3000&&soMsg)?soMsg:'Tap a tube to pick it up, then tap where to pour. Pour onto the same colour or into an empty tube.';
+  const today=ctDayKey(),dailyDone=SO.lastDaily===today;
+  const modes=`<div class="ctsizes sosizes"><button data-so="level" aria-pressed="${!P.daily}">Level ${P.daily?SO.level:P.level}<small>${soColors(P.daily?SO.level:P.level)} colours</small></button><button data-so="daily" aria-pressed="${!!P.daily}">Daily<small>${dailyDone?'Done ✓':'10 colours'}</small></button></div>`;
+  controls.innerHTML=P.done?`<div class="row"><button class="btn primary tall" id="soNext">${P.daily?'Back to levels':`Level ${SO.level}`}</button>${!dailyDone&&!P.daily?`<button class="btn tall" id="soDaily">Daily puzzle</button>`:''}</div>`
+    :`<div class="row"><button class="btn" id="soUndo" ${P.undo.length?'':'disabled'}>Undo</button><button class="btn" id="soRestart" ${P.moves?'':'disabled'}>Restart</button><button class="btn" id="soExtra" ${P.extra?'disabled':''}>+ Tube</button><button class="btn" id="soHint">Hint</button></div>${modes}`;
+  const on=(id,f)=>{const e=$(id);if(e)e.onclick=f};
+  on('#soNext',()=>soNew(false));on('#soDaily',()=>soNew(true));
+  on('#soUndo',()=>{if(!P.undo.length)return;if(SR.anim)srFinish();P.tubes=P.undo.pop();soSel=-1;soHintTo=-1;soSave();renderSort(true)});
+  on('#soRestart',()=>{if(SR.anim)srFinish();P.undo.push(P.tubes.map(t=>t.slice()));P.tubes=P.start.map(t=>t.slice());if(P.extra)P.tubes.push([]);soSel=-1;soHintTo=-1;soSave();renderSort(true)});
+  on('#soExtra',()=>{if(P.extra)return;if(SR.anim)srFinish();P.extra=true;P.undo.forEach(u=>u.push([]));P.tubes.push([]);soSave();renderSort(true)});
+  on('#soHint',soHint);
+  controls.querySelectorAll('[data-so]').forEach(b=>b.onclick=()=>{const want=b.dataset.so==='daily';if(want===!!P.daily)return;
+    if(want){if(dailyDone)return soSay('Today’s daily is done. Back tomorrow!'),renderSort(false);return soNew(true)}soNew(false)});
+}
+
+/* ---- Sort renderer: glass and liquid drawn on a canvas. The liquid surface stays level as a tube tilts,
+   a tube only spills once its surface reaches the lip, and surfaces slosh and ripple. ---- */
+const SR={cv:null,g:null,W:0,H:0,dpr:1,L:null,vis:[],anim:null,parts:[],raf:0,last:0,cele:false,ro:null,t:0};
+const SR_N=12,SR_RATE=3.4;
+const srRM=()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}};
+const srEase=x=>x<0?0:x>1?1:x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;
+function srRuns(t){const out=[];for(const c of t){const l=out[out.length-1];if(l&&l.c===c)l.a++;else out.push({c,a:1})}return out}
+function srNewVis(){return{layers:[],lift:0,lv:0,hop:0,hv:0,hd:-1,sk:0,wh:new Float32Array(SR_N),wv:new Float32Array(SR_N),sl:0,sv:0,px:null,pvx:0,bub:[],cx:0,cy:0,th:0}}
+function srSync(){if(!SO||!SO.p)return;const T=SO.p.tubes,A=SR.anim;while(SR.vis.length<T.length)SR.vis.push(srNewVis());SR.vis.length=T.length;
+  T.forEach((t,i)=>{if(A&&(i===A.from||i===A.to))return;const r=srRuns(t),v=SR.vis[i];if(JSON.stringify(r)!==JSON.stringify(v.layers))v.layers=r})}
+function srLayout(){const n=SO.p.tubes.length,W=SR.W,per=n>7?Math.ceil(n/2):n,rows=Math.ceil(n/per),colW=W/per;
+  const w=Math.min(44,colW*0.58),u=w*0.9,h=u*4.55,r=w*0.46,top=n>7?54:64,gap=n>7?30:50;
+  const H=top+rows*h+(rows-1)*gap+18,pos=[];
+  for(let i=0;i<n;i++){const row=Math.floor(i/per),col=i%per,cnt=Math.min(per,n-row*per);pos.push({x:(W-cnt*colW)/2+(col+.5)*colW,y:top+row*(h+gap)+h/2})}
+  SR.L={w,u,h,r,pos,colW,H,n}}
+const SR_FRONT=56;
+function srResize(){const cv=SR.cv;if(!cv||!cv.isConnected)return;const sc=cv.closest('.soscene'),W=sc.clientWidth||340;SR.W=W;srLayout();SR.H=SR.L.H;SR.dpr=Math.min(3,window.devicePixelRatio||1);
+  const ex=SR.L.n>7?6:40;sc.style.minHeight=(SR.H+SR_FRONT+ex)+'px';const SH=Math.max(sc.clientHeight,SR.H+SR_FRONT+ex),L=SR.L,bench=SH-SR_FRONT,oy=Math.round(bench-(L.pos[L.n-1].y+L.h/2)-1);
+  cv.width=Math.round(W*SR.dpr);cv.height=Math.round(SR.H*SR.dpr);cv.style.height=SR.H+'px';cv.style.top=oy+'px';
+  SR.scene={W,SH};sgBuild(sc,W,SH,bench,L.n>7?Math.round(oy+L.pos[0].y+L.h/2+1):null);srKick()}
+function srSetup(wrap){
+  if(SR.anim)srFinish();
+  wrap.innerHTML='<canvas class="socv" aria-label="Colour tubes"></canvas>';SR.cv=wrap.firstChild;SR.g=SR.cv.getContext('2d');
+  SR.cv.addEventListener('pointerdown',e=>{e.preventDefault();const b=SR.cv.getBoundingClientRect(),x=e.clientX-b.left,y=e.clientY-b.top,L=SR.L;if(!L)return;
+    let best=-1,bd=1e9;L.pos.forEach((p,i)=>{const dx=Math.abs(x-p.x);if(dx<L.colW/2&&y>p.y-L.h/2-40&&y<p.y+L.h/2+16&&dx<bd){bd=dx;best=i}});if(best>=0)soTap(best)});
+  try{if(!SR.ro)SR.ro=new ResizeObserver(()=>{if(!SR.cv||!SR.cv.isConnected)return;const sc=SR.cv.closest('.soscene');if(sc.clientWidth!==SR.W||!SR.scene||Math.abs(sc.clientHeight-SR.scene.SH)>2)srResize()});SR.ro.disconnect();SR.ro.observe(wrap.closest('.soscene'))}catch(e){}
+  srSync();srResize()}
+
+/* geometry: the tube's inside as a rectangle (w × h) centred on cx,cy, turned by th (clockwise, radians) */
+function srCorners(cx,cy,th){const {w,h}=SR.L,c=Math.cos(th),s=Math.sin(th);return[[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]].map(([x,y])=>[cx+x*c-y*s,cy+x*s+y*c])}
+function srAreaBelow(P,Y){const out=[];for(let i=0;i<P.length;i++){const a=P[i],b=P[(i+1)%P.length],ia=a[1]>=Y,ib=b[1]>=Y;if(ia)out.push(a);if(ia!==ib){const t=(Y-a[1])/(b[1]-a[1]);out.push([a[0]+(b[0]-a[0])*t,Y])}}
+  let s=0;for(let i=0;i<out.length;i++){const a=out[i],b=out[(i+1)%out.length];s+=a[0]*b[1]-b[0]*a[1]}return Math.abs(s)/2}
+function srLevel(cx,cy,th,V){const {w,u,h}=SR.L;if(Math.abs(th)<1e-4)return cy+h/2-V*u;
+  const P=srCorners(cx,cy,th),A=V*u*w;let lo=Math.min(...P.map(p=>p[1])),hi=Math.max(...P.map(p=>p[1]));
+  for(let k=0;k<24;k++){const m=(lo+hi)/2;if(srAreaBelow(P,m)>A)lo=m;else hi=m}return(lo+hi)/2}
+// the tilt at which a tube holding V units is full right up to its lip
+function srTiltFor(V){const {w,u,h}=SR.L;let lo=0,hi=1.55;for(let k=0;k<22;k++){const m=(lo+hi)/2,ly=(w/2)*Math.sin(m)-h/2*Math.cos(m);if(srAreaBelow(srCorners(0,0,m),ly)/(u*w)>V)lo=m;else hi=m}return(lo+hi)/2}
+const srLipOff=(th)=>{const {w,h}=SR.L,sx=th>=0?w/2:-w/2,c=Math.cos(th),s=Math.sin(th);return[sx*c+h/2*s,sx*s-h/2*c]};
+function srPourPose(A,th){const {w,h,pos}=SR.L,t=pos[A.to],lx=t.x-A.sgn*w*0.12,ly=t.y-h/2-12,o=srLipOff(th);return[lx-o[0],ly-o[1]]}
+
+/* pouring */
+function srStartPour(from,to,c,n){
+  if(SR.anim)srFinish();
+  if(srRM()||!SR.L||!SR.cv||!SR.cv.isConnected){srSync();srKick();return}
+  const v=SR.vis[from],w=SR.vis[to];const vol=v.layers.reduce((s,l)=>s+l.a,0);
+  let top=w.layers[w.layers.length-1];if(!top||top.c!==c){top={c,a:0};w.layers.push(top)}
+  const src=v.layers[v.layers.length-1];
+  SR.anim={from,to,c,n,sgn:SR.L.pos[to].x>SR.W/2?1:-1,ph:0,t:0,vol,moved:0,src,src0:src.a,dst:top,dst0:top.a,sx:v.cx||SR.L.pos[from].x,sy:v.cy||SR.L.pos[from].y,stream:0,tail:0,th0:srTiltFor(vol),bx:0,by:0,bth:0};
+  srSync();srKick()}
+function srFinish(){const A=SR.anim;if(!A)return;SR.anim=null;srSync();const v=SR.vis[A.from];if(v){v.px=null}srKick()}
+function srShake(i){const v=SR.vis[i];if(v){v.sk=0.32;srKick()}}
+function srSpark(x,y,col,k){for(let i=0;i<k;i++){const a=-Math.PI/2+(Math.random()-.5)*2.2,s=60+Math.random()*120;SR.parts.push({k:'s',x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.5+Math.random()*.4,max:.9,c:col,r:1.5+Math.random()*1.8})}}
+
+function srKick(){if(SR.raf||!SR.cv)return;SR.last=performance.now();SR.raf=requestAnimationFrame(srFrame)}
+function srFrame(ts){SR.raf=0;if(!SR.cv||!SR.cv.isConnected||!SO||!SO.p)return;
+  const dt=Math.min(0.034,Math.max(0.001,(ts-SR.last)/1000));SR.last=ts;SR.t+=dt;
+  const busy=srStep(dt);srDraw();if(busy)SR.raf=requestAnimationFrame(srFrame)}
+
+function srStep(dt){
+  const L=SR.L,P=SO.p,A=SR.anim;if(!L)return false;let busy=false;
+  if(A){busy=true;A.t+=dt;const v=SR.vis[A.from],w=SR.vis[A.to],tp=L.pos[A.to];
+    if(A.ph===0){const e=srEase(A.t/0.32),th=A.sgn*A.th0*e,[px,py]=srPourPose(A,A.sgn*A.th0);
+      A.cx=A.sx+(px-A.sx)*e;A.cy=A.sy+(py-A.sy)*e-Math.sin(e*Math.PI)*18;A.th=th;if(A.t>=0.32){A.ph=1;A.t=0}}
+    else if(A.ph===1){A.moved=Math.min(A.n,A.moved+SR_RATE*dt*(0.55+0.45*Math.min(1,A.t/0.12)));
+      A.src.a=A.src0-A.moved;A.dst.a=A.dst0+A.moved;A.stream=Math.min(1,A.stream+dt/0.09);
+      A.th=A.sgn*Math.max(A.th0,srTiltFor(A.vol-A.moved));[A.cx,A.cy]=srPourPose(A,A.th);
+      // the stream hits the surface: ripples, droplets and bubbles
+      const lv=w.layers.reduce((s,l)=>s+l.a,0),sy=tp.y+L.h/2-lv*L.u,ix=tp.x-A.sgn*L.w*0.05;
+      const k=Math.max(0,Math.min(SR_N-1,Math.round((ix-(tp.x-L.h*0.55))/(L.h*1.1)*(SR_N-1))));
+      w.wv[k]+=(380+Math.random()*260)*dt*3;if(k>0)w.wv[k-1]+=140*dt*3;if(k<SR_N-1)w.wv[k+1]+=140*dt*3;
+      if(Math.random()<dt*26)SR.parts.push({k:'d',x:ix+(Math.random()-.5)*4,y:sy-2,vx:(Math.random()-.5)*90,vy:-90-Math.random()*110,life:.45,max:.45,c:SO_COL[A.c],r:1.2+Math.random()*1.6});
+      if(Math.random()<dt*18&&lv>0.4)w.bub.push({x:(Math.random()-.5)*L.w*0.6,y:sy+6+Math.random()*Math.min(lv*L.u-8,L.u*1.6),r:1+Math.random()*2.2,vy:-(26+Math.random()*30)});
+      if(A.moved>=A.n){A.ph=2;A.t=0}}
+    else if(A.ph===2){A.tail=Math.min(1,A.tail+dt/0.13);if(A.t>=0.13){A.ph=3;A.t=0;A.bx=A.cx;A.by=A.cy;A.bth=A.th}}
+    else{const e=srEase(A.t/0.3),hp=L.pos[A.from];A.cx=A.bx+(hp.x-A.bx)*e;A.cy=A.by+(hp.y-A.by)*e;A.th=A.bth*(1-e);
+      if(A.t>=0.3){const n=A.n,to=A.to;srFinish();const tv=SR.vis[to],tt=P.tubes[to];
+        if(tt.length===SO_CAP&&soDoneTube(tt)){srSpark(L.pos[to].x,L.pos[to].y-L.h/2-4,'#ffffff',12);srSpark(L.pos[to].x,L.pos[to].y-L.h/2-4,SO_COL[tt[0]],8)}
+        v.lv+=60}}}
+  // springs: lift, hop, shake, slosh and surface waves
+  SR.vis.forEach((v,i)=>{const hp=L.pos[i];if(!hp)return;const moving=A&&A.from===i;
+    const tgt=(i===soSel&&!moving)?-16:0;v.lv+=(-(v.lift-tgt)*300-v.lv*24)*dt;v.lift+=v.lv*dt;
+    if(v.hd>=0){v.hd-=dt;if(v.hd<0){v.hv=-280;v.hd=-1}}v.hv+=(-v.hop*320-v.hv*13)*dt;v.hop+=v.hv*dt;
+    if(v.sk>0)v.sk=Math.max(0,v.sk-dt);
+    const cx=moving?A.cx:hp.x+(v.sk>0?Math.sin(v.sk*60)*5*(v.sk/0.32):0),cy=moving?A.cy:hp.y+v.lift+v.hop,th=moving?A.th:0;
+    const vx=v.px==null?0:(cx-v.px)/dt,ax=v.px==null?0:(vx-v.pvx)/dt;v.px=cx;v.pvx=vx;v.cx=cx;v.cy=cy;v.th=th;
+    v.sv+=(-v.sl*55-v.sv*3.2-Math.max(-4000,Math.min(4000,ax))*0.00006)*dt;v.sl+=v.sv*dt;v.sl=Math.max(-.35,Math.min(.35,v.sl));
+    if(Math.abs(v.lv)>40&&!moving)for(let k=0;k<SR_N;k++)v.wv[k]+=(Math.random()-.5)*Math.abs(v.lv)*0.06;
+    const sub=3,h=dt/sub,wh=v.wh,wv=v.wv;let e=0;
+    for(let s=0;s<sub;s++){for(let k=0;k<SR_N;k++){const l=wh[k>0?k-1:k],r=wh[k<SR_N-1?k+1:k];wv[k]+=(-60*wh[k]-4.2*wv[k]+1500*((l+r)/2-wh[k]))*h}
+      for(let k=0;k<SR_N;k++){wh[k]=Math.max(-7,Math.min(7,wh[k]+wv[k]*h))}}
+    for(let k=0;k<SR_N;k++)e+=Math.abs(wh[k])+Math.abs(wv[k])*0.05;
+    const lv=v.layers.reduce((s,l)=>s+l.a,0),surf=L.h/2-lv*L.u;
+    v.bub=v.bub.filter(b=>{b.y+=b.vy*dt;b.x+=Math.sin(SR.t*9+b.r*7)*6*dt;return b.y>hp.y+surf+2});
+    if(e>0.25||Math.abs(v.lift-tgt)>.3||Math.abs(v.lv)>.5||Math.abs(v.hop)>.3||Math.abs(v.hv)>.5||v.hd>=0||v.sk>0||Math.abs(v.sl)>.002||Math.abs(v.sv)>.01||v.bub.length)busy=true});
+  SR.parts=SR.parts.filter(p=>{p.life-=dt;p.vy+=(p.k==='s'?260:900)*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;return p.life>0});if(SR.parts.length)busy=true;
+  if(P.done&&!A&&!SR.cele){SR.cele=true;SR.vis.forEach((v,i)=>{v.hd=0.05+i*0.06;const p=L.pos[i],t=P.tubes[i];if(t.length)setTimeout(()=>{srSpark(p.x,p.y-L.h/2,SO_COL[t[0]],7);srKick()},i*60+120)});busy=true}
+  if(soHintTo>=0)busy=true;
+  return busy}
+
+function srTubePath(g){const {w,h,r}=SR.L;g.beginPath();g.moveTo(-w/2,-h/2);g.lineTo(-w/2,h/2-r);g.arc(-w/2+r,h/2-r,r,Math.PI,Math.PI/2,true);g.lineTo(w/2-r,h/2);g.arc(w/2-r,h/2-r,r,Math.PI/2,0,true);g.lineTo(w/2,-h/2)}
+function srDrawTube(i){
+  const g=SR.g,L=SR.L,v=SR.vis[i],d=SR.dpr,{w,h}=L,cx=v.cx,cy=v.cy,th=v.th,P=SO.p,t=P.tubes[i];
+  const local=()=>{g.setTransform(d,0,0,d,0,0);g.translate(cx,cy);g.rotate(th)};
+  const span=h*0.55,disp=(k,x)=>{const f=(x-(cx-span))/(2*span)*(SR_N-1),a=Math.max(0,Math.min(SR_N-1,Math.floor(f))),b=Math.min(SR_N-1,a+1),m=f-a;return(v.wh[a]*(1-m)+v.wh[b]*m)*k+v.sl*(x-cx)*k};
+  // glass back
+  local();srTubePath(g);g.closePath();g.fillStyle='rgba(225,232,255,.05)';g.fill();
+  g.save();srTubePath(g);g.closePath();g.clip();
+  // liquid, in screen space so the surface stays level
+  g.setTransform(d,0,0,d,0,0);
+  const lev=[];let cum=0;for(const l of v.layers){cum+=Math.max(0,l.a);lev.push(srLevel(cx,cy,th,cum))}
+  const surf=(Y,k)=>{for(let s=0;s<=16;s++){const x=cx-span+2*span*s/16,y=Y+disp(k,x);s?g.lineTo(x,y):g.moveTo(x,y)}};
+  const bottom=cy+span+w+40;
+  for(let k=v.layers.length-1;k>=0;k--){if(v.layers[k].a<=0.002)continue;const top=k===v.layers.length-1;
+    g.beginPath();surf(lev[k],top?1:.4);g.lineTo(cx+span,bottom);g.lineTo(cx-span,bottom);g.closePath();g.fillStyle=SO_COL[v.layers[k].c];g.fill();
+    if(!top){g.beginPath();surf(lev[k],.4);g.strokeStyle='rgba(10,14,30,.16)';g.lineWidth=1;g.stroke()}}
+  if(cum>0.002){const Y=lev[lev.length-1];
+    // depth shading across the tube, only over the liquid
+    g.save();g.beginPath();surf(Y,1);g.lineTo(cx+span,bottom);g.lineTo(cx-span,bottom);g.closePath();g.clip();
+    local();const gr=g.createLinearGradient(-w/2,0,w/2,0);gr.addColorStop(0,'rgba(0,0,0,.34)');gr.addColorStop(.2,'rgba(255,255,255,.12)');gr.addColorStop(.42,'rgba(255,255,255,0)');gr.addColorStop(.8,'rgba(0,0,0,.1)');gr.addColorStop(1,'rgba(0,0,0,.36)');
+    g.fillStyle=gr;g.fillRect(-w/2,-h/2,w,h);
+    const gb=g.createLinearGradient(0,-h/2,0,h/2);gb.addColorStop(0,'rgba(0,0,0,0)');gb.addColorStop(1,'rgba(0,0,0,.18)');g.fillStyle=gb;g.fillRect(-w/2,-h/2,w,h);
+    // bubbles
+    g.setTransform(d,0,0,d,0,0);for(const b of v.bub){g.beginPath();g.arc(cx+b.x,b.y,b.r,0,Math.PI*2);g.fillStyle='rgba(255,255,255,.18)';g.fill();g.strokeStyle='rgba(255,255,255,.55)';g.lineWidth=.8;g.stroke()}
+    g.restore();
+    // bright meniscus line
+    g.setTransform(d,0,0,d,0,0);g.beginPath();surf(Y,1);g.strokeStyle='rgba(255,255,255,.5)';g.lineWidth=1.6;g.stroke();
+    g.beginPath();surf(Y+2.2,1);g.strokeStyle='rgba(255,255,255,.12)';g.lineWidth=2.4;g.stroke()}
+  g.restore();
+  // glass: outline, rim and shine
+  local();
+  const full=t.length===SO_CAP&&soDoneTube(t)&&!(SR.anim&&(SR.anim.to===i||SR.anim.from===i));
+  let col='rgba(226,232,250,.5)',lw=2;
+  if(i===soHintTo){const p=.5+.5*Math.sin(SR.t*6);col=`rgba(95,211,154,${.55+.45*p})`;g.shadowColor='rgba(95,211,154,.8)';g.shadowBlur=10+8*p;lw=2.4}
+  else if(i===soSel&&!(SR.anim&&SR.anim.from===i)){col='#f2b64a';g.shadowColor='rgba(242,182,74,.55)';g.shadowBlur=14;lw=2.4}
+  else if(full)col='rgba(95,211,154,.85)';
+  srTubePath(g);g.strokeStyle=col;g.lineWidth=lw;g.lineJoin='round';g.stroke();g.shadowBlur=0;
+  g.beginPath();g.moveTo(-w/2-3.5,-h/2);g.lineTo(w/2+3.5,-h/2);g.strokeStyle=col;g.lineWidth=3;g.lineCap='round';g.stroke();
+  const sh=g.createLinearGradient(0,-h/2,0,h/2);sh.addColorStop(0,'rgba(255,255,255,.34)');sh.addColorStop(.6,'rgba(255,255,255,.12)');sh.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle=sh;g.beginPath();const sx=-w/2+w*0.13,sw=Math.max(2.5,w*0.11);g.moveTo(sx,-h/2+7);g.lineTo(sx+sw,-h/2+7);g.lineTo(sx+sw,h/2-L.r*0.9);g.quadraticCurveTo(sx+sw/2,h/2-L.r*0.6,sx,h/2-L.r*0.9);g.closePath();g.fill();
+  g.fillStyle='rgba(255,190,120,.3)';g.fillRect(w/2-w*0.2,-h/2+10,Math.max(1.2,w*0.05),h*0.55);
+  g.setTransform(d,0,0,d,0,0)}
+function srDrawStream(){const A=SR.anim;if(!A||A.ph<1||A.ph>2)return;const g=SR.g,L=SR.L,v=SR.vis[A.from],w=SR.vis[A.to],tp=L.pos[A.to];
+  const o=srLipOff(A.th),lx=v.cx+o[0],ly=v.cy+o[1],lv=w.layers.reduce((s,l)=>s+l.a,0),ey=tp.y+w.hop+L.h/2-lv*L.u+3,ex=tp.x-A.sgn*L.w*0.05;
+  const y0=ly+(ey-ly)*A.tail,y1=ly+(ey-ly)*A.stream;if(y1-y0<1)return;
+  const pts=[];for(let s=0;s<=14;s++){const y=y0+(y1-y0)*s/14,f=(y-ly)/Math.max(1,ey-ly),x=lx+(ex-lx)*Math.sqrt(Math.max(0,f))+Math.sin(SR.t*38+f*10)*0.9*f,wd=L.w*(0.3-0.13*Math.sqrt(Math.max(0,f)));pts.push([x,y,wd])}
+  g.beginPath();pts.forEach(([x,y,wd],s)=>s?g.lineTo(x-wd/2,y):g.moveTo(x-wd/2,y));for(let s=pts.length-1;s>=0;s--)g.lineTo(pts[s][0]+pts[s][2]/2,pts[s][1]);g.closePath();
+  g.fillStyle=SO_COL[A.c];g.fill();
+  g.beginPath();pts.forEach(([x,y,wd],s)=>s?g.lineTo(x-wd*0.18,y):g.moveTo(x-wd*0.18,y));g.strokeStyle='rgba(255,255,255,.4)';g.lineWidth=1.1;g.stroke()}
+function srDraw(){const g=SR.g,d=SR.dpr;if(!g||!SR.L)return;g.setTransform(d,0,0,d,0,0);g.clearRect(0,0,SR.W,SR.H);
+  const A=SR.anim,L=SR.L;
+  SR.vis.forEach((v,i)=>{const p=L.pos[i];if(!p)return;const up=(A&&A.from===i)?1:Math.min(1,Math.abs(v.lift+v.hop)/40),a=0.55*(1-up);if(a<0.02)return;
+    const sg=g.createRadialGradient(p.x,p.y+L.h/2+1,1,p.x,p.y+L.h/2+1,L.w*0.75);sg.addColorStop(0,`rgba(0,0,0,${a})`);sg.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=sg;g.beginPath();g.ellipse(p.x,p.y+L.h/2+1,L.w*0.75,5,0,0,Math.PI*2);g.fill()});
+  SR.vis.forEach((v,i)=>{if(!A||A.from!==i)srDrawTube(i)});
+  srDrawStream();if(A)srDrawTube(A.from);
+  for(const p of SR.parts){const a=Math.max(0,p.life/p.max);g.globalAlpha=a;g.fillStyle=p.c;g.beginPath();
+    if(p.k==='s'){const r=p.r*1.6;g.moveTo(p.x,p.y-r);g.lineTo(p.x+r*.35,p.y-r*.35);g.lineTo(p.x+r,p.y);g.lineTo(p.x+r*.35,p.y+r*.35);g.lineTo(p.x,p.y+r);g.lineTo(p.x-r*.35,p.y+r*.35);g.lineTo(p.x-r,p.y);g.lineTo(p.x-r*.35,p.y-r*.35)}
+    else g.arc(p.x,p.y,p.r,0,Math.PI*2);g.fill()}
+  g.globalAlpha=1}
+
+/* ---- Sort backdrop: a photo of a medieval lab (sort-lab.jpg). The tubes stand on its bench; on two-row levels the top row sits
+   on a shelf cut from the same bench wood. Firelight and candlelight flicker with CSS, so nothing redraws for it. ---- */
+const SO_PHOTO={src:'sort-lab.jpg',w:1080,h:1935,stand:0.758,lip:0.795,fire:[0.655,0.6],candles:[[0.352,0.318],[0.443,0.357],[0.298,0.413],[0.352,0.413]]};
+let soImg=null;
+function sgPhoto(){if(!soImg){soImg=new Image();soImg.decoding='async';soImg.onload=()=>{if(S.mode==='sort'&&SR.cv&&SR.cv.isConnected)srResize()};soImg.src=SO_PHOTO.src}return soImg}
+function sgPlace(W,SH,bench){const P=SO_PHOTO;
+  const s=Math.max(W/P.w,SH/P.h,bench/(P.stand*P.h),(SH-bench)/((1-P.stand)*P.h)),iw=P.w*s,ih=P.h*s;
+  return{s,iw,ih,ox:(W-iw)/2,oy:bench-P.stand*ih}}
+function sgBuild(sc,W,SH,bench,shelfY){sgPhoto();const P=SO_PHOTO,{iw,ih,ox,oy}=sgPlace(W,SH,bench),bgs=`${iw}px ${ih}px`;
+  const bg=sc.querySelector('.sobg');bg.style.backgroundImage=`url(${P.src})`;bg.style.backgroundSize=bgs;bg.style.backgroundPosition=`${ox}px ${oy}px`;
+  const sh=sc.querySelector('.soshelf');
+  if(shelfY!=null){sh.hidden=false;const top=shelfY-7;sh.style.top=top+'px';sh.style.backgroundImage=`url(${P.src})`;sh.style.backgroundSize=bgs;sh.style.backgroundPosition=`${ox}px ${-(P.lip*ih)+3}px`}else sh.hidden=true;
+  const at=([x,y])=>[ox+x*iw,oy+y*ih];const [fx,fy]=at(P.fire),fr=iw*0.38;
+  sc.querySelector('.soglow').style.background=`radial-gradient(${fr}px ${fr*0.85}px at ${fx}px ${fy}px, rgba(255,150,60,.42), rgba(255,110,40,.14) 45%, rgba(0,0,0,0) 100%)`;
+  sc.querySelector('.soglow2').style.background=P.candles.map(c=>{const [x,y]=at(c);return `radial-gradient(${iw*0.07}px ${iw*0.07}px at ${x}px ${y}px, rgba(255,200,120,.45), rgba(255,170,80,0))`}).join(',')}
+
+/* ==========================================================
    OFFCUT: cut-list solitaire. Cut each order from your rack, waste as little as you can.
    Lengths are in inches inside; orders come in 3" steps; anything under 1' left on a board is scrap.
    ========================================================== */
@@ -2300,7 +2579,7 @@ function suMenu(){const today=ctDayKey();
   $('#suDaily').onclick=()=>suNew('hard',true);$('#suErr').onclick=()=>{SU.showErr=!SU.showErr;suSave();suDraw();suMenu()};$('#suBack').onclick=()=>suDraw()}
 
 function render(){
-  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else if(S.mode==='sand')return renderSand(true);else if(S.mode==='yard')return renderYard(true);else if(S.mode==='cats')return renderCats(true);else if(S.mode==='offcut')return renderOffcut();else if(S.mode==='trade')return renderTrade();else if(S.mode==='mine')return renderMine(true);else if(S.mode==='sudoku')return renderSudoku();else renderCon();
+  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else if(S.mode==='sand')return renderSand(true);else if(S.mode==='yard')return renderYard(true);else if(S.mode==='cats')return renderCats(true);else if(S.mode==='offcut')return renderOffcut();else if(S.mode==='trade')return renderTrade();else if(S.mode==='mine')return renderMine(true);else if(S.mode==='sudoku')return renderSudoku();else if(S.mode==='sort')return renderSort(true);else renderCon();
   paintClock();
 }
 function setMode(m){
@@ -2432,7 +2711,7 @@ function drawQR(cv,text){
 }
 
 /* ---------- boot ---------- */
-const m0=['merge','solitaire','cats','sudoku'].includes(S.mode)?S.mode:'solitaire';S.mode='';setMode(m0);
+const m0=['merge','solitaire','cats','sudoku','sort'].includes(S.mode)?S.mode:'solitaire';S.mode='';setMode(m0);
 })();
 </script>
 
