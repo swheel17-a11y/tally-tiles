@@ -386,6 +386,8 @@ button:disabled{opacity:.35;cursor:default}
 @keyframes soflick{0%{opacity:.85}12%{opacity:1}23%{opacity:.78}37%{opacity:.95}48%{opacity:.82}61%{opacity:1}74%{opacity:.8}88%{opacity:.93}100%{opacity:.85}}
 .soshelf{position:absolute;left:0;right:0;height:15px;background-repeat:no-repeat;box-shadow:0 6px 10px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,200,140,.25)}
 .sorack{position:absolute;inset:0}
+.knbg{position:absolute;inset:-20px;background-size:cover;background-position:center 62%;filter:blur(7px) brightness(.5) saturate(1.1)}
+.kncv{position:absolute;left:0;top:0;width:100%;display:block;touch-action:none;-webkit-user-select:none;user-select:none}
 .socv{position:absolute;left:0;display:block;width:100%;touch-action:manipulation;-webkit-user-select:none;user-select:none}
 .sosizes{grid-template-columns:1fr 1fr}
 
@@ -455,6 +457,7 @@ td.h{padding-top:14px;font-size:11px;letter-spacing:.12em;text-transform:upperca
     <button role="tab" id="tab-cats" aria-selected="false" data-mode="cats">Cats</button>
     <button role="tab" id="tab-sudoku" aria-selected="false" data-mode="sudoku">Sudoku</button>
     <button role="tab" id="tab-sort" aria-selected="false" data-mode="sort">Sort</button>
+    <button role="tab" id="tab-knots" aria-selected="false" data-mode="knots">Knots</button>
   </div>
   <div class="stage" id="stage"></div>
   <div class="controls" id="controls"></div>
@@ -490,7 +493,7 @@ const addPts=p=>{S.dayPts+=p;save();};
 /* ---------- clocks: one per tab, paused while you're on another tab ---------- */
 const R=26,C=2*Math.PI*R,LIMIT=30;
 const mkClock=()=>({elapsed:0,since:null,running:false,timed:false,onEnd:null});
-const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock(),sand:mkClock(),yard:mkClock(),cats:mkClock(),offcut:mkClock(),trade:mkClock(),mine:mkClock(),sudoku:mkClock(),sort:mkClock()};
+const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock(),sand:mkClock(),yard:mkClock(),cats:mkClock(),offcut:mkClock(),trade:mkClock(),mine:mkClock(),sudoku:mkClock(),sort:mkClock(),knots:mkClock()};
 const el=c=>c.elapsed+(c.since?(performance.now()-c.since)/1000:0);
 let looping=false;
 function clockHTML(){return `<div class="clock" id="clock"><svg viewBox="0 0 64 64"><circle class="track" cx="32" cy="32" r="${R}" fill="none" stroke-width="6"/><circle class="arc" id="arc" cx="32" cy="32" r="${R}" fill="none" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg><div class="t" id="clockT"></div></div>`}
@@ -2022,6 +2025,190 @@ function sgBuild(sc,W,SH,bench,shelfY){sgPhoto();const P=SO_PHOTO,{iw,ih,ox,oy}=
   sc.querySelector('.soglow2').style.background=P.candles.map(c=>{const [x,y]=at(c);return `radial-gradient(${iw*0.07}px ${iw*0.07}px at ${x}px ${y}px, rgba(255,200,120,.45), rgba(255,170,80,0))`}).join(',')}
 
 /* ==========================================================
+   KNOTS: ropes run across a wooden ring; each rope's two pegs share a number.
+   A rope is red while it crosses another rope. Move pegs into empty holes until every rope is green.
+   ========================================================== */
+const KN_KEY='tally-tiles-knots-v1';
+let KN=null,knSel=-1,knMsg='',knMsgT=0,knHint=null;
+const knRopes=lv=>Math.min(9,3+Math.floor((lv-1)/2));
+const knFree=lv=>lv<3?3:lv<9?2:1;
+// two ropes cross when exactly one end of one lies strictly between the ends of the other (going round the ring)
+function knCross(a,b){let [p,q]=a[0]<a[1]?a:[a[1],a[0]];const inA=x=>x>p&&x<q;return inA(b[0])!==inA(b[1])}
+function knTangled(R){const bad=new Set();for(let i=0;i<R.length;i++)for(let j=i+1;j<R.length;j++)if(knCross(R[i],R[j])){bad.add(i);bad.add(j)}return bad}
+function knCount(R){let n=0;for(let i=0;i<R.length;i++)for(let j=i+1;j<R.length;j++)if(knCross(R[i],R[j]))n++;return n}
+// fewest moves to untangle (breadth-first, gives up past `cap`)
+function knMin(H,R0,cap){let layer=[R0],seen=new Set([JSON.stringify(R0)]);
+  for(let d=0;d<=cap;d++){const next=[];for(const R of layer){if(!knTangled(R).size)return d;if(d===cap)continue;const used=new Set(R.flat());
+      for(let i=0;i<R.length;i++)for(let e=0;e<2;e++)for(let h=0;h<H;h++){if(used.has(h))continue;const N=R.map(x=>x.slice());N[i][e]=h;const k=JSON.stringify(N);if(!seen.has(k)){seen.add(k);next.push(N)}}}
+    layer=next}return cap+1}
+function knGenerate(lv,seed){const R=ctRng(seed),n=knRopes(lv),H=2*n+knFree(lv);
+  for(let t=0;t<500;t++){const holes=ctShuf([...Array(H).keys()],R).slice(0,2*n),ropes=[];for(let k=0;k<n;k++)ropes.push([holes[2*k],holes[2*k+1]]);
+    const c=knCount(ropes),bad=knTangled(ropes).size;if(!(bad>=Math.min(n,Math.max(3,Math.ceil(n*0.75)))&&c>=n-1))continue;
+    if(n<=5&&knMin(H,ropes,3)<Math.min(3,2+Math.floor(lv/3)))continue;
+    return{H,ropes}}
+  return null}
+// best single move (fewest crossings afterwards) for hints
+function knBest(P){const used=new Set(P.ropes.flat()),before=knCount(P.ropes);let best=null;
+  P.ropes.forEach((r,i)=>[0,1].forEach(e=>{for(let h=0;h<P.H;h++){if(used.has(h))continue;const R=P.ropes.map(x=>x.slice());R[i][e]=h;const c=knCount(R),f=knTangled(R).size;
+    if(!best||c<best.c||(c===best.c&&f<best.f))best={i,e,h,c,f}}}));return best&&best.c<before?best:best}
+function knLoad(){try{KN=JSON.parse(localStorage.getItem(KN_KEY)||'null')}catch(e){KN=null}KN=Object.assign({level:1,solved:0,streak:0,lastDaily:'',p:null},KN||{})}
+function knSave(){try{localStorage.setItem(KN_KEY,JSON.stringify(KN))}catch(e){}}
+function knNew(daily){const key=ctDayKey(),lv=daily?12:KN.level,seed=daily?ctDaySeed('knots'+key):(Math.random()*4294967296)>>>0;
+  let g=knGenerate(lv,seed);for(let s=1;!g&&s<6;s++)g=knGenerate(lv,seed+s);
+  KN.p={H:g.H,ropes:g.ropes,start:g.ropes.map(r=>r.slice()),undo:[],moves:0,hints:0,done:false,daily:daily?key:'',level:lv,order:g.ropes.map((_,i)=>i)};
+  knSel=-1;knMsg='';knHint=null;KR.ropes=[];KR.win=0;KR.cele=false;knSave();renderKnots(true)}
+function knSay(m){knMsg=m;knMsgT=Date.now();clearTimeout(knSay.t);knSay.t=setTimeout(()=>{if(S.mode==='knots')renderKnots(false)},3100)}
+function knMove(i,e,h){const P=KN.p;if(P.done||P.ropes.flat().includes(h))return false;
+  P.undo.push(P.ropes.map(r=>r.slice()));if(P.undo.length>300)P.undo.shift();P.ropes[i][e]=h;P.moves++;knHint=null;
+  P.order=P.order.filter(x=>x!==i).concat(i);buzz(8);
+  if(!knTangled(P.ropes).size){P.done=true;KN.solved++;
+    if(P.daily){const y=new Date();y.setDate(y.getDate()-1);const yk=`${y.getFullYear()}-${y.getMonth()+1}-${y.getDate()}`;KN.streak=KN.lastDaily===yk?KN.streak+1:KN.lastDaily===P.daily?KN.streak:1;KN.lastDaily=P.daily}
+    else KN.level++;
+    addPts(Math.max(1,P.ropes.length*2-P.hints*2));buzz([20,40,20])}
+  knSave();renderKnots(false);return true}
+function knDoHint(){const P=KN.p;if(P.done)return;const b=knBest(P);if(!b)return;P.hints++;knHint=b;knSel=-1;knSay(`Move the glowing ${b.i+1} into the glowing hole.`);knSave();renderKnots(false)}
+function renderKnots(full){
+  if(!KN)knLoad();if(!KN.p)return knNew(false);
+  const P=KN.p;
+  if(full||!$('#knScene')){
+    stage.innerHTML=`<div class="headline mhead">
+        <div class="mstat"><div class="eyebrow">${P.daily?'Daily':'Level'}</div><div class="mnum dim" id="knLv"></div></div>
+        <div class="mstat"><div class="eyebrow">Tangled</div><div class="mnum" id="knBad"></div></div>
+        <div class="mstat"><div class="eyebrow">Moves</div><div class="mnum dim" id="knMoves"></div></div></div>
+      <div class="soscene knscene" id="knScene"><div class="knbg"></div><canvas class="kncv" aria-label="Rope ring"></canvas></div>
+      <div class="hint" id="knHintTxt"></div>`;
+    krSetup($('#knScene'));
+  }
+  const bad=knTangled(P.ropes).size;
+  $('#knLv').textContent=P.daily?`${P.ropes.length} ropes`:P.level;$('#knBad').textContent=`${bad}/${P.ropes.length}`;$('#knMoves').textContent=P.moves;
+  $('#knHintTxt').textContent=P.done?`Untangled in ${P.moves} move${P.moves===1?'':'s'}${P.hints?` with ${P.hints} hint${P.hints>1?'s':''}`:''}! ${P.daily?`Daily streak: ${KN.streak} 🔥`:''}`
+    :(Date.now()-knMsgT<3000&&knMsg)?knMsg:'Drag a peg into an empty hole (or tap the peg, then the hole). Red knots mark crossings; clear them all.';
+  const today=ctDayKey(),dailyDone=KN.lastDaily===today;
+  const modes=`<div class="ctsizes sosizes"><button data-kn="level" aria-pressed="${!P.daily}">Level ${P.daily?KN.level:P.level}<small>${knRopes(P.daily?KN.level:P.level)} ropes</small></button><button data-kn="daily" aria-pressed="${!!P.daily}">Daily<small>${dailyDone?'Done ✓':`${knRopes(12)} ropes`}</small></button></div>`;
+  controls.innerHTML=P.done?`<div class="row"><button class="btn primary tall" id="knNext">${P.daily?'Back to levels':`Level ${KN.level}`}</button>${!dailyDone&&!P.daily?`<button class="btn tall" id="knDaily">Daily puzzle</button>`:''}</div>`
+    :`<div class="row"><button class="btn" id="knUndo" ${P.undo.length?'':'disabled'}>Undo</button><button class="btn" id="knRestart" ${P.moves?'':'disabled'}>Restart</button><button class="btn" id="knHintBtn">Hint</button></div>${modes}`;
+  const on=(id,f)=>{const e=$(id);if(e)e.onclick=f};
+  on('#knNext',()=>knNew(false));on('#knDaily',()=>knNew(true));
+  on('#knUndo',()=>{if(!P.undo.length)return;P.ropes=P.undo.pop();knSel=-1;knHint=null;knSave();renderKnots(false)});
+  on('#knRestart',()=>{P.undo.push(P.ropes.map(r=>r.slice()));P.ropes=P.start.map(r=>r.slice());knSel=-1;knHint=null;knSave();renderKnots(false)});
+  on('#knHintBtn',knDoHint);
+  controls.querySelectorAll('[data-kn]').forEach(b=>b.onclick=()=>{const want=b.dataset.kn==='daily';if(want===!!P.daily)return;
+    if(want){if(dailyDone)return knSay('Today’s daily is done. Back tomorrow!'),renderKnots(false);return knNew(true)}knNew(false)});
+  krKick();
+}
+
+/* ---- Knots renderer: a wooden ring, pegs, and ropes simulated as chains (verlet) so they bend and settle ---- */
+const KR={cv:null,g:null,W:0,d:1,ring:null,ropes:[],drag:null,raf:0,last:0,t:0,win:0,cele:false,parts:[],ro:null};
+const KR_SEG=18;
+function krGeom(){const W=KR.W,cx=W/2,cy=KR.H/2,Ro=Math.min(W,KR.H)*0.47,Ri=Ro*0.66,Rm=(Ro+Ri)/2,H=KN.p.H,hr=Math.min((Ro-Ri)*0.36,Math.PI*Rm/H*0.78);
+  return{cx,cy,Ro,Ri,Rm,hr,H,hole:k=>{const a=-Math.PI/2+k*2*Math.PI/H;return[cx+Math.cos(a)*Rm,cy+Math.sin(a)*Rm]}}}
+function krSetup(sc){KR.cv=sc.querySelector('.kncv');KR.g=KR.cv.getContext('2d');
+  const bg=sc.querySelector('.knbg');bg.style.backgroundImage=`url(${SO_PHOTO.src})`;
+  KR.cv.addEventListener('pointerdown',krDown);KR.cv.addEventListener('pointermove',krMoveEv);KR.cv.addEventListener('pointerup',krUp);KR.cv.addEventListener('pointercancel',()=>{if(KR.drag){KR.drag=null;krKick()}});
+  try{if(!KR.ro)KR.ro=new ResizeObserver(()=>{if(KR.cv&&KR.cv.isConnected&&(KR.cv.parentElement.clientWidth!==KR.W||KR.cv.parentElement.clientHeight!==KR.H))krResize()});KR.ro.disconnect();KR.ro.observe(sc)}catch(e){}
+  krResize()}
+function krResize(){const sc=KR.cv.parentElement;KR.W=sc.clientWidth||340;sc.style.minHeight=Math.round(KR.W*0.9)+'px';KR.H=Math.max(sc.clientHeight,Math.round(KR.W*0.9));KR.d=Math.min(3,window.devicePixelRatio||1);
+  KR.cv.width=Math.round(KR.W*KR.d);KR.cv.height=Math.round(KR.H*KR.d);KR.cv.style.height=KR.H+'px';KR.ring=null;KR.ropes=[];krKick()}
+function krRing(G){const d=KR.d,c=document.createElement('canvas');c.width=KR.cv.width;c.height=KR.cv.height;const g=c.getContext('2d');g.scale(d,d);const R=ctRng(5);
+  // soft shadow under the ring
+  g.save();g.shadowColor='rgba(0,0,0,.7)';g.shadowBlur=26;g.shadowOffsetY=10;g.beginPath();g.arc(G.cx,G.cy,G.Ro,0,Math.PI*2);g.arc(G.cx,G.cy,G.Ri,0,Math.PI*2,true);g.fillStyle='#7a4f2c';g.fill('evenodd');g.restore();
+  g.save();g.beginPath();g.arc(G.cx,G.cy,G.Ro,0,Math.PI*2);g.arc(G.cx,G.cy,G.Ri,0,Math.PI*2,true);g.clip('evenodd');
+  let gr=g.createRadialGradient(G.cx-G.Ro*0.3,G.cy-G.Ro*0.35,G.Ri*0.2,G.cx,G.cy,G.Ro);gr.addColorStop(0,'#e7b77c');gr.addColorStop(.55,'#c98d52');gr.addColorStop(1,'#8a5a32');g.fillStyle=gr;g.fillRect(0,0,KR.W,KR.H);
+  for(let k=0;k<70;k++){const r=G.Ri+(G.Ro-G.Ri)*R(),a0=R()*Math.PI*2,len=0.4+R()*2.2;g.strokeStyle=`rgba(${R()<.5?'90,52,24':'255,220,170'},${0.08+R()*0.16})`;g.lineWidth=0.6+R()*1.4;g.beginPath();g.arc(G.cx+(R()-.5)*3,G.cy+(R()-.5)*3,r,a0,a0+len);g.stroke()}
+  // bevels on the inner and outer edges
+  g.lineWidth=5;g.strokeStyle='rgba(255,230,190,.35)';g.beginPath();g.arc(G.cx,G.cy,G.Ro-2.5,Math.PI*1.05,Math.PI*1.95);g.stroke();
+  g.strokeStyle='rgba(60,30,10,.45)';g.beginPath();g.arc(G.cx,G.cy,G.Ro-2.5,Math.PI*0.05,Math.PI*0.95);g.stroke();
+  g.strokeStyle='rgba(60,30,10,.5)';g.beginPath();g.arc(G.cx,G.cy,G.Ri+2.5,Math.PI*1.05,Math.PI*1.95);g.stroke();
+  g.strokeStyle='rgba(255,230,190,.3)';g.beginPath();g.arc(G.cx,G.cy,G.Ri+2.5,Math.PI*0.05,Math.PI*0.95);g.stroke();
+  g.restore();
+  // the well in the middle
+  gr=g.createRadialGradient(G.cx,G.cy,G.Ri*0.2,G.cx,G.cy,G.Ri);gr.addColorStop(0,'rgba(8,6,6,.92)');gr.addColorStop(.85,'rgba(18,12,8,.88)');gr.addColorStop(1,'rgba(0,0,0,.95)');g.fillStyle=gr;g.beginPath();g.arc(G.cx,G.cy,G.Ri,0,Math.PI*2);g.fill();
+  // holes
+  for(let k=0;k<G.H;k++){const [x,y]=G.hole(k);gr=g.createRadialGradient(x+G.hr*0.25,y+G.hr*0.3,G.hr*0.1,x,y,G.hr);gr.addColorStop(0,'#2a170c');gr.addColorStop(.7,'#140a05');gr.addColorStop(1,'#3a2210');
+    g.fillStyle=gr;g.beginPath();g.arc(x,y,G.hr,0,Math.PI*2);g.fill();g.strokeStyle='rgba(255,220,170,.35)';g.lineWidth=1.2;g.beginPath();g.arc(x,y,G.hr,Math.PI*0.1,Math.PI*0.9);g.stroke();
+    g.strokeStyle='rgba(40,20,8,.7)';g.beginPath();g.arc(x,y,G.hr,Math.PI*1.1,Math.PI*1.9);g.stroke()}
+  return c}
+function krPegPos(i,e,G){const P=KN.p,D=KR.drag;if(D&&D.i===i&&D.e===e&&D.moved)return[D.x,D.y];return G.hole(P.ropes[i][e])}
+function krEnsure(G){const P=KN.p;if(KR.ropes.length===P.ropes.length)return;
+  KR.ropes=P.ropes.map((r,i)=>{const a=G.hole(r[0]),b=G.hole(r[1]),pts=[];for(let k=0;k<=KR_SEG;k++){const t=k/KR_SEG;pts.push({x:a[0]+(b[0]-a[0])*t,y:a[1]+(b[1]-a[1])*t,px:0,py:0})}pts.forEach(p=>{p.px=p.x;p.py=p.y});return{pts,lift:[0,0]}})}
+function krStep(dt){const P=KN.p,G=krGeom();krEnsure(G);let busy=!!KR.drag;
+  KR.ropes.forEach((R,i)=>{const pts=R.pts,a=krPegPos(i,0,G),b=krPegPos(i,1,G);
+    const dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy),rest=Math.max(len*1.05,G.hr*2)/KR_SEG;
+    let mv=0;
+    for(let k=1;k<KR_SEG;k++){const p=pts[k],vx=(p.x-p.px)*0.9,vy=(p.y-p.py)*0.9;p.px=p.x;p.py=p.y;p.x+=vx;p.y+=vy;mv+=Math.abs(vx)+Math.abs(vy)}
+    // ease the ends toward their pegs so a drop glides in
+    for(const [k,t] of [[0,a],[KR_SEG,b]]){const p=pts[k];p.x+=(t[0]-p.x)*Math.min(1,dt*22);p.y+=(t[1]-p.y)*Math.min(1,dt*22);if(KR.drag&&KR.drag.i===i&&KR.drag.e===(k?1:0)&&KR.drag.moved){p.x=t[0];p.y=t[1]}p.px=p.x;p.py=p.y;mv+=Math.abs(t[0]-p.x)+Math.abs(t[1]-p.y)}
+    for(let it=0;it<14;it++)for(let k=0;k<KR_SEG;k++){const p=pts[k],q=pts[k+1],ddx=q.x-p.x,ddy=q.y-p.y,dd=Math.hypot(ddx,ddy)||1e-6,f=(dd-rest)/dd*0.5;
+      if(k>0){p.x+=ddx*f;p.y+=ddy*f}if(k+1<KR_SEG){q.x-=ddx*f;q.y-=ddy*f}}
+    // keep the middle of the rope pulled slightly taut and off the ring's wood
+    for(let k=1;k<KR_SEG;k++){const p=pts[k],t=k/KR_SEG,tx=a[0]+dx*t,ty=a[1]+dy*t;p.x+=(tx-p.x)*0.04;p.y+=(ty-p.y)*0.04}
+    if(mv>0.05)busy=true});
+  if(P.done&&!KR.drag){KR.win=Math.min(1,KR.win+dt/1.1);if(KR.win<1)busy=true;
+    if(!KR.cele){KR.cele=true;P.ropes.forEach(r=>r.forEach(h=>{const [x,y]=G.hole(h);for(let k=0;k<5;k++){const a=Math.random()*Math.PI*2,s=40+Math.random()*90;KR.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-60,life:.7,c:'#ffe7a0'})}}))}}
+  KR.parts=KR.parts.filter(p=>{p.life-=dt;p.vy+=240*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;return p.life>0});if(KR.parts.length)busy=true;
+  if(knHint)busy=true;
+  return busy}
+const KR_RED='#ff3b30',KR_GREEN='#5fd39a';
+// each rope keeps its own look: six solid colours, then two-tone candy stripes
+const KN_STYLES=[{c:'#e5484d'},{c:'#f59f24'},{c:'#f2d024',ink:'#3a2a00'},{c:'#3cb043'},{c:'#3b82f6'},{c:'#9b5de5'},
+  {c:'#f3efe6',s:'#e5484d',ink:'#7a1414'},{c:'#3b82f6',s:'#f2d024'},{c:'#3cb043',s:'#1b1b1b'}];
+const knShade=(hex,f)=>{const n=parseInt(hex.slice(1),16),r=n>>16,g=n>>8&255,b=n&255,m=x=>Math.round(f<1?x*f:x+(255-x)*(f-1));return `rgb(${m(r)},${m(g)},${m(b)})`};
+function krSegX(a,b,c,d){const r=[b.x-a.x,b.y-a.y],s=[d.x-c.x,d.y-c.y],den=r[0]*s[1]-r[1]*s[0];if(Math.abs(den)<1e-6)return null;
+  const t=((c.x-a.x)*s[1]-(c.y-a.y)*s[0])/den,u=((c.x-a.x)*r[1]-(c.y-a.y)*r[0])/den;return t>0&&t<1&&u>0&&u<1?{x:a.x+r[0]*t,y:a.y+r[1]*t}:null}
+function krDraw(){const g=KR.g,d=KR.d,P=KN.p,G=krGeom();g.setTransform(d,0,0,d,0,0);g.clearRect(0,0,KR.W,KR.H);
+  if(!KR.ring)KR.ring=krRing(G);g.drawImage(KR.ring,0,0,KR.W,KR.H);
+  const bad=knTangled(P.ropes),w=Math.max(6,G.hr*0.72),fade=P.done?1-KR.win:1,pulse=.5+.5*Math.sin(KR.t*6);
+  if(knHint){const [x,y]=G.hole(knHint.h);g.strokeStyle=`rgba(255,226,140,${.5+.5*pulse})`;g.lineWidth=3;g.shadowColor='rgba(255,210,120,.9)';g.shadowBlur=12;g.beginPath();g.arc(x,y,G.hr+2,0,Math.PI*2);g.stroke();g.shadowBlur=0}
+  g.globalAlpha=fade;
+  for(const i of P.order){const R=KR.ropes[i];if(!R)continue;const st=KN_STYLES[i%KN_STYLES.length],pts=R.pts;
+    const path=()=>{g.beginPath();g.moveTo(pts[0].x,pts[0].y);for(let k=1;k<KR_SEG;k++){const mx=(pts[k].x+pts[k+1].x)/2,my=(pts[k].y+pts[k+1].y)/2;g.quadraticCurveTo(pts[k].x,pts[k].y,mx,my)}g.lineTo(pts[KR_SEG].x,pts[KR_SEG].y)};
+    g.lineCap='round';g.lineJoin='round';
+    g.save();g.shadowColor='rgba(0,0,0,.55)';g.shadowBlur=6;g.shadowOffsetY=3;path();g.strokeStyle='rgba(0,0,0,.5)';g.lineWidth=w+2;g.stroke();g.restore();
+    path();g.strokeStyle=knShade(st.c,0.5);g.lineWidth=w+2;g.stroke();
+    path();g.strokeStyle=st.c;g.lineWidth=w;g.stroke();
+    if(st.s){g.lineCap='butt';g.setLineDash([w*0.7,w*0.7]);path();g.strokeStyle=st.s;g.lineWidth=w;g.stroke();g.setLineDash([]);g.lineCap='round'}
+    // twisted strands and a soft highlight
+    g.setLineDash([w*0.5,w*0.4]);g.lineDashOffset=0;path();g.strokeStyle='rgba(255,255,255,.26)';g.lineWidth=w*0.5;g.stroke();
+    g.lineDashOffset=w*0.45;path();g.strokeStyle='rgba(0,0,0,.2)';g.lineWidth=w*0.5;g.stroke();g.setLineDash([]);g.lineDashOffset=0;
+    path();g.strokeStyle='rgba(255,255,255,.25)';g.lineWidth=Math.max(1,w*0.14);g.stroke()}
+  // where ropes cross: a pulsing red knot
+  if(!P.done){for(let i=0;i<P.ropes.length;i++)for(let j=i+1;j<P.ropes.length;j++){if(!knCross(P.ropes[i],P.ropes[j]))continue;const A=KR.ropes[i],B=KR.ropes[j];if(!A||!B)continue;
+      const x=krSegX(A.pts[0],A.pts[KR_SEG],B.pts[0],B.pts[KR_SEG]);if(!x)continue;
+      g.save();g.shadowColor='rgba(255,40,30,.9)';g.shadowBlur=8+6*pulse;g.strokeStyle=`rgba(255,70,60,${.65+.35*pulse})`;g.lineWidth=2.5;g.beginPath();g.arc(x.x,x.y,w*0.75+pulse*2,0,Math.PI*2);g.stroke();g.restore();
+      g.fillStyle='rgba(255,60,50,.9)';g.beginPath();g.arc(x.x,x.y,2.2,0,Math.PI*2);g.fill()}}
+  // pegs: the rope's colour, a red ring while tangled, green once clear
+  for(const i of P.order){const st=KN_STYLES[i%KN_STYLES.length],tangled=bad.has(i);for(const e of [0,1]){const D=KR.drag,dragging=D&&D.i===i&&D.e===e&&D.moved,[x,y]=krPegPos(i,e,G),sel=knSel===i*2+e,hint=knHint&&knHint.i===i&&knHint.e===e,r=G.hr*(dragging?1.15:0.9);
+    g.save();g.shadowColor='rgba(0,0,0,.6)';g.shadowBlur=dragging?14:5;g.shadowOffsetY=dragging?8:2;
+    const gr=g.createRadialGradient(x-r*0.35,y-r*0.4,r*0.1,x,y,r);gr.addColorStop(0,knShade(st.c,1.45));gr.addColorStop(.6,st.c);gr.addColorStop(1,knShade(st.c,0.55));
+    g.fillStyle=gr;g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fill();g.restore();
+    if(st.s){g.save();g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.clip();g.strokeStyle=st.s;g.lineWidth=r*0.42;for(let k=-2;k<=2;k++){g.beginPath();g.moveTo(x-r+k*r*0.9,y+r);g.lineTo(x+r+k*r*0.9,y-r);g.stroke()}g.restore()}
+    const ring=sel?'#ffe28a':hint?`rgba(255,226,140,${.6+.4*pulse})`:tangled?KR_RED:KR_GREEN;
+    g.strokeStyle=ring;g.lineWidth=sel||hint?3.2:2.6;g.beginPath();g.arc(x,y,r+1.6,0,Math.PI*2);g.stroke();
+    g.font=`800 ${Math.round(r*1.05)}px Archivo, system-ui, sans-serif`;g.textAlign='center';g.textBaseline='middle';
+    if(st.s){g.fillStyle='rgba(0,0,0,.55)';g.beginPath();g.arc(x,y,r*0.55,0,Math.PI*2);g.fill();g.fillStyle='#fff'}
+    else{g.fillStyle=st.ink||'#fff';g.shadowColor=st.ink?'rgba(255,255,255,.4)':'rgba(0,0,0,.5)';g.shadowBlur=3}
+    g.fillText(String(i+1),x,y+1);g.shadowBlur=0;
+    if(!tangled&&!P.done){g.fillStyle=KR_GREEN;g.beginPath();g.arc(x+r*0.78,y-r*0.78,r*0.36,0,Math.PI*2);g.fill();g.strokeStyle='#0d2a1a';g.lineWidth=1.6;g.beginPath();g.moveTo(x+r*0.62,y-r*0.78);g.lineTo(x+r*0.75,y-r*0.64);g.lineTo(x+r*0.96,y-r*0.92);g.stroke()}}}
+  g.globalAlpha=1;
+  for(const p of KR.parts){g.globalAlpha=Math.max(0,p.life/.7);g.fillStyle=p.c;g.beginPath();g.arc(p.x,p.y,2,0,Math.PI*2);g.fill()}g.globalAlpha=1}
+function krKick(){if(KR.raf||!KR.cv)return;KR.last=performance.now();KR.raf=requestAnimationFrame(krFrame)}
+function krFrame(ts){KR.raf=0;if(!KR.cv||!KR.cv.isConnected||!KN||!KN.p||S.mode!=='knots')return;const dt=Math.min(.034,Math.max(.001,(ts-KR.last)/1000));KR.last=ts;KR.t+=dt;
+  const busy=krStep(dt);krDraw();if(busy)KR.raf=requestAnimationFrame(krFrame)}
+function krPt(e){const b=KR.cv.getBoundingClientRect();return[e.clientX-b.left,e.clientY-b.top]}
+function krPegAt(x,y,G){const P=KN.p;let best=null,bd=1e9;P.ropes.forEach((r,i)=>r.forEach((h,e)=>{const [hx,hy]=G.hole(h),dd=Math.hypot(x-hx,y-hy);if(dd<G.hr*1.6&&dd<bd){bd=dd;best={i,e}}}));return best}
+function krHoleAt(x,y,G,free){const used=new Set(KN.p.ropes.flat());let best=-1,bd=1e9;for(let k=0;k<G.H;k++){if(free&&used.has(k))continue;const [hx,hy]=G.hole(k),dd=Math.hypot(x-hx,y-hy);if(dd<bd){bd=dd;best=k}}
+  return bd<Math.max(G.hr*2.2,Math.PI*G.Rm/G.H*1.1)?best:-1}
+function krDown(e){const P=KN.p;if(!P||P.done)return;e.preventDefault();const G=krGeom(),[x,y]=krPt(e),pg=krPegAt(x,y,G);
+  if(pg){KR.drag={i:pg.i,e:pg.e,x,y,sx:x,sy:y,moved:false};try{KR.cv.setPointerCapture(e.pointerId)}catch(_){}krKick();return}
+  if(knSel>=0){const h=krHoleAt(x,y,G,true);if(h>=0){const i=knSel>>1,ee=knSel&1;knSel=-1;knMove(i,ee,h);krKick();return}}
+  knSel=-1;krKick()}
+function krMoveEv(e){const D=KR.drag;if(!D)return;const [x,y]=krPt(e);D.x=x;D.y=y;if(!D.moved&&Math.hypot(x-D.sx,y-D.sy)>6){D.moved=true;knSel=-1;const P=KN.p;P.order=P.order.filter(k=>k!==D.i).concat(D.i)}krKick()}
+function krUp(e){const D=KR.drag;if(!D)return;KR.drag=null;const G=krGeom();
+  if(D.moved){const h=krHoleAt(D.x,D.y,G,true);if(h<0||!knMove(D.i,D.e,h)){buzz(25)}}
+  else{const id=D.i*2+D.e;knSel=knSel===id?-1:id;renderKnots(false)}
+  krKick()}
+
+/* ==========================================================
    OFFCUT: cut-list solitaire. Cut each order from your rack, waste as little as you can.
    Lengths are in inches inside; orders come in 3" steps; anything under 1' left on a board is scrap.
    ========================================================== */
@@ -2579,7 +2766,7 @@ function suMenu(){const today=ctDayKey();
   $('#suDaily').onclick=()=>suNew('hard',true);$('#suErr').onclick=()=>{SU.showErr=!SU.showErr;suSave();suDraw();suMenu()};$('#suBack').onclick=()=>suDraw()}
 
 function render(){
-  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else if(S.mode==='sand')return renderSand(true);else if(S.mode==='yard')return renderYard(true);else if(S.mode==='cats')return renderCats(true);else if(S.mode==='offcut')return renderOffcut();else if(S.mode==='trade')return renderTrade();else if(S.mode==='mine')return renderMine(true);else if(S.mode==='sudoku')return renderSudoku();else if(S.mode==='sort')return renderSort(true);else renderCon();
+  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else if(S.mode==='sand')return renderSand(true);else if(S.mode==='yard')return renderYard(true);else if(S.mode==='cats')return renderCats(true);else if(S.mode==='offcut')return renderOffcut();else if(S.mode==='trade')return renderTrade();else if(S.mode==='mine')return renderMine(true);else if(S.mode==='sudoku')return renderSudoku();else if(S.mode==='sort')return renderSort(true);else if(S.mode==='knots')return renderKnots(true);else renderCon();
   paintClock();
 }
 function setMode(m){
@@ -2711,7 +2898,7 @@ function drawQR(cv,text){
 }
 
 /* ---------- boot ---------- */
-const m0=['merge','solitaire','cats','sudoku','sort'].includes(S.mode)?S.mode:'solitaire';S.mode='';setMode(m0);
+const m0=['merge','solitaire','cats','sudoku','sort','knots'].includes(S.mode)?S.mode:'solitaire';S.mode='';setMode(m0);
 })();
 </script>
 
