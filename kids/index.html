@@ -49,6 +49,7 @@ button:disabled{opacity:.4;cursor:default}
 .starbox.bump{animation:bump .35s}
 @keyframes bump{50%{transform:scale(1.15)}}
 #view{flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+.ttframe{display:block;width:100%;flex:none;border:0;border-radius:18px;background:#121a33}
 
 /* home */
 .hello{margin:0;font-family:var(--f-display);font-weight:600;font-size:22px;color:var(--muted)}
@@ -927,13 +928,23 @@ function say(text,force){if(canSpeak)speakNow(text,force)}
 /* ---------- star gate: Learn games fill a wallet, Fun games spend it as play time ---------- */
 const GATED=['fruit','bubble','runner','tower','brick','fish','tv','slice','ninja'];
 const gateOn=()=>K.mode!=='little'&&K.gate!==false;
-const isGated=id=>gateOn()&&GATED.includes(id);
+const isGated=id=>gateOn()&&(GATED.includes(id)||String(id).startsWith('tt-'));
+/* ---------- games shared from Dad's app (Tally & Tiles). The Parents page switches each one on or off per tablet. ---------- */
+const TT=[{id:'knots',name:'Knots',em:'🪢',sub:'Untangle the ropes',color:'#a0582a'},{id:'sort',name:'Potion Sort',em:'⚗️',sub:'Pour the colors',color:'#6a3f7a'},
+  {id:'merge',name:'Merge',em:'🧮',sub:'Slide and add',color:'#c7901a'},{id:'solitaire',name:'Solitaire',em:'🂡',sub:'Classic cards',color:'#2b7a4b'},
+  {id:'cats',name:'Cats',em:'🐱',sub:'Logic puzzle',color:'#e07a5f'},{id:'sudoku',name:'Sudoku',em:'🔢',sub:'Number puzzle',color:'#3d5a98'}];
+const ttShared=()=>TT.filter(g=>(K.shared||[]).includes(g.id)).map(g=>Object.assign({},g,{id:'tt-'+g.id,tt:g.id}));
+function playShared(id){const g=TT.find(x=>x.id===id);if(!g||!(K.shared||[]).includes(id))return go('home');
+  setHeader(g.name,'From Dad\u2019s game app');
+  view.innerHTML=`<iframe class="ttframe" title="${g.name}" src="../index.html?kid=${id}"></iframe>`;
+  const f=view.querySelector('.ttframe'),fit=()=>{if(!f.isConnected)return window.removeEventListener('resize',fit);f.style.height=Math.max(320,Math.floor(innerHeight-f.getBoundingClientRect().top-10))+'px'};fit();window.addEventListener('resize',fit)}
+
 const minsPerStar=()=>K.minsPerStar||2;
 if(K.wallet===undefined){K.wallet=Math.min(K.stars||0,5);K.playSec=0}
 const fmtSec=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
 function updateStars(){$('#starCount').textContent=gateOn()?K.wallet:K.stars;$('#starbox').setAttribute('aria-label',gateOn()?'Stars to spend':'Stars')}
 function spendScreen(id,start){
-  const g=GAMES.find(x=>x.id===id),m=minsPerStar();setHeader(g.name,'Uses play time');
+  const g=GAMES.find(x=>x.id===id)||ttShared().find(x=>x.id===id)||{name:'Play time'},m=minsPerStar();setHeader(g.name,'Uses play time');
   view.innerHTML=`<div class="board"><div class="panel spend"><div class="em">${g.em}</div>
       <h2>Spend stars to play</h2>
       <p>You have <b>${K.wallet}</b> star${K.wallet===1?'':'s'}. Each star is <b>${m} minute${m>1?'s':''}</b> of play time.</p>
@@ -3975,6 +3986,7 @@ function stDay(){K.st=K.st||{days:{},movies:[]};const k=dayKey(0);if(!K.st.days[
 // what the tablet is doing right now, in words for the admin page
 function famDoing(){if(document.querySelector('.famlock'))return 'Locked';const r=location.hash.slice(1)||'home';
   if(r==='tv'&&window.__tvNow&&document.querySelector('#tvv'))return 'Watching '+window.__tvNow.name;
+  const tt=r.startsWith('tt-')&&TT.find(x=>'tt-'+x.id===r);if(tt)return tt.name;
   const g=GAMES.find(x=>x.id===r);return g?g.name:{home:wdLocked()?'Home (spelling words locked)':'Home screen',stickers:'Sticker Book',grownups:'Grown-ups',bank:'Star Bank',chat:'Writing a message',spelling:'Spelling Words'}[r]||r}
 let stLastStars=null,stLastWallet=null,stTick=0;
 setInterval(()=>{if(document.hidden||!K.mode)return;const D=stDay(),r=location.hash.slice(1);
@@ -4067,6 +4079,9 @@ function famCmd(c){const age=c.at?Date.now()-c.at:0,stale=age>15*60*1000;log('fa
     case 'wordsSkip':if(K.words){wdPlan();K.words.skip[dayKey(0)]=true;save();if(location.hash===''||location.hash==='#home')show()}break;
     case 'chatMode':K.chatMode=['all','pics','off'].includes(c.mode)?c.mode:'all';if(location.hash==='#chat'||!location.hash||location.hash==='#home')show();break;
     case 'fart':if(!stale)famFart();break;
+    case 'share':{const g=TT.find(x=>x.id===c.game);if(!g)break;K.shared=(K.shared||[]).filter(x=>x!==g.id);if(c.on)K.shared.push(g.id);save();
+      if(!c.on&&location.hash==='#tt-'+g.id)go('home');else if(!location.hash||location.hash==='#home')show();
+      if(c.on&&!stale)famNotice(`New game from Dad: ${g.name}!`,g.em);break}
     case 'seen':(K.outbox||[]).forEach(m=>{if(m.t<=(c.upTo||0))m.seen=true});break;
     case 'unlock':famUnlock();if(!stale)famNotice('The tablet is unlocked!','🔓');break;
     case 'stars':{const n=Math.max(0,Math.min(1000,c.n|0));if(!n)break;const pops=awardBig(n);
@@ -4096,7 +4111,7 @@ function famPush(force){if(!FB.on)return;const now=Date.now();if(!force&&now-FB.
   const days={};Object.keys((K.st&&K.st.days)||{}).sort().slice(-14).forEach(k=>days[k]=K.st.days[k]);
   FB.db.collection('devices').doc(FB.uid).set({name:K.name||'',mode:K.mode||'',stars:K.stars||0,wallet:K.wallet||0,rate:sbRate(),playSec:K.playSec||0,
     locked:!!K.locked,lockAt:K.lockAt||null,doing:famDoing(),days,movies:((K.st&&K.st.movies)||[]).slice(0,25),buys:(K.buys||[]).slice(0,20),wishes:K.wishes||[],msgs:(K.outbox||[]).slice(0,20),diag:LOGB.slice(-40).map(e=>new Date(e.t).toLocaleTimeString()+' '+e.e+(e.d?' '+e.d:'')).join('\n'),alerts:!!K.ntfy,battery:famBat,chatMode:chatMode(),words:wdSummary(),alertTopic:K.ntfy||'',
-    stickers:skTotal(),seen:firebase.firestore.FieldValue.serverTimestamp(),seenMs:now,ua:navigator.userAgent.slice(0,120)},{merge:false}).catch(e=>{FB.err=String(e&&e.message||e)})}
+    shared:K.shared||[],stickers:skTotal(),seen:firebase.firestore.FieldValue.serverTimestamp(),seenMs:now,ua:navigator.userAgent.slice(0,120)},{merge:false}).catch(e=>{FB.err=String(e&&e.message||e)})}
 setInterval(()=>{if(document.hidden)return;if(!FB.on)famStart();else famPush()},60000);
 window.addEventListener('hashchange',()=>setTimeout(()=>famPush(true),1500));
 setTimeout(famStart,2500);
@@ -4282,7 +4297,7 @@ function home(){
   setHeader(K.mode==='little'&&K.name?`Hi, ${K.name}!`:'Star Quest');$('#homeBtn').hidden=true;
   const n=stickersEarned();
   if(K.mode==='little'){
-    view.innerHTML=`<div class="tiles ltiles">${[...GAMES.filter(g=>g.little),...GAMES.filter(g=>g.both)].map(g=>`<button class="tile" data-g="${g.id}" data-say="${g.name}" style="background:${g.color}"><span class="em">${g.em}</span><span><b>${g.name}</b></span></button>`).join('')}
+    view.innerHTML=`<div class="tiles ltiles">${[...GAMES.filter(g=>g.little),...GAMES.filter(g=>g.both),...ttShared()].map(g=>`<button class="tile" data-g="${g.id}" data-say="${g.name}" style="background:${g.color}"><span class="em">${g.em}</span><span><b>${g.name}</b></span></button>`).join('')}
       <button class="tile ${chatMode()==='off'?'tileoff':''}" data-g="chat" data-say="Talk to Mom and Dad" style="background:#2f9be0"><span class="em">💬</span><span><b>Talk to Mom & Dad</b></span></button>
       <button class="tile" data-g="stickers" data-say="Sticker book" style="background:#7a3a6e"><span class="em">${skTotal()?skAt(skTotal()-1):'📒'}</span><span><b>Stickers</b><br><small>Page ${skNow().page+1}: ${skNow().have} of ${SK_N}</small></span></button></div>
       <div class="home-foot"><span></span><button class="grownup" id="grown">Grown-ups: press and hold<i></i></button></div>`;
@@ -4291,7 +4306,7 @@ function home(){
   if(wdLocked())return wdHome();
   const tile=g=>`<button class="tile" data-g="${g.id}" style="background:${g.color}"><span class="em">${g.em}</span>${isGated(g.id)?`<span class="lv">⭐ ${K.playSec>0?fmtSec(K.playSec)+' left':'Uses stars'}</span>`:g.max?`<span class="lv">Level ${K.lv[g.id]}</span>`:''}<span><b>${g.name}</b><br><small>${g.sub}</small></span></button>`;
   view.innerHTML=`<p class="hello">Play</p>
-    <div class="tiles">${GAMES.filter(g=>g.play&&!g.little).map(tile).join('')}</div>
+    <div class="tiles">${[...GAMES.filter(g=>g.play&&!g.little),...ttShared()].map(tile).join('')}</div>
     <p class="hello">Learn</p>
     <div class="tiles">${GAMES.filter(g=>!g.play&&!g.little).map(tile).join('')}
       ${K.words&&K.words.list&&K.words.list.length?`<button class="tile" data-g="spelling" style="background:#e0533a"><span class="em">📝</span><span><b>Spelling Words</b><br><small>${wdPlan().learned} of ${K.words.list.length} · Test ${wdDay(K.words.test)}</small></span></button>`:''}
@@ -4373,7 +4388,7 @@ function grownups(){
 const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,times:playTimes,money:playMoney,bank:playBank,chat:playChat,spelling:playSpelling,ninjaread:playRead,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),ninja:gated('ninja',playNinja),tv:gated('tv',()=>{TV.stack=[];playTv()}),mix:playMix,adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
 function go(name){if(location.hash.slice(1)!==name)location.hash=name;else show()}
 function show(){if(window.__tvKill)window.__tvKill();document.documentElement.classList.remove('watching');loopToken++;let r=location.hash.slice(1);if(wdLocked()&&!WD_FREE.includes(r)){history.replaceState(null,'','#home');r='home'}bgfxRoute(r);resetArm=false;$('#timeChip').hidden=true;updateStars();$('#overlay').hidden=true;popQ.length=0;try{netStop();if(window.SQAndroid)SQAndroid.stop();else if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}
-  view.scrollTop=0;(ROUTES[r]||home)()}
+  view.scrollTop=0;(ROUTES[r]||(r.startsWith('tt-')?gated(r,()=>playShared(r.slice(3))):home))()}
 window.addEventListener('hashchange',show);
 $('#homeBtn').onclick=()=>{sfx.tap();go('home')};
 window.addEventListener('resize',()=>{if(location.hash==='#doodle'&&playDoodle.resize)playDoodle.resize();if(location.hash==='#fruit'&&playFruit.fit)playFruit.fit();if(location.hash==='#trace'&&playTrace.fit)playTrace.fit();if(location.hash==='#brick'&&playBrick.fit)playBrick.fit();const S=canvasGame.cur;if(S&&S.alive())S.fit()});
