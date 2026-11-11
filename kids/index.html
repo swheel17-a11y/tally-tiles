@@ -4197,17 +4197,17 @@ function playSpelling(){
   // today's queue, or (no gate) extra practice on the whole list
   let queue=(gated?P.need:W.list).map(x=>({...x})),total=queue.length,doneN=0,typed='',mode='spell',helped=false;
   // sound boxes (the teacher's 4 steps) for each new word on learning days, not on practice test day
-  const boxDays=gated&&!P.last&&K.wdBoxes!==false,boxed=new Set();let bx=null,snap='';
+  const boxDays=gated&&!P.last&&K.wdBoxes===true,boxed=new Set();let bx=null,snap='';
   const wantBoxes=()=>boxDays&&queue.length&&!boxed.has(cur().w);
   const say=x=>speakNow(`${x.w}. ${x.s?x.s.replace(/[.!?]?$/,'.'):''} ${x.w}.`,'must');
   const cur=()=>queue[0];
   const draw=(msg)=>{if(tok!==loopToken)return;const x=cur();if(mode==='boxes')return drawBoxes();setHeader('Spelling Words',gated?`${total-doneN} left today`:'Extra practice');
-    view.innerHTML=`<div class="wdwrap"><div class="wdtop"><button class="pbtn wdhear" id="wdHear">🔊 Hear it again</button><button class="pbtn wdhear wdbrk" id="wdBreak">🫧 Break</button>${snap&&mode==='spell'?`<img class="wdsnap" src="${snap}" alt="">`:''}<div class="wdprog"><i style="width:${doneN/total*100}%"></i></div><span>${doneN} / ${total}</span></div>
+    view.innerHTML=`<div class="wdwrap"><div class="wdtop"><button class="pbtn wdhear" id="wdHear">🔊 Hear it again</button>${snap&&mode==='spell'?`<img class="wdsnap" src="${snap}" alt="">`:''}<div class="wdprog"><i style="width:${doneN/total*100}%"></i></div><span>${doneN} / ${total}</span></div>
       ${mode==='copy'?`<div class="wdshow">${x.w.split('').map(c=>`<span>${c}</span>`).join('')}</div><p class="wdmsg">Now you type it while you look.</p>`:`<p class="wdmsg">${msg||'Listen, then spell the word.'}</p>`}
       <div class="wdtyped ${typed?'':'empty'}" id="wdTyped">${typed?typed.split('').map(c=>`<span>${c}</span>`).join(''):'<i>tap the letters</i>'}<b class="wdcur"></b></div>
       <div class="wdkeys">${WD_KEYS.map(r=>`<div>${r.split('').map(c=>`<button data-k="${c}">${c}</button>`).join('')}</div>`).join('')}
         <div><button class="wdwide" data-k="del">⌫</button>${mode==='spell'?`<button class="wdwide" data-k="hint">💡 First letter</button>`:''}<button class="wdwide go" data-k="ok">Check ✓</button></div></div></div>`;
-    $('#wdHear').onclick=()=>say(x);$('#wdBreak').onclick=wdBreak;
+    $('#wdHear').onclick=()=>say(x);
     view.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{const k=b.dataset.k;
       if(k==='del'){typed=typed.slice(0,-1);return draw(msg)}
       if(k==='hint'){helped=true;if(!typed)typed=x.w[0];draw(`It starts with "${x.w[0]}".`);speakNow(`It starts with ${x.w[0]}.`,'must');return}
@@ -4228,14 +4228,14 @@ function playSpelling(){
   const BX_STEPS=[['Say it and stretch it','Say the word and stretch it on your fingers.'],['Dots for sounds','How many sounds? Make that many boxes and put a dot in each one.'],['One sound per box','Say each sound and write its letters in its box.'],['Write the whole word','Say the sounds again, then write the whole word in the long box.']];
   function drawBoxes(){const x=cur();if(!bx)bx={step:0,n:3,strokes:[]};
     setHeader('Spelling Words',`${total-doneN} left today`);
-    view.innerHTML=`<div class="wdwrap" style="width:min(1100px,100%)"><div class="wdtop"><button class="pbtn wdhear" id="wdHear">🔊 Hear it again</button><button class="pbtn wdhear wdbrk" id="wdBreak">🫧 Break</button><div class="wdprog"><i style="width:${doneN/total*100}%"></i></div><span>${doneN} / ${total}</span></div>
+    view.innerHTML=`<div class="wdwrap" style="width:min(1100px,100%)"><div class="wdtop"><button class="pbtn wdhear" id="wdHear">🔊 Hear it again</button><div class="wdprog"><i style="width:${doneN/total*100}%"></i></div><span>${doneN} / ${total}</span></div>
       <div class="bxsteps">${BX_STEPS.map((t,i)=>`<span class="${i===bx.step?'now':i<bx.step?'did':''}"><b>${i<bx.step?'✓':i+1}</b>${t[0]}</span>`).join('')}</div>
       <p class="bxmsg">${BX_STEPS[bx.step][1]}</p>
       <div class="bxpad" id="bxPad"><canvas id="bxCv"></canvas>${bx.step===0?'<div class="bxhand"><i>✋</i><span style="font-size:60px">👄</span><i>🤚</i></div>':''}</div>
       <div class="bxtools">${bx.step>=1?`<div class="bxcount">Boxes <button id="bxMinus">−</button><span style="min-width:28px;text-align:center;font-size:30px">${bx.n}</span><button id="bxPlus">+</button></div>`:''}
         ${bx.step>=1?'<button class="pbtn" id="bxUndo">↶ Undo</button><button class="pbtn" id="bxClear">🧽 Clear</button>':''}<span class="grow"></span>
         ${bx.step>0?'<button class="pbtn" id="bxBack">◀ Back</button>':''}<button class="pbtn go" id="bxNext">${bx.step<3?'Next ▶':'Done ✓'}</button></div></div>`;
-    $('#wdHear').onclick=()=>say(x);$('#wdBreak').onclick=wdBreak;
+    $('#wdHear').onclick=()=>say(x);
     const pad=$('#bxPad'),cv=$('#bxCv'),dpr=Math.min(2,window.devicePixelRatio||1);
     const fit=()=>{const r=view.getBoundingClientRect(),top=pad.getBoundingClientRect().top,toolsH=90;
       const W=pad.clientWidth,H=Math.max(260,Math.min(460,window.innerHeight-top-toolsH));cv.style.height=H+'px';cv.width=W*dpr;cv.height=H*dpr;return[W,H]};
