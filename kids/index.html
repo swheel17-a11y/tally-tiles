@@ -679,6 +679,26 @@ html.little .tvp b,html.little .tve b{font-size:20px}
 .famnote span{font-size:1.4em}.famnote.out{opacity:0;transform:translate(-50%,-30px)}@keyframes famin{from{transform:translate(-50%,-80px)}}
 .famcd{position:fixed;top:12px;right:12px;z-index:105;background:#fff3b0;color:#1d2b4f;border-radius:16px;padding:8px 14px;font-size:20px;font-weight:800;box-shadow:0 4px 0 #e6c26a;pointer-events:none}
 .famcd.low{background:#ffd0c9;box-shadow:0 4px 0 #e89a8e;animation:mxpulse 1s infinite}
+/* bedtime countdown */
+.ntov{position:fixed;inset:0;z-index:100;background:linear-gradient(160deg,#2b2f6e,#4b3b8f 55%,#7a4f9a);color:#fff;display:flex;flex-direction:column;padding:22px 28px 16px;gap:14px;overflow:hidden}
+.ntov.bed{background:radial-gradient(ellipse at 50% 0%,#3b2a7a,#141a4a 60%,#070a24);align-items:center;justify-content:center;text-align:center}
+.nthead{display:flex;align-items:center;justify-content:space-between;gap:16px}.nthead>div:first-child{display:flex;flex-direction:column}
+.nthead small{font-size:20px;font-weight:700;opacity:.85}.nthead b{font-family:var(--f-display);font-size:64px;line-height:1.05}
+.ntnow{font-family:var(--f-display);font-size:28px;font-weight:700;background:rgba(255,255,255,.14);padding:12px 22px;border-radius:999px;display:flex;align-items:center;gap:10px}
+.ntpulse{display:inline-block;animation:ntp 1.4s ease-in-out infinite}@keyframes ntp{50%{transform:scale(1.25)}}
+.ntrows{flex:1;display:flex;flex-direction:column;justify-content:center;gap:10px;min-height:0}
+.ntrow{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.08);border-radius:20px;padding:8px 16px;flex:0 1 74px;min-height:0}
+.ntrow.run{background:rgba(255,255,255,.2);box-shadow:0 0 0 3px #ffd75a}.ntrow.done{opacity:.8}.ntrow.play{flex-basis:96px;background:rgba(63,191,127,.18)}
+.ntem{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-size:32px;flex:none}.ntrow.play .ntem{width:64px;height:64px;font-size:40px}
+.ntmid{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}.ntlbl{font-weight:800;font-size:22px}
+.nttrack{height:18px;border-radius:9px;background:rgba(255,255,255,.15);overflow:hidden}.ntrow.play .nttrack{height:30px;border-radius:15px}
+.nttrack i{display:block;height:100%;border-radius:inherit;transition:width .8s}
+.ntmin{font-family:var(--f-display);font-weight:700;font-size:24px;min-width:120px;text-align:right}.ntrow.play .ntmin{font-size:32px}
+.ntgu{align-self:center;color:#cfd6f5!important;opacity:.7}
+.ntgn h2{font-family:var(--f-display);font-size:56px;margin:6px 0 0}.ntgn p{font-size:26px;margin:6px 0 18px;opacity:.9}
+.ntmoon{font-size:120px;animation:ntp 4s ease-in-out infinite}
+.ntrecap{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-bottom:18px}.ntrecap span{background:rgba(255,255,255,.12);padding:8px 16px;border-radius:999px;font-weight:700;font-size:20px}
+html.little .ntlbl{font-size:24px}html.little .ntem{width:60px;height:60px;font-size:38px}
 .famlock{position:fixed;top:0;left:0;right:0;bottom:0;z-index:115;background:radial-gradient(ellipse at 50% 0%,#3b2a7a,#141a4a 60%,#070a24);color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px}
 .famlockin{display:flex;flex-direction:column;align-items:center;gap:8px;max-width:640px}.famlockem{font-size:120px;line-height:1}
 .famlockin h2{font-family:var(--f-display);font-size:clamp(40px,7vw,64px);margin:0}.famlockin p{font-size:clamp(20px,3vw,28px);margin:0}.famlockin .famsmall{opacity:.8;font-size:20px}
@@ -4079,6 +4099,7 @@ function famCmd(c){const age=c.at?Date.now()-c.at:0,stale=age>15*60*1000;log('fa
     case 'wordsSkip':if(K.words){wdPlan();K.words.skip[dayKey(0)]=true;save();if(location.hash===''||location.hash==='#home')show()}break;
     case 'chatMode':K.chatMode=['all','pics','off'].includes(c.mode)?c.mode:'all';if(location.hash==='#chat'||!location.hash||location.hash==='#home')show();break;
     case 'fart':if(!stale)famFart();break;
+    case 'night':ntSet(c.night||null,c.rev||0);break;
     case 'share':{const g=TT.find(x=>x.id===c.game);if(!g)break;K.shared=(K.shared||[]).filter(x=>x!==g.id);if(c.on)K.shared.push(g.id);save();
       if(!c.on&&location.hash==='#tt-'+g.id)go('home');else if(!location.hash||location.hash==='#home')show();
       if(c.on&&!stale)famNotice(`New game from Dad: ${g.name}!`,g.em);break}
@@ -4091,6 +4112,58 @@ function famCmd(c){const age=c.at?Date.now()-c.at:0,stale=age>15*60*1000;log('fa
   save();famPush(true)}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){famLockShow();if(K.lockAt)famCountdown();if(!FB.on)famStart()}else famPush(true)});
 setTimeout(()=>{famLockShow();if(K.lockAt)famCountdown()},300);
+
+/* ---------- BEDTIME: an evening countdown the parents run from their phone ----------
+   K.night = {bed, began, rev, tasks:[{n:name, em, ms:banked time, run:start time or 0, done}]}
+   Every routine eats into play time as it happens; the screen shows where the evening went. */
+let ntIv=null,ntSig='';const ntSaid=new Set();
+const NT_COL=['#ff8a5c','#5ab4f0','#b07cf0','#3fbfb0','#f2b705','#f06aa8','#7cc46a'];
+function ntCalc(N,now=Date.now()){const t=Math.min(now,N.bed),total=Math.max(60000,N.bed-N.began);
+  const tasks=(N.tasks||[]).map((x,i)=>({...x,i,spent:Math.max(0,(x.ms||0)+(x.run?Math.max(0,t-x.run):0))}));
+  const used=tasks.reduce((a,x)=>a+x.spent,0),allDone=tasks.length&&tasks.every(x=>x.done),tEnd=allDone?Math.min(t,Math.max(...tasks.map(x=>x.end||t))):t;
+  // gaps count as in-between until the last routine is done; after that it is play time
+  return{total,tasks,between:Math.max(0,tEnd-N.began-used),left:Math.max(0,N.bed-now),running:tasks.find(x=>x.run),allDone:tasks.every(x=>x.done),bed:now>=N.bed}}
+const ntMin=ms=>{const m=Math.max(0,Math.round(ms/60000));return m<60?`${m} min`:`${Math.floor(m/60)} hr${m%60?` ${m%60} min`:''}`};
+const ntClock=ms=>new Date(ms).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+function ntMorning(bed){const d=new Date(bed);d.setHours(6,0,0,0);if(d.getTime()<=bed)d.setDate(d.getDate()+1);return d.getTime()}
+function ntActive(){const N=K.night;if(!N||!N.bed)return false;if(Date.now()>=ntMorning(N.bed)){K.night=null;save();famPush(true);return false}return true}
+function ntShow(){clearInterval(ntIv);let o=document.querySelector('.ntov');
+  if(!ntActive()){if(o)o.remove();ntSig='';return}
+  if(!o){o=document.createElement('div');o.className='ntov';document.body.appendChild(o);ntSig='';
+    if(window.__tvKill)window.__tvKill();if(location.hash&&location.hash!=='#home'){history.replaceState(null,'','#home');show()}}
+  ntDraw(o);ntIv=setInterval(()=>{if(!ntActive())return ntShow();ntDraw(o)},5000)}
+function ntSay(key,text,fresh){if(ntSaid.has(key))return;ntSaid.add(key);if(fresh)speakNow(text,'must')}
+function ntDraw(o){const N=K.night,c=ntCalc(N),now=Date.now(),nm=K.name||'';
+  // spoken moments, only when they just happened (not when the tablet wakes up later)
+  if(c.running)ntSay('run'+c.running.n+c.running.run,`Time for ${c.running.n}!`,now-c.running.run<60000);
+  if(c.allDone&&c.tasks.length){const last=Math.max(...c.tasks.map(x=>x.end||0));ntSay('done'+N.rev,`All done! Now it's play time until bed.`,now-last<60000)}
+  if(!c.bed&&c.left<=5*60000&&c.left>4*60000)ntSay('five'+N.bed,'Five minutes until bed!',true);
+  if(c.bed)ntSay('bed'+N.bed,`Good night${nm?', '+nm:''}! Sweet dreams.`,now-N.bed<60000);
+  const sig=(c.bed?'bed':'eve')+JSON.stringify(N.tasks.map(x=>[x.n,!!x.run,!!x.done]))+N.bed+chatMode();
+  if(sig!==ntSig){ntSig=sig;
+    o.classList.toggle('bed',c.bed);
+    o.innerHTML=c.bed?`<div class="ntgn"><div class="ntmoon">🌙</div><h2>Good night${nm?', '+esc(nm):''}!</h2><p>Sweet dreams 💤</p>
+        <div class="ntrecap">${c.tasks.map(x=>`<span>${x.em} ${esc(x.n)} ${ntMin(x.spent)}</span>`).join('')}<span>🧸 Play ${ntMin(Math.max(0,c.total-c.tasks.reduce((a,x)=>a+x.spent,0)-c.between))}</span></div>
+        <div class="famask" ${chatMode()==='off'?'hidden':''}><button class="pbtn" id="ntLove">❤️ Good night, I love you!</button></div><p class="famsmall" id="ntAsked"></p></div>
+        <button class="grownup ntgu" id="ntGu">Grown-ups: press and hold<i></i></button>`
+      :`<div class="nthead"><div><small>🌙 Bedtime at ${ntClock(N.bed)}</small><b id="ntLeft"></b><small>until bed</small></div><div class="ntnow" id="ntNow"></div></div>
+        <div class="ntrows" id="ntRows"></div><button class="grownup ntgu" id="ntGu">Grown-ups: press and hold<i></i></button>`;
+    const g=o.querySelector('#ntGu');let t=null;
+    g.addEventListener('pointerdown',e=>{e.preventDefault();g.classList.add('holding');t=setTimeout(()=>{g.classList.remove('holding');pinPad('Grown-up: enter your PIN to end bedtime mode',ntEnd)},2000)});
+    ['pointerup','pointerleave','pointercancel'].forEach(ev=>g.addEventListener(ev,()=>{clearTimeout(t);g.classList.remove('holding')}));g.oncontextmenu=e=>e.preventDefault();
+    const lv=o.querySelector('#ntLove');if(lv)lv.onclick=()=>{chatSend('❤️','Good night, I love you!');o.querySelector('#ntAsked').textContent=FB.on?'Sent to Mom and Dad ✓':'It will send when the internet is back.';speakNow('Sent!',true)}}
+  if(c.bed)return;
+  o.querySelector('#ntLeft').textContent=ntMin(c.left);
+  o.querySelector('#ntNow').innerHTML=c.running?`<span class="ntpulse">${c.running.em}</span> Now: ${esc(c.running.n)}`:c.allDone?'🎉 All done! Play time!':`⏳ Next: ${esc((c.tasks.find(x=>!x.done)||{}).n||'')}`;
+  const pct=ms=>Math.max(0,Math.min(100,ms/c.total*100));
+  const row=(em,label,ms,col,cls,note)=>`<div class="ntrow ${cls}"><span class="ntem" style="background:${col}33">${em}</span><div class="ntmid"><span class="ntlbl">${label}</span><div class="nttrack"><i style="width:${pct(ms)}%;background:${col}"></i></div></div><span class="ntmin">${note}</span></div>`;
+  o.querySelector('#ntRows').innerHTML=c.tasks.map(x=>row(x.em,esc(x.n),x.spent,NT_COL[x.i%NT_COL.length],x.run?'run':x.done?'done':'',x.done?`✓ ${ntMin(x.spent)}`:x.run||x.spent>=60000?ntMin(x.spent):'—')).join('')
+    +(c.between>=60000?row('⏳','In between',c.between,'#9aa6bf','between',ntMin(c.between)):'')
+    +row('🧸','Play time left',c.left,'#3fbf7f','play',ntMin(c.left))}
+function ntEnd(){K.night=null;save();ntShow();sfx.up();famPush(true)}
+function ntSet(n,rev){if(K.night&&rev&&(K.night.rev||0)>rev)return;K.night=n?{...n,rev:rev||n.rev||Date.now()}:null;save();ntShow()}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)ntShow()});
+setTimeout(ntShow,350);
 
 /* ---------- Firebase sync ---------- */
 const FB={on:false,db:null,uid:null,lastPush:0,loading:false,err:''};
@@ -4111,7 +4184,7 @@ function famPush(force){if(!FB.on)return;const now=Date.now();if(!force&&now-FB.
   const days={};Object.keys((K.st&&K.st.days)||{}).sort().slice(-14).forEach(k=>days[k]=K.st.days[k]);
   FB.db.collection('devices').doc(FB.uid).set({name:K.name||'',mode:K.mode||'',stars:K.stars||0,wallet:K.wallet||0,rate:sbRate(),playSec:K.playSec||0,
     locked:!!K.locked,lockAt:K.lockAt||null,doing:famDoing(),days,movies:((K.st&&K.st.movies)||[]).slice(0,25),buys:(K.buys||[]).slice(0,20),wishes:K.wishes||[],msgs:(K.outbox||[]).slice(0,20),diag:LOGB.slice(-40).map(e=>new Date(e.t).toLocaleTimeString()+' '+e.e+(e.d?' '+e.d:'')).join('\n'),alerts:!!K.ntfy,battery:famBat,chatMode:chatMode(),words:wdSummary(),alertTopic:K.ntfy||'',
-    shared:K.shared||[],stickers:skTotal(),seen:firebase.firestore.FieldValue.serverTimestamp(),seenMs:now,ua:navigator.userAgent.slice(0,120)},{merge:false}).catch(e=>{FB.err=String(e&&e.message||e)})}
+    night:K.night||null,shared:K.shared||[],stickers:skTotal(),seen:firebase.firestore.FieldValue.serverTimestamp(),seenMs:now,ua:navigator.userAgent.slice(0,120)},{merge:false}).catch(e=>{FB.err=String(e&&e.message||e)})}
 setInterval(()=>{if(document.hidden)return;if(!FB.on)famStart();else famPush()},60000);
 window.addEventListener('hashchange',()=>setTimeout(()=>famPush(true),1500));
 setTimeout(famStart,2500);

@@ -64,6 +64,15 @@ details summary{cursor:pointer;font-weight:700;color:var(--muted);font-size:14px
 .kstats i.bat.low{background:#ffe0dc;color:#b3263e}.kstats i.lock{background:#ffe0dc;color:#b3263e}.kstats i.cd{background:#fff3b0;color:#7a5a00}.kstats i.new{background:#2f9be0;color:#fff}
 .back{align-self:flex-start}
 .wchips{display:flex;flex-wrap:wrap;gap:6px}.wchips span{background:var(--bg);border-radius:10px;padding:5px 9px;font-size:14px}.wchips span.ok{background:#d9f5e3;color:#1f7a45}.wchips b{color:#d9435b}
+.nt.on{background:linear-gradient(160deg,#2b2f6e,#5a3f96);color:#fff}.nt.on h2{color:#fff}.nt.on .empty,.nt.on .lbl{color:rgba(255,255,255,.75)}.nt.on .pill{background:rgba(255,255,255,.18);color:#fff}
+.nt.on input.tx{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:#fff;color-scheme:dark}.nt.on .btn:not(.go):not(.good):not(.warn){background:rgba(255,255,255,.15);color:#fff}.nt.on .btn.go{background:#ffd75a;color:#1d2b4f}
+.ntchips{display:flex;flex-wrap:wrap;gap:6px}.ntchips .btn{min-height:40px;padding:8px 12px;font-weight:600;opacity:.65}.ntchips .btn.on{background:#5a3f96;color:#fff;opacity:1}
+.ntlist{display:flex;flex-direction:column;gap:8px}
+.ntr{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:14px;padding:8px 10px}.nt.on .ntr{background:rgba(255,255,255,.1)}
+.ntr.run{box-shadow:0 0 0 2px #ffd75a}.ntr.done{opacity:.75}.ntr.play{background:rgba(63,191,127,.2)}
+.ntr .ntem{font-size:26px;width:34px;text-align:center}.ntt{flex:1;min-width:0;display:flex;flex-direction:column}.ntt b{font-size:16px}.ntt small{font-size:13px;opacity:.8}
+.ntr .btn{min-height:40px;padding:8px 11px}
+.kstats i.nt{background:#5a3f96;color:#fff}
 </style>
 </head>
 <body>
@@ -125,7 +134,8 @@ function render(){const list=visible();
   if(!list.length){main.innerHTML='<div class="card"><h2>No tablets yet</h2><p class="empty">Open Star Quest on each tablet (with internet on). They show up here within a minute.</p></div>';return}
   const keep=document.activeElement&&document.activeElement.id;const vals={},opened=[...main.querySelectorAll('details[id]')].map(d=>[d.id,d.open]);main.querySelectorAll('.tx').forEach(i=>vals[i.id]=i.value);
   const sel=selId(),one=sel&&devs[sel]&&!hidden[sel];
-  main.innerHTML=one?`<button class="btn back" id="backAll">← All kids</button>`+devCard(sel,devs[sel]):`<div class="kids">${list.map(([id,d])=>kidTile(id,d)).join('')}</div>`+(list.length>1?allCard():'')+alertCard(list)+(Object.keys(hidden).length?`<button class="btn" id="unhide">Show hidden tablets (${Object.keys(hidden).length})</button>`:'');
+  const nAct=list.some(([id])=>nOf(id));
+  main.innerHTML=one?`<button class="btn back" id="backAll">← All kids</button>`+devCard(sel,devs[sel]):(nAct?nightCard(list):'')+`<div class="kids">${list.map(([id,d])=>kidTile(id,d)).join('')}</div>`+(nAct?'':nightCard(list))+(list.length>1?allCard():'')+alertCard(list)+(Object.keys(hidden).length?`<button class="btn" id="unhide">Show hidden tablets (${Object.keys(hidden).length})</button>`:'');
   Object.entries(vals).forEach(([k,v])=>{const i=document.getElementById(k);if(i)i.value=v});opened.forEach(([k,o])=>{const e=document.getElementById(k);if(e)e.open=o});if(keep&&document.getElementById(keep))document.getElementById(keep).focus();
   wire()}
 const nextThu=()=>{const d=new Date();d.setDate(d.getDate()+((4-d.getDay()+7)%7||7));return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
@@ -156,13 +166,77 @@ function alertCard(list){const fromTab=(list.find(([,d])=>d.alertTopic)||[,{}])[
     <p class="empty" style="margin:0">Get a buzz from the ntfy app when a kid sends a message, when time runs out and a tablet locks, or when Noah buys something with stars. Subscribe to this same channel in ntfy.</p>
     <div class="rowc"><input class="tx" id="ntfyTopic" value="${esc(t)}" placeholder="Channel name" autocapitalize="off" autocomplete="off" spellcheck="false"></div>
     <div class="rowc"><button class="btn go" id="ntfyOn">Turn on for all tablets</button><button class="btn" id="ntfyTest">Send a test</button><button class="btn" id="ntfyOff">Turn off</button></div></div>`}
+/* ---------- Bedtime: tonight's routine, run from here, shown on the tablets ---------- */
+const NT_PRE=[['🍽️','Dinner'],['📚','Homework'],['🛁','Bath'],['🪥','Teeth & PJs'],['🧹','Chores'],['📖','Reading'],['🧸','Clean up toys']];
+const ntDraft={},ntLocal={},clone=o=>JSON.parse(JSON.stringify(o));
+const ntMin=ms=>{const m=Math.max(0,Math.round(ms/60000));return m<60?`${m}m`:`${Math.floor(m/60)}h ${m%60}m`};
+const ntClock=ms=>new Date(ms).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+const ntHHMM=ms=>{const d=new Date(ms);return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`};
+function ntMorning(bed){const d=new Date(bed);d.setHours(6,0,0,0);if(d.getTime()<=bed)d.setDate(d.getDate()+1);return d.getTime()}
+function ntBedFrom(v){const [h,m]=(v||'20:30').split(':').map(Number);const d=new Date();d.setHours(h,m,0,0);if(d.getTime()<Date.now()-60000)d.setDate(d.getDate()+1);return d.getTime()}
+function nOf(id){const L=ntLocal[id],D=(devs[id]||{}).night||null;let n=D;if(L&&L.rev>=((D&&D.rev)||0)&&Date.now()-L.rev<180000)n=L.n;if(n&&Date.now()>=ntMorning(n.bed))n=null;return n}
+function ntCalc(N,now=Date.now()){const t=Math.min(now,N.bed),total=Math.max(60000,N.bed-N.began);
+  const tasks=(N.tasks||[]).map((x,i)=>({...x,i,spent:Math.max(0,(x.ms||0)+(x.run?Math.max(0,t-x.run):0))}));
+  const used=tasks.reduce((a,x)=>a+x.spent,0),allDone=tasks.length&&tasks.every(x=>x.done),tEnd=allDone?Math.min(t,Math.max(...tasks.map(x=>x.end||t))):t;
+  return{total,tasks,between:Math.max(0,tEnd-N.began-used),left:Math.max(0,N.bed-now),running:tasks.find(x=>x.run)}}
+function nPut(id,n,label){const rev=Date.now();if(n)n.rev=rev;ntLocal[id]={rev,n};send(id,{type:'night',night:n,rev},label)}
+function ntEdit(id,fn,label){const n=nOf(id);if(!n)return;const N=clone(n);if(fn(N,Date.now())===false)return;nPut(id,N,label)}
+const ntBank=(N,now)=>x=>{if(x.run){x.ms=(x.ms||0)+Math.max(0,Math.min(now,N.bed)-x.run);x.run=0}};
+function ntOp(ids,tn,op){ids.forEach(id=>ntEdit(id,(N,now)=>{const x=N.tasks.find(t=>t.n===tn);if(!x)return false;
+  if(op==='start'){N.tasks.forEach(ntBank(N,now));x.run=now;x.done=false;delete x.end}else{ntBank(N,now)(x);x.done=true;x.end=now}},`${tn} ${op==='start'?'started':'done'} · ${name(devs[id])}`));render()}
+function ntDefault(d){return NT_PRE.filter(([,n])=>(d.mode==='little'?['Dinner','Bath','Teeth & PJs']:['Dinner','Homework','Bath','Teeth & PJs']).includes(n)).map(x=>x.slice())}
+function nightCard(list){const act=list.filter(([id])=>nOf(id));
+  if(!act.length){list.forEach(([id,d])=>{if(!ntDraft[id])ntDraft[id]={on:ntDefault(d),extra:[]}});
+    return `<div class="card nt"><h2>🌙 Tonight's bedtime</h2>
+      <div class="rowc"><span class="lbl">Bedtime</span><input class="tx" type="time" id="ntBed" value="20:30" style="max-width:150px"></div>
+      ${list.map(([id,d])=>{const D=ntDraft[id],all=[...NT_PRE,...D.extra];return `<div class="lbl">${d.mode==='little'?'🧚':'🥷'} ${esc(name(d))}'s list (tap to add or remove)</div>
+        <div class="ntchips">${all.map(([em,n])=>`<button class="btn ${D.on.some(x=>x[1]===n)?'on':''}" data-ntchip="${esc(id)}" data-ntn="${esc(n)}" data-ntem="${em}">${em} ${esc(n)}</button>`).join('')}</div>
+        <div class="rowc"><input class="tx" id="ntAdd-${esc(id)}" placeholder="Something else, like Feed the dog"><button class="btn" data-ntnew="${esc(id)}">+ Add</button></div>`}).join('')}
+      <button class="btn go" id="ntStart">🌙 Start the evening</button>
+      <p class="empty" style="margin:0">The tablets switch to the bedtime screen. Play time starts with everything left until bed, and each thing you start takes its minutes out of it.</p></div>`}
+  const N0=nOf(act[0][0]),names=[];act.forEach(([id])=>nOf(id).tasks.forEach(x=>{if(!names.some(y=>y[1]===x.n))names.push([x.em,x.n])}));
+  const C={};act.forEach(([id])=>C[id]=ntCalc(nOf(id)));
+  return `<div class="card nt on"><h2>🌙 Tonight <span class="pill">Bed at ${ntClock(N0.bed)}</span><span class="pill cd">${ntMin(C[act[0][0]].left)} to bed</span></h2>
+    <div class="ntlist">${names.map(([em,tn])=>{const who=act.filter(([id])=>nOf(id).tasks.some(x=>x.n===tn)),st=who.map(([id,d])=>{const x=C[id].tasks.find(t=>t.n===tn);return{id,d,x}});
+      const running=st.some(s=>s.x.run),allDone=st.every(s=>s.x.done);
+      return `<div class="ntr ${running?'run':allDone?'done':''}"><span class="ntem">${em}</span><div class="ntt"><b>${esc(tn)}</b><small>${st.map(s=>`${esc(name(s.d))} ${s.x.run?'▶ ':s.x.done?'✓ ':''}${s.x.spent>=60000||s.x.run||s.x.done?ntMin(s.x.spent):'not yet'}`).join(' · ')}</small></div>
+        ${running?`<button class="btn good" data-ntop="done" data-ntn="${esc(tn)}">✓ Done</button>`:allDone?'<span class="pill on">Done</span>':`<button class="btn go" data-ntop="start" data-ntn="${esc(tn)}">▶ Start</button>`}</div>`}).join('')}
+      ${act.some(([id])=>C[id].between>=60000)?`<div class="ntr"><span class="ntem">⏳</span><div class="ntt"><b>In between</b><small>${act.map(([id,d])=>`${esc(name(d))} ${ntMin(C[id].between)}`).join(' · ')}</small></div></div>`:''}
+      <div class="ntr play"><span class="ntem">🧸</span><div class="ntt"><b>Play time left</b><small>${act.map(([id,d])=>`${esc(name(d))} ${ntMin(C[id].left)}`).join(' · ')}</small></div></div></div>
+    <div class="rowc"><span class="lbl">Bedtime</span><input class="tx" type="time" id="ntBed2" value="${ntHHMM(N0.bed)}" style="max-width:150px"><button class="btn" id="ntBedSet">Change</button><button class="btn warn" id="ntEndAll">End the evening</button></div>
+    <p class="empty" style="margin:0">To fix minutes, or add or remove something for one kid, open that kid's page.</p></div>`}
+function ntBox(id,d){const n=nOf(id);if(!n)return '';const c=ntCalc(n);
+  return `<h3>🌙 Bedtime at ${ntClock(n.bed)} · ${ntMin(c.left)} left</h3><div class="ntlist">${c.tasks.map(x=>`<div class="ntr ${x.run?'run':x.done?'done':''}"><span class="ntem">${x.em}</span><div class="ntt"><b>${esc(x.n)}</b><small>${x.run?'▶ ':x.done?'✓ ':''}${ntMin(x.spent)}</small></div>
+      <button class="btn" data-ntadj="${x.i}" data-d="-5">−5</button><button class="btn" data-ntadj="${x.i}" data-d="5">+5</button>
+      ${x.run?`<button class="btn good" data-ntone="done" data-ntn="${esc(x.n)}">✓</button>`:`<button class="btn go" data-ntone="start" data-ntn="${esc(x.n)}">▶</button>`}<button class="btn warn" data-ntdel="${x.i}" aria-label="Remove">✕</button></div>`).join('')}</div>
+    <div class="rowc"><input class="tx" id="ntOne-${esc(id)}" placeholder="Add something for ${esc(name(d))}"><button class="btn" data-ntaddone>+ Add</button><button class="btn warn" data-ntendone>End for ${esc(name(d))}</button></div>`}
+function ntWire(){
+  main.querySelectorAll('[data-ntchip]').forEach(b=>b.onclick=()=>{const D=ntDraft[b.dataset.ntchip],n=b.dataset.ntn,i=D.on.findIndex(x=>x[1]===n);if(i>=0)D.on.splice(i,1);else D.on.push([b.dataset.ntem,n]);
+    const order=[...NT_PRE,...D.extra].map(x=>x[1]);D.on.sort((a,c)=>order.indexOf(a[1])-order.indexOf(c[1]));render()});
+  main.querySelectorAll('[data-ntnew]').forEach(b=>b.onclick=()=>{const id=b.dataset.ntnew,i=document.getElementById('ntAdd-'+id),v=i.value.trim().slice(0,30);if(!v)return toast('Type it first');
+    const D=ntDraft[id];if(![...NT_PRE,...D.extra].some(x=>x[1].toLowerCase()===v.toLowerCase())){D.extra.push(['⭐',v]);D.on.push(['⭐',v])}i.value='';render()});
+  const st=$('#ntStart');if(st)st.onclick=()=>{const bed=ntBedFrom($('#ntBed').value),now=Date.now();if(bed-now>8*3600e3)return toast('That bedtime is more than 8 hours away. Check the time.');
+    if(!confirm(`Start the evening? Bedtime at ${ntClock(bed)} (${ntMin(bed-now)} from now). The tablets switch to the bedtime screen.`))return;
+    visible().forEach(([id,d])=>{const D=ntDraft[id]||{on:ntDefault(d)};nPut(id,{bed,began:now,tasks:D.on.map(([em,n])=>({n,em,ms:0,run:0,done:false}))},`bedtime screen on · ${name(d)}`)});render()};
+  main.querySelectorAll('[data-ntop]').forEach(b=>b.onclick=()=>{const tn=b.dataset.ntn,ids=visible().map(([id])=>id).filter(id=>{const n=nOf(id);return n&&n.tasks.some(x=>x.n===tn)});
+    ntOp(b.dataset.ntop==='done'?ids.filter(id=>nOf(id).tasks.find(x=>x.n===tn).run):ids.filter(id=>!nOf(id).tasks.find(x=>x.n===tn).done),tn,b.dataset.ntop)});
+  const bs=$('#ntBedSet');if(bs)bs.onclick=()=>{const bed=ntBedFrom($('#ntBed2').value);visible().forEach(([id,d])=>ntEdit(id,N=>{N.bed=bed},`bedtime ${ntClock(bed)} · ${name(d)}`));render()};
+  const ea=$('#ntEndAll');if(ea)ea.onclick=()=>{if(!confirm('End the evening? The tablets go back to normal.'))return;visible().forEach(([id,d])=>{if(nOf(id))nPut(id,null,`bedtime off · ${name(d)}`)});render()};
+  main.querySelectorAll('[data-id]').forEach(card=>{const id=card.dataset.id,nm=name(devs[id]);
+    card.querySelectorAll('[data-ntadj]').forEach(b=>b.onclick=()=>{ntEdit(id,(N,now)=>{const x=N.tasks[+b.dataset.ntadj];x.ms=(x.ms||0)+(+b.dataset.d)*60000;
+      const spent=x.ms+(x.run?Math.min(now,N.bed)-x.run:0);if(spent<0)x.ms-=spent},`${b.dataset.d>0?'+':''}${b.dataset.d} min · ${nm}`);render()});
+    card.querySelectorAll('[data-ntone]').forEach(b=>b.onclick=()=>ntOp([id],b.dataset.ntn,b.dataset.ntone));
+    card.querySelectorAll('[data-ntdel]').forEach(b=>b.onclick=()=>{const n=nOf(id),x=n&&n.tasks[+b.dataset.ntdel];if(!x||!confirm(`Remove ${x.n} from ${nm}'s evening?`))return;ntEdit(id,N=>{N.tasks.splice(+b.dataset.ntdel,1)},`removed ${x.n}`);render()});
+    const ad=card.querySelector('[data-ntaddone]');if(ad)ad.onclick=()=>{const i=document.getElementById('ntOne-'+id),v=i.value.trim().slice(0,30);if(!v)return toast('Type it first');
+      const p=NT_PRE.find(x=>x[1].toLowerCase()===v.toLowerCase());ntEdit(id,N=>{N.tasks.push({n:p?p[1]:v,em:p?p[0]:'⭐',ms:0,run:0,done:false})},`added ${v}`);i.value='';render()};
+    const eo=card.querySelector('[data-ntendone]');if(eo)eo.onclick=()=>{if(confirm(`End bedtime mode on ${nm}'s tablet?`)){nPut(id,null,`bedtime off · ${nm}`);render()}}})}
 const batTxt=d=>{const B=d.battery;if(!B)return '';return `<i class="bat ${!B.charging&&B.level<=20?'low':''}">${B.charging?'⚡':B.level<=20?'🪫':'🔋'} ${B.level}%</i>`};
 function kidTile(id,d){const online=d.seenMs&&Date.now()-d.seenMs<150000,today=(d.days||{})[dk(0)]||{g:{},tv:0},gTot=Object.values(today.g||{}).reduce((a,b)=>a+b,0);
   const unread=(d.msgs||[]).filter(m=>m.t>(seenT[id]||0)).length,lockIn=d.lockAt&&d.lockAt>Date.now()?Math.ceil((d.lockAt-Date.now())/60000):0,W=d.words;
   return `<div class="kidwrap"><button class="kid" data-k="${esc(id)}"><span class="kem">${d.mode==='little'?'🧚':'🥷'}</span><b>${esc(name(d))}</b>
     <span class="pill ${online?'on':''}">${online?'● Online':'Seen '+(d.seenMs?ago(d.seenMs):'never')}</span>
     <span class="kline">${esc(online?d.doing||'':'')}</span>
-    <span class="kstats">${batTxt(d)}${d.chatMode==='off'?'<i>🔕 Msgs off</i>':d.chatMode==='pics'?'<i>🖼️ No typing</i>':''}${d.locked?'<i class="lock">🔒 Locked</i>':''}${lockIn?`<i class="cd">⏳ ${lockIn} min</i>`:''}${unread?`<i class="new">💬 ${unread} new</i>`:''}${W&&W.locked?`<i>📝 ${W.need} left</i>`:W&&W.doneToday?'<i>📝 Done ✓</i>':''}<i>🎮 ${mins(gTot)}</i>${today.tv?`<i>🍿 ${mins(today.tv)}</i>`:''}<i>⭐ ${d.wallet||0}</i></span></button>
+    <span class="kstats">${batTxt(d)}${d.chatMode==='off'?'<i>🔕 Msgs off</i>':d.chatMode==='pics'?'<i>🖼️ No typing</i>':''}${(()=>{const n=nOf(id);if(!n)return '';const c=ntCalc(n);return `<i class="nt">🌙 ${c.left<=0?'Bedtime':c.running?c.running.em+' '+esc(c.running.n):ntMin(c.left)+' to bed'}</i>`})()}${d.locked?'<i class="lock">🔒 Locked</i>':''}${lockIn?`<i class="cd">⏳ ${lockIn} min</i>`:''}${unread?`<i class="new">💬 ${unread} new</i>`:''}${W&&W.locked?`<i>📝 ${W.need} left</i>`:W&&W.doneToday?'<i>📝 Done ✓</i>':''}<i>🎮 ${mins(gTot)}</i>${today.tv?`<i>🍿 ${mins(today.tv)}</i>`:''}<i>⭐ ${d.wallet||0}</i></span></button>
     <div class="kmsg"><input class="tx" id="qm-${esc(id)}" placeholder="Message ${esc(name(d))}…" enterkeyhint="send"><button class="btn go" data-qm="${esc(id)}">Send</button><button class="btn" data-fart="${esc(id)}" aria-label="Send a fart">💨</button></div></div>`}
 function allCard(){return `<div class="card all"><h2>📣 All tablets</h2><div class="rowc"><input class="tx" id="allMsg" placeholder="Message to everyone"><button class="btn" data-all="notice">Send</button></div>
   <div class="rowc"><button class="btn" data-all="countdown" data-m="5">⏳ 5 min, then lock</button><button class="btn" data-all="lock">🔒 Lock now</button><button class="btn" data-all="unlock">🔓 Unlock</button><button class="btn" data-all="fart">💨 Fart</button></div></div>`}
@@ -174,6 +248,7 @@ function devCard(id,d){const online=d.seenMs&&Date.now()-d.seenMs<150000,today=(
     <h2>${d.mode==='little'?'🧚':'🥷'} ${esc(name(d))} ${d.battery?`<span class="pill ${!d.battery.charging&&d.battery.level<=20?'lock':''}">${d.battery.charging?'⚡':d.battery.level<=20?'🪫':'🔋'} ${d.battery.level}%</span>`:''}${online?'<span class="pill on">● Online</span>':`<span class="pill">Seen ${d.seenMs?ago(d.seenMs):'never'}</span>`}${d.locked?'<span class="pill lock">🔒 Locked</span>':''}${lockIn?`<span class="pill cd">⏳ Locks in ${lockIn} min</span>`:''}</h2>
     <div class="doing">${online?'Now: '+esc(d.doing||''):'Last: '+esc(d.doing||'')}</div>
     ${msgBox(id,d)}
+    ${ntBox(id,d)}
     ${wordsBox(id,d)}
     <div class="stats"><div class="stat"><b>${mins(gTot)}</b><span>games today</span></div><div class="stat"><b>${mins(today.tv)}</b><span>movies today</span></div>
       <div class="stat"><b>⭐ ${d.wallet||0}</b><span>to spend · ${money(Math.round((d.wallet||0)*100/rate))}</span></div></div>
@@ -198,7 +273,7 @@ function devCard(id,d){const online=d.seenMs&&Date.now()-d.seenMs<150000,today=(
       <details><summary>Tablet options & diagnostics</summary><div class="rowc" style="margin-top:8px"><button class="btn" data-hide>Hide this tablet</button><button class="btn" data-diag>📋 Copy diagnostics</button></div>
         <pre style="white-space:pre-wrap;font-size:11px;max-height:240px;overflow:auto;background:var(--bg);border-radius:10px;padding:8px;margin:8px 0 0">${esc(d.diag||'No diagnostics yet.')}</pre></details>
     </div></div>`}
-function wire(){
+function wire(){ntWire();
   main.querySelectorAll('[data-id]').forEach(card=>{const id=card.dataset.id,d=devs[id],nm=name(d),rate=d.rate||25;
     const fb=card.querySelector('[data-fill]');if(fb)fb.onclick=()=>fillSentences($('#wl-'+id));
     const ws=card.querySelector('[data-wsend]');if(ws)ws.onclick=()=>{const list=parseWords($('#wl-'+id).value),test=$('#wt-'+id).value;if(!list.length)return toast('Type the words first');
