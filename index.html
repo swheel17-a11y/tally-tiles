@@ -459,6 +459,7 @@ td.h{padding-top:14px;font-size:11px;letter-spacing:.12em;text-transform:upperca
     <button role="tab" id="tab-sudoku" aria-selected="false" data-mode="sudoku">Sudoku</button>
     <button role="tab" id="tab-sort" aria-selected="false" data-mode="sort">Sort</button>
     <button role="tab" id="tab-knots" aria-selected="false" data-mode="knots">Knots</button>
+    <button role="tab" id="tab-screws" aria-selected="false" data-mode="screws">Screws</button>
   </div>
   <div class="stage" id="stage"></div>
   <div class="controls" id="controls"></div>
@@ -466,7 +467,7 @@ td.h{padding-top:14px;font-size:11px;letter-spacing:.12em;text-transform:upperca
 <div class="sheet-bg" id="sheet" hidden></div>
 <script>
 /* Kid mode: index.html?kid=knots shows just that one game (used by the Star Quest kids app). It keeps its own saves, apart from Dad's. */
-(()=>{const k=(new URLSearchParams(location.search).get('kid')||'').toLowerCase();if(!/^(merge|solitaire|cats|sudoku|sort|knots)$/.test(k))return;
+(()=>{const k=(new URLSearchParams(location.search).get('kid')||'').toLowerCase();if(!/^(merge|solitaire|cats|sudoku|sort|knots|screws)$/.test(k))return;
   window.__KIDM=k;document.documentElement.classList.add('kidmode');
   try{const P=Storage.prototype,g=P.getItem,st=P.setItem,r=P.removeItem;P.getItem=function(x){return g.call(this,'kid:'+x)};P.setItem=function(x,v){return st.call(this,'kid:'+x,v)};P.removeItem=function(x){return r.call(this,'kid:'+x)}}catch(e){}})();
 </script>
@@ -500,7 +501,7 @@ const addPts=p=>{S.dayPts+=p;save();};
 /* ---------- clocks: one per tab, paused while you're on another tab ---------- */
 const R=26,C=2*Math.PI*R,LIMIT=30;
 const mkClock=()=>({elapsed:0,since:null,running:false,timed:false,onEnd:null});
-const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock(),sand:mkClock(),yard:mkClock(),cats:mkClock(),offcut:mkClock(),trade:mkClock(),mine:mkClock(),sudoku:mkClock(),sort:mkClock(),knots:mkClock()};
+const clocks={numbers:mkClock(),letters:mkClock(),conundrum:mkClock(),merge:mkClock(),solitaire:mkClock(),sand:mkClock(),yard:mkClock(),cats:mkClock(),offcut:mkClock(),trade:mkClock(),mine:mkClock(),sudoku:mkClock(),sort:mkClock(),knots:mkClock(),screws:mkClock()};
 const el=c=>c.elapsed+(c.since?(performance.now()-c.since)/1000:0);
 let looping=false;
 function clockHTML(){return `<div class="clock" id="clock"><svg viewBox="0 0 64 64"><circle class="track" cx="32" cy="32" r="${R}" fill="none" stroke-width="6"/><circle class="arc" id="arc" cx="32" cy="32" r="${R}" fill="none" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg><div class="t" id="clockT"></div></div>`}
@@ -2216,6 +2217,232 @@ function krUp(e){const D=KR.drag;if(!D)return;KR.drag=null;const G=krGeom();
   krKick()}
 
 /* ==========================================================
+   SCREWS: planks stacked on a board, held by coloured screws. Tap a screw no plank is covering to pull it.
+   A plank left with one screw swings and hangs from it; a plank with none falls away.
+   Screws go into colour boxes (3 each); others wait in a small tray. Fill the tray and you're stuck.
+   Board units: 100 wide × 125 tall.
+   ========================================================== */
+const SC_BW=100,SC_BH=125,SC_SR=3.6,SC_PW=11;
+const SC_COL=['#e5484d','#3b82f6','#f2c12e','#3cb043','#9b5de5','#f5862e'];
+const SC_STAIN=['#c8955a','#9a5f34','#dcb27a','#b0763f','#7e4f2c','#e0bf8c','#a86b3c','#c48a4e'];
+const scRot=(x,y,a)=>{const c=Math.cos(a),s=Math.sin(a);return[x*c-y*s,x*s+y*c]};
+function scCorners(p){return[[-1,-1],[1,-1],[1,1],[-1,1]].map(([u,v])=>{const [x,y]=scRot(u*p.L/2,v*p.w/2,p.a);return[p.x+x,p.y+y]})}
+function scOverlap(A,B){const ca=scCorners(A),cb=scCorners(B);for(const P of [ca,cb])for(let i=0;i<4;i++){const a=P[i],b=P[(i+1)%4],nx=-(b[1]-a[1]),ny=b[0]-a[0];
+    const pa=ca.map(c=>c[0]*nx+c[1]*ny),pb=cb.map(c=>c[0]*nx+c[1]*ny);if(Math.max(...pa)<Math.min(...pb)+0.5||Math.max(...pb)<Math.min(...pa)+0.5)return false}return true}
+// does a plank (at pose) cover a point (a screw head)?
+function scCovers(pose,L,w,x,y){const [lx,ly]=scRot(x-pose.x,y-pose.y,-pose.a);return Math.abs(lx)<L/2+SC_SR*0.55&&Math.abs(ly)<w/2+SC_SR*0.55}
+// where a plank comes to rest hanging from one screw: its centre straight below the screw
+function scHang(pl,sc){const qx=sc.lx,qy=sc.ly,d=Math.hypot(qx,qy);if(d<0.5)return{x:pl.x,y:pl.y,a:pl.a};
+  const a=-Math.PI/2-Math.atan2(qy,qx),[rx,ry]=scRot(qx,qy,a);return{x:sc.wx-rx,y:sc.wy-ry,a}}
+// the pose a plank rests in, given which of its screws are still in
+function scRest(P,pi){const pl=P.planks[pi],left=pl.screws.filter(s=>!P.screws[s].gone);
+  if(!left.length)return null;if(left.length>=2)return{x:pl.x,y:pl.y,a:pl.a};return scHang(pl,P.screws[left[0]])}
+function scFreeAt(P,si,poseOf){const s=P.screws[si];if(s.gone)return false;for(let q=s.plank+1;q<P.planks.length;q++){const pose=poseOf(q);if(pose&&scCovers(pose,P.planks[q].L,P.planks[q].w,s.wx,s.wy))return false}return true}
+const scRestPose=P=>q=>scRest(P,q);
+function scGen(lv,seed){const R=ctRng(seed),n=Math.min(13,3+lv),k=Math.min(6,2+Math.floor(lv/3));
+  for(let t=0;t<600;t++){const planks=[],screws=[];let ok=true;
+    for(let i=0;i<n&&ok;i++){let placed=false;const need=R()<0.8;
+      for(let u=0;u<80&&!placed;u++){const L=30+R()*38,angs=[0,Math.PI/2,Math.PI/4,-Math.PI/4,(R()-.5)*0.6,Math.PI/2+(R()-.5)*0.6],a=angs[Math.floor(R()*angs.length)];
+        const pl={L,w:SC_PW,x:8+R()*84,y:10+R()*105,a,screws:[],stain:SC_STAIN[Math.floor(R()*SC_STAIN.length)]};
+        if(scCorners(pl).some(([x,y])=>x<3||x>SC_BW-3||y<3||y>SC_BH-3))continue;
+        if(i>0&&!planks.some(q=>scOverlap(q,pl)))continue;
+        if(i>0&&need&&!screws.some(s=>scCovers(pl,L,SC_PW,s.wx,s.wy)))continue;
+        const ns=L>48&&R()<0.4?3:2,loc=ns===3?[-(L/2-5.5),0,L/2-5.5]:[-(L/2-5.5),L/2-5.5];
+        const pts=loc.map(lx=>{const [x,y]=scRot(lx,0,a);return{lx,ly:0,wx:pl.x+x,wy:pl.y+y}});
+        if(pts.some(p=>screws.some(s=>Math.hypot(s.wx-p.wx,s.wy-p.wy)<SC_SR*2.6)))continue;
+        // a new plank must not sit on top of every screw of a plank below it from the start... that is allowed; it is the puzzle
+        planks.push(pl);pts.forEach(p=>{pl.screws.push(screws.length);screws.push(Object.assign({plank:i,gone:false,c:0,rot:R()*Math.PI},p))});placed=true}
+      if(!placed)ok=false}
+    if(!ok)continue;
+    // balance to a multiple of three: add a middle screw to a long plank, or drop one
+    for(let g=0;g<6&&screws.length%3;g++){const add=screws.length%3===2,cand=planks.map((pl,i)=>i).filter(i=>add?planks[i].screws.length===2&&planks[i].L>40:planks[i].screws.length===3);
+      if(!cand.length)break;const pi=cand[Math.floor(R()*cand.length)],pl=planks[pi];
+      if(add){const wx=pl.x,wy=pl.y;if(screws.some(s=>Math.hypot(s.wx-wx,s.wy-wy)<SC_SR*2.6))continue;pl.screws.splice(1,0,screws.length);screws.push({plank:pi,gone:false,c:0,rot:R()*Math.PI,lx:0,ly:0,wx,wy})}
+      else{const si=pl.screws.splice(1,1)[0];screws.splice(si,1);planks.forEach(q=>q.screws=q.screws.map(x=>x>si?x-1:x))}}
+    if(screws.length%3)continue;
+    // find an order that clears the board (swings included); keep boards where only some screws start free
+    const P={planks,screws};let order=null;
+    for(let tr=0;tr<30&&!order;tr++){screws.forEach(s=>s.gone=false);const ord=[];
+      while(ord.length<screws.length){const free=screws.map((s,i)=>i).filter(i=>scFreeAt(P,i,scRestPose(P)));if(!free.length)break;const pick=free[Math.floor(R()*free.length)];screws[pick].gone=true;ord.push(pick)}
+      if(ord.length===screws.length)order=ord}
+    screws.forEach(s=>s.gone=false);if(!order)continue;
+    const free0=screws.filter((s,i)=>scFreeAt(P,i,scRestPose(P))).length;if(free0>Math.max(3,Math.ceil(screws.length*0.55)))continue;
+    // colour the screws in chunks of three along that order: the boxes then come in that colour order
+    const queue=[];for(let j=0;j<order.length/3;j++){let c=Math.floor(R()*k);if(queue.length&&c===queue[queue.length-1]&&k>1)c=(c+1)%k;queue.push(c);for(let m=0;m<3;m++)screws[order[j*3+m]].c=c}
+    // shuffle within small windows so the order isn't spelled out by colour
+    return{planks,screws,queue,order,k}}
+  return null}
+
+const SC_KEY='tally-tiles-screws-v1';
+let SCR=null,scMsg='',scMsgT=0,scHintS=-1;
+function scLoad(){try{SCR=JSON.parse(localStorage.getItem(SC_KEY)||'null')}catch(e){SCR=null}SCR=Object.assign({level:1,solved:0,streak:0,lastDaily:'',p:null},SCR||{})}
+function scSave(){try{localStorage.setItem(SC_KEY,JSON.stringify(SCR))}catch(e){}}
+function scNew(daily){const key=ctDayKey(),lv=daily?10:SCR.level,seed=daily?ctDaySeed('screws'+key):(Math.random()*4294967296)>>>0;
+  let g=scGen(lv,seed);for(let s=1;!g&&s<8;s++)g=scGen(lv,seed+s);
+  SCR.p={lv,k:g.k,planks:g.planks,screws:g.screws,queue:g.queue,order:g.order,box:[0,1,2].filter(j=>j<g.queue.length),fill:{},next:Math.min(3,g.queue.length),tray:[],cap:5,extra:false,moves:0,undo:[],done:false,stuck:false,daily:daily?key:''};
+  scMsg='';scHintS=-1;SV.vis=null;SV.fly=[];SV.parts=[];SV.cele=false;scSave();renderScrews(true)}
+function scSay(m){scMsg=m;scMsgT=Date.now();clearTimeout(scSay.t);scSay.t=setTimeout(()=>{if(S.mode==='screws')renderScrews(false)},3100)}
+const scSnap=P=>JSON.stringify({g:P.screws.map(s=>s.gone?1:0),box:P.box,fill:P.fill,next:P.next,tray:P.tray,cap:P.cap,extra:P.extra});
+function scLeft(P){return P.screws.some(s=>!s.gone)}
+// the box a screw of colour c would go into (lowest visible box of that colour with room), or -1
+function scBoxFor(P,c){for(let k=0;k<P.box.length;k++){const j=P.box[k];if(j!=null&&P.queue[j]===c&&(P.fill[j]||0)<3)return k}return -1}
+function scCanPlace(P,c){return scBoxFor(P,c)>=0||P.tray.length<P.cap}
+// a box that is full leaves; the next one in the queue takes its spot; waiting screws of that colour hop in
+function scSettle(P,anim){let changed=true;while(changed){changed=false;
+  for(let k=0;k<P.box.length;k++){const j=P.box[k];if(j!=null&&(P.fill[j]||0)>=3){if(anim)SV.leaving.push({k,c:P.queue[j],t:0});P.box[k]=P.next<P.queue.length?P.next++:null;changed=true}}
+  for(let t=P.tray.length-1;t>=0;t--){const k=scBoxFor(P,P.tray[t]);if(k>=0){const j=P.box[k];P.fill[j]=(P.fill[j]||0)+1;if(anim)SV.fly.push({c:P.tray[t],from:{tray:t},to:{box:k,slot:P.fill[j]-1},t:0,d:.35});P.tray.splice(t,1);changed=true}}}}
+function scPull(si){const P=SCR.p;if(P.done)return;if(SV.pending){SV.fly=[];SV.pending=false;scSettle(P,true)}const s=P.screws[si];
+  if(!scCanPlace(P,s.c)){buzz(35);SV.trayShake=0.35;scSay('No room in the tray! Undo, or use + Slot.');renderScrews(false);return}
+  P.undo.push(scSnap(P));if(P.undo.length>200)P.undo.shift();scHintS=-1;
+  const from=svScrewPx(si);s.gone=true;P.moves++;const k=scBoxFor(P,s.c);
+  if(k>=0){const j=P.box[k];P.fill[j]=(P.fill[j]||0)+1;SV.fly.push({c:s.c,from,to:{box:k,slot:P.fill[j]-1},t:0,d:.5,spin:true})}
+  else{P.tray.push(s.c);SV.fly.push({c:s.c,from,to:{tray:P.tray.length-1},t:0,d:.5,spin:true})}
+  buzz(8);SV.pending=true;
+  if(!scLeft(P)){P.done=true;SCR.solved++;
+    if(P.daily){const y=new Date();y.setDate(y.getDate()-1);const yk=`${y.getFullYear()}-${y.getMonth()+1}-${y.getDate()}`;SCR.streak=SCR.lastDaily===yk?SCR.streak+1:SCR.lastDaily===P.daily?SCR.streak:1;SCR.lastDaily=P.daily}
+    else SCR.level++;addPts(Math.max(2,P.planks.length));buzz([20,40,20])}
+  scSave();renderScrews(false);srKickSc()}
+function scCheckStuck(){const P=SCR.p;if(P.done||!SV.vis)return;const pose=q=>SV.vis[q].mode==='fall'||SV.vis[q].mode==='gone'?null:SV.vis[q];
+  const free=P.screws.map((s,i)=>i).filter(i=>scFreeAt(P,i,pose));P.stuck=!!free.length&&!free.some(i=>scCanPlace(P,P.screws[i].c))}
+function scHint(){const P=SCR.p;if(P.done)return;const pose=q=>{const v=SV.vis&&SV.vis[q];return !v||v.mode==='fall'||v.mode==='gone'?null:v};
+  const free=P.screws.map((s,i)=>i).filter(i=>scFreeAt(P,i,pose)),rank=i=>P.order.indexOf(i);
+  const good=free.filter(i=>scBoxFor(P,P.screws[i].c)>=0).sort((a,b)=>rank(a)-rank(b));const pick=good[0]!=null?good[0]:free.filter(i=>scCanPlace(P,P.screws[i].c)).sort((a,b)=>rank(a)-rank(b))[0];
+  if(pick==null){scSay('No safe screw left. Try Undo or + Slot.');return renderScrews(false)}
+  scHintS=pick;scSay(good.length?'Pull the glowing screw: its box is open.':'Pull the glowing screw; it waits in the tray.');renderScrews(false);srKickSc()}
+function renderScrews(full){
+  if(!SCR)scLoad();if(!SCR.p)return scNew(false);const P=SCR.p;
+  if(full||!$('#scScene')){
+    stage.innerHTML=`<div class="headline mhead">
+        <div class="mstat"><div class="eyebrow">${P.daily?'Daily':'Level'}</div><div class="mnum dim" id="scLv"></div></div>
+        <div class="mstat"><div class="eyebrow">Screws</div><div class="mnum" id="scLeftN"></div></div>
+        <div class="mstat"><div class="eyebrow">Moves</div><div class="mnum dim" id="scMoves"></div></div></div>
+      <div class="soscene knscene" id="scScene"><div class="knbg"></div><canvas class="kncv sccv" aria-label="Screw board"></canvas></div>
+      <div class="hint" id="scHintTxt"></div>`;
+    svSetup($('#scScene'));
+  }
+  const left=P.screws.filter(s=>!s.gone).length;
+  $('#scLv').textContent=P.daily?'Hard':P.lv;$('#scLeftN').textContent=`${left}`;$('#scMoves').textContent=P.moves;
+  $('#scHintTxt').textContent=P.done?`Cleared in ${P.moves} moves! ${P.daily?`Daily streak: ${SCR.streak} 🔥`:''}`
+    :P.stuck?'Stuck: the tray is full and no free screw fits a box. Undo, Restart, or + Slot.'
+    :(Date.now()-scMsgT<3000&&scMsg)?scMsg:'Tap a screw nothing is covering. Screws fill matching boxes up top; the rest wait in the tray.';
+  const today=ctDayKey(),dailyDone=SCR.lastDaily===today;
+  const modes=`<div class="ctsizes sosizes"><button data-sc="level" aria-pressed="${!P.daily}">Level ${P.daily?SCR.level:P.lv}<small>${Math.min(13,3+(P.daily?SCR.level:P.lv))} planks</small></button><button data-sc="daily" aria-pressed="${!!P.daily}">Daily<small>${dailyDone?'Done ✓':'13 planks'}</small></button></div>`;
+  controls.innerHTML=P.done?`<div class="row"><button class="btn primary tall" id="scNext">${P.daily?'Back to levels':`Level ${SCR.level}`}</button>${!dailyDone&&!P.daily?`<button class="btn tall" id="scDaily">Daily puzzle</button>`:''}</div>`
+    :`<div class="row"><button class="btn" id="scUndo" ${P.undo.length?'':'disabled'}>Undo</button><button class="btn" id="scRestart" ${P.moves?'':'disabled'}>Restart</button><button class="btn" id="scExtra" ${P.extra?'disabled':''}>+ Slot</button><button class="btn" id="scHintBtn">Hint</button></div>${modes}`;
+  const on=(id,f)=>{const e=$(id);if(e)e.onclick=f};
+  on('#scNext',()=>scNew(false));on('#scDaily',()=>scNew(true));
+  const restore=snap=>{const o=JSON.parse(snap);P.screws.forEach((s,i)=>s.gone=!!o.g[i]);Object.assign(P,{box:o.box,fill:o.fill,next:o.next,tray:o.tray,cap:o.cap,extra:o.extra});P.stuck=false;scHintS=-1;SV.vis=null;SV.fly=[];SV.leaving=[];scSave();renderScrews(false);srKickSc()};
+  on('#scUndo',()=>{if(P.undo.length)restore(P.undo.pop())});
+  on('#scRestart',()=>{P.undo.push(scSnap(P));P.screws.forEach(s=>s.gone=false);Object.assign(P,{box:[0,1,2].filter(j=>j<P.queue.length),fill:{},next:Math.min(3,P.queue.length),tray:[],cap:P.extra?6:5});P.stuck=false;scHintS=-1;SV.vis=null;SV.fly=[];SV.leaving=[];scSave();renderScrews(false);srKickSc()});
+  on('#scExtra',()=>{if(P.extra)return;P.extra=true;P.cap++;P.undo.forEach((u,i)=>{const o=JSON.parse(u);o.cap++;o.extra=true;P.undo[i]=JSON.stringify(o)});P.stuck=false;scSave();renderScrews(false);srKickSc()});
+  on('#scHintBtn',scHint);
+  controls.querySelectorAll('[data-sc]').forEach(b=>b.onclick=()=>{const want=b.dataset.sc==='daily';if(want===!!P.daily)return;
+    if(want){if(dailyDone)return scSay('Today’s daily is done. Back tomorrow!'),renderScrews(false);return scNew(true)}scNew(false)});
+  srKickSc()}
+
+/* ---- Screws renderer: wood board, stacked planks, metal screws; planks swing on their last screw and fall ---- */
+const SV={cv:null,g:null,W:0,H:0,d:1,s:1,ox:0,oy:0,ty:0,vis:null,fly:[],leaving:[],parts:[],raf:0,last:0,t:0,board:null,trayShake:0,pending:false,cele:false,ro:null};
+const SV_G=320;
+function svSetup(sc){SV.cv=sc.querySelector('.sccv');SV.g=SV.cv.getContext('2d');sc.querySelector('.knbg').style.backgroundImage=`url(${SO_PHOTO.src})`;
+  SV.cv.addEventListener('pointerdown',svDown);
+  try{if(!SV.ro)SV.ro=new ResizeObserver(()=>{if(SV.cv&&SV.cv.isConnected&&(SV.cv.parentElement.clientWidth!==SV.W||SV.cv.parentElement.clientHeight!==SV.H))svResize()});SV.ro.disconnect();SV.ro.observe(sc)}catch(e){}
+  svResize()}
+function svResize(){const sc=SV.cv.parentElement;SV.W=sc.clientWidth||340;
+  const trayU=36,needU=trayU+SC_BH+8;sc.style.minHeight='380px';SV.H=Math.max(sc.clientHeight,240);
+  SV.s=Math.min(SV.W/(SC_BW+8),SV.H/needU);SV.ox=(SV.W-SC_BW*SV.s)/2;SV.ty=Math.max(4,(SV.H-needU*SV.s)/2);SV.oy=SV.ty+trayU*SV.s;
+  SV.d=Math.min(3,window.devicePixelRatio||1);SV.cv.width=Math.round(SV.W*SV.d);SV.cv.height=Math.round(SV.H*SV.d);SV.cv.style.height=SV.H+'px';SV.board=null;srKickSc()}
+const svPx=(x,y)=>[SV.ox+x*SV.s,SV.oy+y*SV.s];
+function svScrewPx(si){const P=SCR.p,s=P.screws[si];return svPx(s.wx,s.wy)}
+function svInitVis(){const P=SCR.p;SV.vis=P.planks.map((pl,i)=>{const r=scRest(P,i);if(!r)return{mode:'gone',x:pl.x,y:pl.y,a:pl.a,va:0,vx:0,vy:0};
+  const left=pl.screws.filter(s=>!P.screws[s].gone).length;return{mode:left>=2?'fixed':'pivot',x:r.x,y:r.y,a:r.a,va:0,vx:0,vy:0}})}
+// tray geometry in px: three colour boxes on top, holding slots below
+function svTray(){const P=SCR.p,s=SV.s,W=SC_BW*s,bw=W*0.3,bh=13*s,gap=(W-3*bw)/2,y0=SV.ty+2*s,boxes=[0,1,2].map(k=>({x:SV.ox+k*(bw+gap),y:y0,w:bw,h:bh}));
+  const n=P.cap,sw=Math.min(W/n,11*s),ty=y0+bh+5*s,tx=SV.ox+(W-n*sw)/2,slots=[...Array(n)].map((_,i)=>({x:tx+i*sw+sw/2,y:ty+sw/2,r:sw*0.34}));
+  return{boxes,slots,slotOf:(k,j)=>({x:boxes[k].x+bw*(j+1)/4,y:y0+bh*0.55})}}
+function svStep(dt){const P=SCR.p;if(!SV.vis)svInitVis();let busy=false;
+  P.planks.forEach((pl,i)=>{const v=SV.vis[i],left=pl.screws.filter(s=>!P.screws[s].gone);
+    if(v.mode==='gone')return;
+    if(!left.length&&v.mode!=='fall'){v.mode='fall';v.vy=-20;v.vx=(v.vx||0)+(Math.random()-.5)*14;v.va=(v.va||0)+(Math.random()-.5)*1.5}
+    else if(left.length===1&&v.mode==='fixed')v.mode='pivot';
+    if(v.mode==='pivot'){const s=P.screws[left[0]],kI=(pl.L*pl.L+pl.w*pl.w)/12+s.lx*s.lx+s.ly*s.ly,[rx,ry]=scRot(s.lx,s.ly,v.a),cx=s.wx-rx;
+      const al=SV_G*(cx-s.wx)/kI;v.va+=al*dt;v.va*=Math.exp(-1.6*dt);v.a+=v.va*dt;const [qx,qy]=scRot(s.lx,s.ly,v.a);const nx=s.wx-qx,ny=s.wy-qy;v.vx=(nx-v.x)/dt;v.vy=(ny-v.y)/dt;v.x=nx;v.y=ny;
+      if(Math.abs(v.va)>0.02||Math.abs(al)>0.05)busy=true}
+    else if(v.mode==='fall'){v.vy+=SV_G*dt;v.x+=v.vx*dt;v.y+=v.vy*dt;v.a+=v.va*dt;busy=true;if(v.y>SC_BH+pl.L){v.mode='gone'}}});
+  SV.fly=SV.fly.filter(f=>{f.t+=dt;busy=true;if(f.t>=f.d){if(f.to.box!=null)svBurst(f);return false}return true});
+  if(!SV.fly.length&&SV.pending){SV.pending=false;scSettle(P,true);scCheckStuck();scSave();renderScrews(false);busy=true}
+  SV.leaving=SV.leaving.filter(l=>{l.t+=dt;busy=true;return l.t<.5});
+  SV.parts=SV.parts.filter(p=>{p.life-=dt;p.vy+=200*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;busy=true;return p.life>0});
+  if(SV.trayShake>0){SV.trayShake=Math.max(0,SV.trayShake-dt);busy=true}
+  if(P.done&&!SV.cele&&!SV.fly.length){SV.cele=true;for(let k=0;k<30;k++){const [x,y]=svPx(Math.random()*SC_BW,SC_BH*0.4+Math.random()*SC_BH*0.4);SV.parts.push({x,y,vx:(Math.random()-.5)*160,vy:-80-Math.random()*160,life:.9,c:SC_COL[k%SC_COL.length]})}busy=true}
+  if(scHintS>=0)busy=true;return busy}
+function svBurst(f){const T=svTray(),p=T.slotOf(f.to.box,f.to.slot);for(let k=0;k<6;k++)SV.parts.push({x:p.x,y:p.y,vx:(Math.random()-.5)*90,vy:-40-Math.random()*60,life:.35,c:'#ffe7a0'})}
+function svBoard(){const c=document.createElement('canvas');c.width=SV.cv.width;c.height=SV.cv.height;const g=c.getContext('2d'),d=SV.d,s=SV.s,P=SCR.p,R=ctRng(17);g.scale(d,d);
+  const x0=SV.ox-3*s,y0=SV.oy-3*s,w=(SC_BW+6)*s,h=(SC_BH+6)*s;
+  g.save();g.shadowColor='rgba(0,0,0,.7)';g.shadowBlur=24;g.shadowOffsetY=10;g.fillStyle='#5a3a22';g.beginPath();g.roundRect?g.roundRect(x0,y0,w,h,10):g.rect(x0,y0,w,h);g.fill();g.restore();
+  g.save();g.beginPath();g.roundRect?g.roundRect(x0,y0,w,h,10):g.rect(x0,y0,w,h);g.clip();
+  let gr=g.createLinearGradient(x0,y0,x0+w,y0+h);gr.addColorStop(0,'#7a5032');gr.addColorStop(.5,'#5e3c24');gr.addColorStop(1,'#46291a');g.fillStyle=gr;g.fillRect(x0,y0,w,h);
+  for(let k=0;k<90;k++){const yy=y0+R()*h,amp=2+R()*5,ph=R()*6;g.strokeStyle=`rgba(${R()<.5?'30,16,8':'190,140,95'},${0.06+R()*0.12})`;g.lineWidth=0.6+R()*1.4;g.beginPath();for(let xx=0;xx<=w;xx+=8){const y=yy+Math.sin(xx/40+ph)*amp;xx?g.lineTo(x0+xx,y):g.moveTo(x0,y)}g.stroke()}
+  g.strokeStyle='rgba(255,220,170,.18)';g.lineWidth=3;g.strokeRect(x0+1.5,y0+1.5,w-3,h-3);g.restore();
+  // holes where screws sit
+  for(const sc of P.screws){const [x,y]=svPx(sc.wx,sc.wy),r=SC_SR*s*0.95;gr=g.createRadialGradient(x+r*.3,y+r*.35,r*.1,x,y,r);gr.addColorStop(0,'#1c1009');gr.addColorStop(.8,'#0d0704');gr.addColorStop(1,'#3a2414');g.fillStyle=gr;g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fill()}
+  // tray backing
+  const T=svTray();g.fillStyle='rgba(20,12,8,.55)';const ts=T.slots,tw=ts.length?(ts[ts.length-1].x-ts[0].x)+ts[0].r*3:0;
+  if(ts.length){g.beginPath();g.roundRect?g.roundRect(ts[0].x-ts[0].r*1.5,ts[0].y-ts[0].r*1.5,tw,ts[0].r*3,ts[0].r*1.5):g.rect(ts[0].x-ts[0].r*1.5,ts[0].y-ts[0].r*1.5,tw,ts[0].r*3);g.fill()}
+  for(const sl of ts){g.fillStyle='#0b0705';g.beginPath();g.arc(sl.x,sl.y,sl.r,0,Math.PI*2);g.fill();g.strokeStyle='rgba(255,220,170,.25)';g.lineWidth=1;g.stroke()}
+  return c}
+function svScrewHead(g,x,y,r,col,rot,glow){g.save();g.shadowColor='rgba(0,0,0,.55)';g.shadowBlur=r*0.6;g.shadowOffsetY=r*0.25;
+  const gr=g.createRadialGradient(x-r*.35,y-r*.4,r*.1,x,y,r);gr.addColorStop(0,'#ffffff');gr.addColorStop(.25,col);gr.addColorStop(1,'#1a1a1a');
+  g.fillStyle=gr;g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fill();g.restore();
+  g.strokeStyle='rgba(0,0,0,.45)';g.lineWidth=Math.max(1,r*0.12);g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.stroke();
+  g.save();g.translate(x,y);g.rotate(rot);g.strokeStyle='rgba(20,20,20,.75)';g.lineWidth=Math.max(1.2,r*0.24);g.lineCap='round';g.beginPath();g.moveTo(-r*.5,0);g.lineTo(r*.5,0);g.moveTo(0,-r*.5);g.lineTo(0,r*.5);g.stroke();
+  g.strokeStyle='rgba(255,255,255,.35)';g.lineWidth=Math.max(.6,r*.08);g.beginPath();g.moveTo(-r*.5,-r*.12);g.lineTo(r*.5,-r*.12);g.stroke();g.restore();
+  if(glow){g.strokeStyle=`rgba(255,226,140,${glow})`;g.lineWidth=3;g.shadowColor='rgba(255,210,120,.9)';g.shadowBlur=12;g.beginPath();g.arc(x,y,r+3,0,Math.PI*2);g.stroke();g.shadowBlur=0}}
+function svDraw(){const g=SV.g,d=SV.d,s=SV.s,P=SCR.p;g.setTransform(d,0,0,d,0,0);g.clearRect(0,0,SV.W,SV.H);if(!SV.board)SV.board=svBoard();g.drawImage(SV.board,0,0,SV.W,SV.H);
+  const pulse=.5+.5*Math.sin(SV.t*6);
+  // planks bottom to top, each with its own screws on top of it
+  P.planks.forEach((pl,i)=>{const v=SV.vis[i];if(v.mode==='gone')return;const [cx,cy]=svPx(v.x,v.y),L=pl.L*s,w=pl.w*s;
+    g.save();g.translate(cx,cy);g.rotate(v.a);
+    g.save();g.shadowColor='rgba(0,0,0,.6)';g.shadowBlur=10;g.shadowOffsetX=3;g.shadowOffsetY=5;g.fillStyle=pl.stain;g.beginPath();g.roundRect?g.roundRect(-L/2,-w/2,L,w,w*0.35):g.rect(-L/2,-w/2,L,w);g.fill();g.restore();
+    g.beginPath();g.roundRect?g.roundRect(-L/2,-w/2,L,w,w*0.35):g.rect(-L/2,-w/2,L,w);g.save();g.clip();
+    let gr=g.createLinearGradient(0,-w/2,0,w/2);gr.addColorStop(0,'rgba(255,240,215,.35)');gr.addColorStop(.18,'rgba(255,240,215,0)');gr.addColorStop(.8,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.35)');g.fillStyle=gr;g.fillRect(-L/2,-w/2,L,w);
+    const R=ctRng(i*31+7);for(let k=0;k<7;k++){const yy=-w/2+w*(k+.5)/7+(R()-.5)*2;g.strokeStyle=`rgba(${R()<.6?'60,30,10':'255,230,190'},${.1+R()*.15})`;g.lineWidth=.6+R();g.beginPath();g.moveTo(-L/2,yy);g.bezierCurveTo(-L/6,yy+(R()-.5)*3,L/6,yy+(R()-.5)*3,L/2,yy);g.stroke()}
+    g.restore();g.strokeStyle='rgba(40,20,8,.55)';g.lineWidth=1.2;g.stroke();
+    // its holes, then its screws
+    pl.screws.forEach(si=>{const sc=P.screws[si],r=SC_SR*s*.95,[hx,hy]=[sc.lx*s,sc.ly*s];g.fillStyle='#1a0e07';g.beginPath();g.arc(hx,hy,r,0,Math.PI*2);g.fill();g.strokeStyle='rgba(255,230,190,.25)';g.lineWidth=1;g.beginPath();g.arc(hx,hy,r,Math.PI*.15,Math.PI*.85);g.stroke()});
+    g.restore();
+    pl.screws.forEach(si=>{const sc=P.screws[si];if(sc.gone)return;const [x,y]=svPx(sc.wx,sc.wy);svScrewHead(g,x,y,SC_SR*s*1.05,SC_COL[sc.c],sc.rot,si===scHintS?.6+.4*pulse:0)})});
+  // colour boxes
+  const T=svTray();
+  P.box.forEach((j,k)=>{const b=T.boxes[k];if(j==null){g.strokeStyle='rgba(255,255,255,.15)';g.setLineDash([4,4]);g.strokeRect(b.x,b.y,b.w,b.h);g.setLineDash([]);return}
+    const col=SC_COL[P.queue[j]];g.save();g.shadowColor='rgba(0,0,0,.5)';g.shadowBlur=8;g.shadowOffsetY=3;const gr=g.createLinearGradient(0,b.y,0,b.y+b.h);gr.addColorStop(0,col);gr.addColorStop(1,'#222');g.fillStyle=gr;
+    g.beginPath();g.roundRect?g.roundRect(b.x,b.y,b.w,b.h,6):g.rect(b.x,b.y,b.w,b.h);g.fill();g.restore();g.strokeStyle='rgba(255,255,255,.35)';g.lineWidth=1.2;g.stroke();
+    for(let m=0;m<3;m++){const p=T.slotOf(k,m),r=b.h*0.28;const filled=m<(P.fill[j]||0)&&!SV.fly.some(f=>f.to.box===k&&f.to.slot===m);
+      if(filled)svScrewHead(g,p.x,p.y,r,col,m*.7,0);else{g.fillStyle='rgba(255,255,255,.16)';g.beginPath();g.arc(p.x,p.y,r*0.8,0,Math.PI*2);g.fill();g.strokeStyle='rgba(255,255,255,.55)';g.lineWidth=1.2;g.setLineDash([2.5,2.5]);g.stroke();g.setLineDash([])}}});
+  SV.leaving.forEach(l=>{const b=T.boxes[l.k],e=l.t/.5;g.globalAlpha=1-e;g.fillStyle=SC_COL[l.c];g.beginPath();g.roundRect?g.roundRect(b.x,b.y-e*30,b.w,b.h,6):g.rect(b.x,b.y-e*30,b.w,b.h);g.fill();g.globalAlpha=1;g.fillStyle='#fff';g.font=`800 ${Math.round(b.h*.6)}px Archivo,system-ui`;g.textAlign='center';g.textBaseline='middle';g.globalAlpha=1-e;g.fillText('✓',b.x+b.w/2,b.y+b.h/2-e*30);g.globalAlpha=1});
+  // holding tray
+  const sh=SV.trayShake>0?Math.sin(SV.trayShake*70)*4:0;
+  P.tray.forEach((c,t)=>{const sl=T.slots[t];if(!sl||SV.fly.some(f=>f.to.tray===t))return;svScrewHead(g,sl.x+sh,sl.y,sl.r*1.1,SC_COL[c],t,0)});
+  if(SV.trayShake>0){g.strokeStyle='rgba(255,70,60,.8)';g.lineWidth=2;T.slots.forEach(sl=>{g.beginPath();g.arc(sl.x+sh,sl.y,sl.r+2,0,Math.PI*2);g.stroke()})}
+  // screws in flight: unscrew (spin + lift), then arc to their spot
+  SV.fly.forEach(f=>{const e=Math.min(1,f.t/f.d),to=f.to.box!=null?T.slotOf(f.to.box,f.to.slot):T.slots[f.to.tray],from=f.from.tray!=null?T.slots[f.from.tray]:{x:f.from[0],y:f.from[1]};
+    const lift=f.spin?Math.min(1,e/0.3):1,m=f.spin?Math.max(0,(e-0.3)/0.7):e,ee=m<.5?2*m*m:1-Math.pow(-2*m+2,2)/2;
+    const x=from.x+(to.x-from.x)*ee,y=from.y+(to.y-from.y)*ee-Math.sin(ee*Math.PI)*40-(f.spin?lift*6*(1-m):0);
+    const r=SC_SR*s*1.05*(1+0.35*lift*(1-m))*(1-0.3*m)+(to.r||0)*0;svScrewHead(g,x,y,Math.max(3,r),SC_COL[f.c],SV.t*18,0)});
+  for(const p of SV.parts){g.globalAlpha=Math.max(0,Math.min(1,p.life*2));g.fillStyle=p.c;g.beginPath();g.arc(p.x,p.y,2.2,0,Math.PI*2);g.fill()}g.globalAlpha=1}
+function srKickSc(){if(SV.raf||!SV.cv)return;SV.last=performance.now();SV.raf=requestAnimationFrame(svFrame)}
+function svFrame(ts){SV.raf=0;if(!SV.cv||!SV.cv.isConnected||!SCR||!SCR.p||S.mode!=='screws')return;const dt=Math.min(.034,Math.max(.001,(ts-SV.last)/1000));SV.last=ts;SV.t+=dt;
+  const busy=svStep(dt);svDraw();if(busy)SV.raf=requestAnimationFrame(svFrame)}
+function svDown(e){const P=SCR.p;if(!P||P.done)return;e.preventDefault();if(!SV.vis)svInitVis();const b=SV.cv.getBoundingClientRect(),x=e.clientX-b.left,y=e.clientY-b.top;
+  const pose=q=>{const v=SV.vis[q];return v.mode==='fall'||v.mode==='gone'?null:v};
+  // topmost screw under the finger
+  let hit=-1,hd=1e9;P.screws.forEach((sc,i)=>{if(sc.gone)return;const [sx,sy]=svPx(sc.wx,sc.wy),dd=Math.hypot(x-sx,y-sy);if(dd<SC_SR*SV.s*1.9&&(dd<hd-2||(Math.abs(dd-hd)<=2&&sc.plank>P.screws[hit].plank))){hd=dd;hit=i}});
+  if(hit<0)return;
+  if(scFreeAt(P,hit,pose)){scPull(hit);return}
+  // covered: nudge the plank on top so you can see what's holding it
+  const sc=P.screws[hit];for(let q=P.planks.length-1;q>sc.plank;q--){const v=pose(q);if(v&&scCovers(v,P.planks[q].L,P.planks[q].w,sc.wx,sc.wy)){if(v.mode==='pivot')v.va+=(Math.random()<.5?-1:1)*1.2;else{v.a+=0.03;setTimeout(()=>{v.a-=0.03;srKickSc()},90)}break}}
+  buzz(20);scSay('That screw is covered by a plank.');renderScrews(false)}
+
+/* ==========================================================
    OFFCUT: cut-list solitaire. Cut each order from your rack, waste as little as you can.
    Lengths are in inches inside; orders come in 3" steps; anything under 1' left on a board is scrap.
    ========================================================== */
@@ -2773,7 +3000,7 @@ function suMenu(){const today=ctDayKey();
   $('#suDaily').onclick=()=>suNew('hard',true);$('#suErr').onclick=()=>{SU.showErr=!SU.showErr;suSave();suDraw();suMenu()};$('#suBack').onclick=()=>suDraw()}
 
 function render(){
-  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else if(S.mode==='sand')return renderSand(true);else if(S.mode==='yard')return renderYard(true);else if(S.mode==='cats')return renderCats(true);else if(S.mode==='offcut')return renderOffcut();else if(S.mode==='trade')return renderTrade();else if(S.mode==='mine')return renderMine(true);else if(S.mode==='sudoku')return renderSudoku();else if(S.mode==='sort')return renderSort(true);else if(S.mode==='knots')return renderKnots(true);else renderCon();
+  if(S.mode==='numbers')renderNumbers();else if(S.mode==='letters')renderLetters();else if(S.mode==='merge')return renderMerge(true);else if(S.mode==='solitaire')return renderSol(true);else if(S.mode==='sand')return renderSand(true);else if(S.mode==='yard')return renderYard(true);else if(S.mode==='cats')return renderCats(true);else if(S.mode==='offcut')return renderOffcut();else if(S.mode==='trade')return renderTrade();else if(S.mode==='mine')return renderMine(true);else if(S.mode==='sudoku')return renderSudoku();else if(S.mode==='sort')return renderSort(true);else if(S.mode==='knots')return renderKnots(true);else if(S.mode==='screws')return renderScrews(true);else renderCon();
   paintClock();
 }
 function setMode(m){
@@ -2906,7 +3133,7 @@ function drawQR(cv,text){
 }
 
 /* ---------- boot ---------- */
-const m0=window.__KIDM||(['merge','solitaire','cats','sudoku','sort','knots'].includes(S.mode)?S.mode:'solitaire');S.mode='';setMode(m0);
+const m0=window.__KIDM||(['merge','solitaire','cats','sudoku','sort','knots','screws'].includes(S.mode)?S.mode:'solitaire');S.mode='';setMode(m0);
 })();
 </script>
 
