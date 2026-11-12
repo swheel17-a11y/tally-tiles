@@ -4134,13 +4134,18 @@ const ntCanWords=()=>!!(ntHw()&&K.words&&K.words.list&&K.words.list.length);
 function ntChip(on){let c=document.querySelector('.ntchip');if(!on){if(c)c.remove();return}
   if(!c){c=document.createElement('button');c.className='ntchip';c.onclick=()=>{sfx.tap();go('home')};document.body.appendChild(c)}
   const x=ntHw(),m=x?Math.round(((x.ms||0)+Date.now()-x.run)/60000):0;c.textContent=`📚 Homework ${m} min · 🌙 Back to bedtime`}
-function ntShow(){clearInterval(ntIv);let o=document.querySelector('.ntov');
+// keep the screen awake while the evening screen is up (let it sleep once it's bedtime)
+let ntWake=null,ntWakeErr='';
+async function ntKeepAwake(on){try{if(on){if(ntWake||document.hidden)return;if(!('wakeLock' in navigator)){if(ntWakeErr!=='x'){ntWakeErr='x';log('wake','not supported')}return}
+    ntWake=await navigator.wakeLock.request('screen');ntWakeErr='';log('wake','on');ntWake.addEventListener('release',()=>{ntWake=null})}
+  else if(ntWake){const w=ntWake;ntWake=null;await w.release();log('wake','off')}}catch(e){ntWake=null;const m=String(e&&e.message||e);if(m!==ntWakeErr){ntWakeErr=m;log('wake',m)}}}
+function ntShow(){clearInterval(ntIv);let o=document.querySelector('.ntov');ntKeepAwake(ntActive()&&Date.now()<K.night.bed);
   if(!ntActive()){if(o)o.remove();ntSig='';ntChip(false);return}
-  if(location.hash==='#spelling'&&ntCanWords()){if(o)o.remove();ntSig='';ntChip(true);ntIv=setInterval(()=>{if(!ntActive()||!ntCanWords()||location.hash!=='#spelling')return ntShow();ntChip(true)},5000);return}
+  if(location.hash==='#spelling'&&ntCanWords()){if(o)o.remove();ntSig='';ntChip(true);ntIv=setInterval(()=>{if(!ntActive()||!ntCanWords()||location.hash!=='#spelling')return ntShow();ntKeepAwake(true);ntChip(true)},5000);return}
   ntChip(false)
   if(!o){o=document.createElement('div');o.className='ntov';document.body.appendChild(o);ntSig='';
     if(window.__tvKill)window.__tvKill();if(location.hash&&location.hash!=='#home'){history.replaceState(null,'','#home');show()}}
-  ntDraw(o);ntIv=setInterval(()=>{if(!ntActive())return ntShow();ntDraw(o)},5000)}
+  ntDraw(o);ntIv=setInterval(()=>{if(!ntActive())return ntShow();ntKeepAwake(Date.now()<K.night.bed);ntDraw(o)},5000)}
 function ntSay(key,text,fresh){if(ntSaid.has(key))return;ntSaid.add(key);if(fresh)speakNow(text,'must')}
 function ntDraw(o){const N=K.night,c=ntCalc(N),now=Date.now(),nm=K.name||'';
   // spoken moments, only when they just happened (not when the tablet wakes up later)
