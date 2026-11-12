@@ -68,6 +68,7 @@ details summary{cursor:pointer;font-weight:700;color:var(--muted);font-size:14px
 .nt.on input.tx{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:#fff;color-scheme:dark}.nt.on .btn:not(.go):not(.good):not(.warn){background:rgba(255,255,255,.15);color:#fff}.nt.on .btn.go{background:#ffd75a;color:#1d2b4f}
 .ntchips{display:flex;flex-wrap:wrap;gap:6px}.ntchips .btn{min-height:40px;padding:8px 12px;font-weight:600;opacity:.65}.ntchips .btn.on{background:#5a3f96;color:#fff;opacity:1}
 .ntmv{display:flex;flex-direction:column;gap:2px}.ntmv button{width:30px;height:22px;border:0;border-radius:6px;background:rgba(127,127,127,.18);color:inherit;font-size:11px;line-height:1}.ntmv button:disabled{opacity:.25}
+.ntkid{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}.ntkid .lbl{font-size:16px;font-weight:700}.ntkid .btn{min-height:38px;padding:6px 12px}.ntkid .btn.on{background:#5a3f96;color:#fff}
 .ntlist{display:flex;flex-direction:column;gap:8px}
 .ntr{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:14px;padding:8px 10px}.nt.on .ntr{background:rgba(255,255,255,.1)}
 .ntr.run{box-shadow:0 0 0 2px #ffd75a}.ntr.done{opacity:.75}.ntr.play{background:rgba(63,191,127,.2)}
@@ -190,9 +191,9 @@ function nightCard(list){const act=list.filter(([id])=>nOf(id));
   if(!act.length){list.forEach(([id,d])=>{if(!ntDraft[id])ntDraft[id]={on:ntDefault(d),extra:[]}});
     return `<div class="card nt"><h2>🌙 Tonight's bedtime</h2>
       <div class="rowc"><span class="lbl">Bedtime</span><input class="tx" type="time" id="ntBed" value="20:30" style="max-width:150px"></div>
-      ${list.map(([id,d])=>{const D=ntDraft[id],all=[...NT_PRE,...D.extra];return `<div class="lbl">${d.mode==='little'?'🧚':'🥷'} ${esc(name(d))}'s list (tap to add or remove)</div>
-        <div class="ntchips">${all.map(([em,n])=>`<button class="btn ${D.on.some(x=>x[1]===n)?'on':''}" data-ntchip="${esc(id)}" data-ntn="${esc(n)}" data-ntem="${em}">${em} ${esc(n)}</button>`).join('')}</div>
-        <div class="rowc"><input class="tx" id="ntAdd-${esc(id)}" placeholder="Something else, like Feed the dog"><button class="btn" data-ntnew="${esc(id)}">+ Add</button></div>`}).join('')}
+      ${list.map(([id,d])=>{const D=ntDraft[id],all=[...NT_PRE,...D.extra];return `<div class="ntkid"><span class="lbl">${d.mode==='little'?'🧚':'🥷'} ${esc(name(d))}</span><button class="btn ${D.skip?'':'on'}" data-ntskip="${esc(id)}">${D.skip?'Not tonight':'✓ Tonight'}</button></div>
+        ${D.skip?`<p class="empty" style="margin:0">${esc(name(d))}'s tablet stays normal. You can add ${esc(name(d))} later.</p>`:`<div class="lbl">Tap to add or remove</div><div class="ntchips">${all.map(([em,n])=>`<button class="btn ${D.on.some(x=>x[1]===n)?'on':''}" data-ntchip="${esc(id)}" data-ntn="${esc(n)}" data-ntem="${em}">${em} ${esc(n)}</button>`).join('')}</div>
+        <div class="rowc"><input class="tx" id="ntAdd-${esc(id)}" placeholder="Something else, like Feed the dog"><button class="btn" data-ntnew="${esc(id)}">+ Add</button></div>`}`}).join('')}
       <button class="btn go" id="ntStart">🌙 Start the evening</button>
       <p class="empty" style="margin:0">The tablets switch to the bedtime screen. Play time starts with everything left until bed, and each thing you start takes its minutes out of it.</p></div>`}
   const N0=nOf(act[0][0]),names=[];act.forEach(([id])=>nOf(id).tasks.forEach(x=>{if(!names.some(y=>y[1]===x.n))names.push([x.em,x.n])}));
@@ -205,6 +206,7 @@ function nightCard(list){const act=list.filter(([id])=>nOf(id));
         ${running?`<button class="btn good" data-ntop="done" data-ntn="${esc(tn)}">✓ Done</button>`:allDone?'<span class="pill on">Done</span>':`<button class="btn go" data-ntop="start" data-ntn="${esc(tn)}">▶ Start</button>`}</div>`}).join('')}
       ${act.some(([id])=>C[id].between>=60000)?`<div class="ntr"><span class="ntem">⏳</span><div class="ntt"><b>In between</b><small>${act.map(([id,d])=>`${esc(name(d))} ${ntMin(C[id].between)}`).join(' · ')}</small></div></div>`:''}
       <div class="ntr play"><span class="ntem">🧸</span><div class="ntt"><b>Play time left</b><small>${act.map(([id,d])=>`${esc(name(d))} ${ntMin(C[id].left)}`).join(' · ')}</small></div></div></div>
+    ${list.filter(([id])=>!nOf(id)).map(([id,d])=>`<div class="ntr"><span class="ntem">${d.mode==='little'?'🧚':'🥷'}</span><div class="ntt"><b>${esc(name(d))} isn't in tonight</b><small>${(ntDraft[id]||{on:ntDefault(d)}).on.map(x=>x[0]+' '+esc(x[1])).join(' · ')}</small></div><button class="btn go" data-ntjoin="${esc(id)}">+ Add ${esc(name(d))}</button></div>`).join('')}
     <div class="rowc"><span class="lbl">Bedtime</span><input class="tx" type="time" id="ntBed2" value="${ntHHMM(N0.bed)}" style="max-width:150px"><button class="btn" id="ntBedSet">Change</button><button class="btn warn" id="ntEndAll">End the evening</button></div>
     <p class="empty" style="margin:0">To fix minutes, or add or remove something for one kid, open that kid's page.</p></div>`}
 function ntBox(id,d){const n=nOf(id);if(!n)return '';const c=ntCalc(n);
@@ -219,7 +221,8 @@ function ntWire(){
     const D=ntDraft[id];if(![...NT_PRE,...D.extra].some(x=>x[1].toLowerCase()===v.toLowerCase())){D.extra.push(['⭐',v]);D.on.push(['⭐',v])}i.value='';render()});
   const st=$('#ntStart');if(st)st.onclick=()=>{const bed=ntBedFrom($('#ntBed').value),now=Date.now();if(bed-now>8*3600e3)return toast('That bedtime is more than 8 hours away. Check the time.');
     if(!confirm(`Start the evening? Bedtime at ${ntClock(bed)} (${ntMin(bed-now)} from now). The tablets switch to the bedtime screen.`))return;
-    visible().forEach(([id,d])=>{const D=ntDraft[id]||{on:ntDefault(d)};nPut(id,{bed,began:now,tasks:D.on.map(([em,n])=>({n,em,ms:0,run:0,done:false}))},`bedtime screen on · ${name(d)}`)});render()};
+    const who=visible().filter(([id])=>!(ntDraft[id]||{}).skip);if(!who.length)return toast('Pick at least one kid');
+    who.forEach(([id,d])=>{const D=ntDraft[id]||{on:ntDefault(d)};nPut(id,{bed,began:now,tasks:D.on.map(([em,n])=>({n,em,ms:0,run:0,done:false}))},`bedtime screen on · ${name(d)}`)});render()};
   main.querySelectorAll('[data-ntop]').forEach(b=>b.onclick=()=>{const tn=b.dataset.ntn,ids=visible().map(([id])=>id).filter(id=>{const n=nOf(id);return n&&n.tasks.some(x=>x.n===tn)});
     ntOp(b.dataset.ntop==='done'?ids.filter(id=>nOf(id).tasks.find(x=>x.n===tn).run):ids.filter(id=>!nOf(id).tasks.find(x=>x.n===tn).done),tn,b.dataset.ntop)});
   main.querySelectorAll('[data-ntmv]').forEach(b=>b.onclick=()=>{const tn=b.dataset.ntmv,d=+b.dataset.d;
@@ -227,6 +230,9 @@ function ntWire(){
     const act=visible().filter(([id])=>nOf(id)),names=[];act.forEach(([id])=>nOf(id).tasks.forEach(x=>{if(!names.includes(x.n))names.push(x.n)}));
     const i=names.indexOf(tn),j=i+d;if(i<0||j<0||j>=names.length)return;[names[i],names[j]]=[names[j],names[i]];
     act.forEach(([id,dd])=>{const n=nOf(id);if(!n.tasks.some(x=>x.n===tn))return;ntEdit(id,N=>{N.tasks.sort((a,c)=>names.indexOf(a.n)-names.indexOf(c.n))},`moved ${tn} · ${name(dd)}`)});render()});
+  main.querySelectorAll('[data-ntskip]').forEach(b=>b.onclick=()=>{const D=ntDraft[b.dataset.ntskip];D.skip=!D.skip;render()});
+  main.querySelectorAll('[data-ntjoin]').forEach(b=>b.onclick=()=>{const id=b.dataset.ntjoin,d=devs[id],o=visible().map(([i])=>nOf(i)).find(Boolean);if(!o)return;
+    const D=ntDraft[id]||{on:ntDefault(d)};nPut(id,{bed:o.bed,began:Date.now(),tasks:D.on.map(([em,n])=>({n,em,ms:0,run:0,done:false}))},`bedtime screen on · ${name(d)}`);render()});
   const bs=$('#ntBedSet');if(bs)bs.onclick=()=>{const bed=ntBedFrom($('#ntBed2').value);visible().forEach(([id,d])=>ntEdit(id,N=>{N.bed=bed},`bedtime ${ntClock(bed)} · ${name(d)}`));render()};
   const ea=$('#ntEndAll');if(ea)ea.onclick=()=>{if(!confirm('End the evening? The tablets go back to normal.'))return;visible().forEach(([id,d])=>{if(nOf(id))nPut(id,null,`bedtime off · ${name(d)}`)});render()};
   main.querySelectorAll('[data-id]').forEach(card=>{const id=card.dataset.id,nm=name(devs[id]);
