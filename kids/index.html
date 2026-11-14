@@ -4044,7 +4044,16 @@ function famNotice(text,em,replies){if(!text)return;if(replies)chatInbox(text,em
   b.onclick=e=>{const r=e.target.closest('[data-r]');if(r){const q=replies[+r.dataset.r];chatSend(q[0],q[1]);b.querySelector('b').textContent='Sent: '+q[1];b.querySelector('.famrep').remove();clearTimeout(t);t=setTimeout(gone,2500);return}gone()}}
 const FAM_REPLY=[['👍','OK!'],['🙏','Can I have 5 more minutes?'],['❤️','I love you!']];
 // a fart from Mom & Dad: made with sound synthesis, different every time (plays even if game sounds are off)
-function famFart(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();
+// real whoopee-cushion recordings (in farts/), loaded once and played through Web Audio; falls back to the synth
+const FART_FILES=['long','toot','big','squeaker','triple','twopart'],fartBufs=[];let fartLast=-1,fartLoading=false;
+function fartLoad(){if(fartLoading)return;fartLoading=true;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)()}catch(e){return}
+  FART_FILES.forEach(n=>fetch('farts/fart-'+n+'.mp3').then(r=>r.ok?r.arrayBuffer():Promise.reject(r.status)).then(b=>new Promise((ok,no)=>ac.decodeAudioData(b,ok,no))).then(buf=>fartBufs.push(buf)).catch(e=>log('fart load',n+' '+String(e))))}
+function famFart(){fartLoad();if(fartBufs.length){try{if(ac.state==='suspended')ac.resume();let i;do{i=Math.floor(Math.random()*fartBufs.length)}while(fartBufs.length>1&&i===fartLast);fartLast=i;
+    const src=ac.createBufferSource(),g=ac.createGain();src.buffer=fartBufs[i];g.gain.value=1;src.connect(g);g.connect(ac.destination);src.start(ac.currentTime+0.05)}catch(e){log('fart failed',String(e))}
+    const p=document.createElement('div');p.className='fartpuff';p.innerHTML='<span>💨</span><b>Pfffft! 😆</b>';document.body.appendChild(p);setTimeout(()=>p.remove(),2600);return}
+  famFartSynth()}
+setTimeout(fartLoad,4000);
+function famFartSynth(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();
   const t=ac.currentTime+0.05,dur=0.45+Math.random()*0.9,base=65+Math.random()*55;
   const o=ac.createOscillator();o.type='sawtooth';o.frequency.setValueAtTime(base*1.35,t);o.frequency.exponentialRampToValueAtTime(base*0.65,t+dur);
   const lfo=ac.createOscillator(),lg=ac.createGain();lfo.type='square';lfo.frequency.value=16+Math.random()*24;lg.gain.value=base*0.4;lfo.connect(lg);lg.connect(o.frequency);
@@ -4206,7 +4215,8 @@ window.addEventListener('hashchange',()=>setTimeout(()=>famPush(true),1500));
 setTimeout(famStart,2500);
 function famGrownups(){return `<div class="prow" style="flex-wrap:wrap"><span>Grown-up PIN <small style="color:var(--muted)">(for Star Bank purchases and unlocking)</small></span><span class="ctl"><button class="pbtn" id="pinSet">${K.pin?'Change PIN':'Set PIN'}</button></span></div>
   <div class="prow" style="flex-wrap:wrap"><span>Star Bank: stars per $1</span><span class="ctl">${[10,20,25,50].map(r=>`<button class="pbtn" data-rate="${r}" style="${sbRate()===r?'background:var(--ink);color:#fff':''}">${r}</button>`).join('')}</span></div>
-  <div class="prow" style="flex-wrap:wrap"><span>Family link <small style="color:var(--muted)">${FB_CONFIG?(FB.on?'Connected. Your admin page can see this tablet.':FB.err?'Not connected: '+FB.err.slice(0,80):'Connecting…'):'Not set up yet'}</small></span>${K.locked?'<span class="ctl"><button class="pbtn" id="famUnl">Unlock</button></span>':''}</div>`}
+  <div class="prow" style="flex-wrap:wrap"><span>Family link <small style="color:var(--muted)">${FB_CONFIG?(FB.on?'Connected. Your admin page can see this tablet.':FB.err?'Not connected: '+FB.err.slice(0,80):'Connecting…'):'Not set up yet'}</small></span>${K.locked?'<span class="ctl"><button class="pbtn" id="famUnl">Unlock</button></span>':''}</div>
+  <p style="font-size:13px;color:var(--muted);margin:8px 2px 0">Sound credit: “Whoopee Cushion, Long, A.wav” by InspectorJ (www.jshaw.co.uk) of Freesound.org, CC BY 4.0.</p>`}
 function famGrownupsWire(re){const p=$('#pinSet');if(p)p.onclick=()=>{const old=K.pin;const setNew=()=>{K.pin=null;pinPad('',()=>re(),()=>{K.pin=old;save()})};old?pinPad('Enter your current PIN',setNew):setNew()};
   view.querySelectorAll('[data-rate]').forEach(b=>b.onclick=()=>{K.rate=+b.dataset.rate;save();re()});const u=$('#famUnl');if(u)u.onclick=()=>{famUnlock();re()}}
 
