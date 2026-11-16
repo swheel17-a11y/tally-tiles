@@ -823,6 +823,27 @@ html.bgfx-on.bgdark .home-foot .grownup{color:#1d2b4f}
 .sleigh{position:absolute;top:9%;left:0;font-size:38px;white-space:nowrap;opacity:0;animation:sleigh 24s linear infinite 3s}
 @keyframes sleigh{0%{opacity:0;transform:translate(110vw,0)}4%{opacity:1}30%{transform:translate(50vw,-3vh)}55%{opacity:1;transform:translate(-20vw,2vh)}56%,100%{opacity:0;transform:translate(-30vw,2vh)}}
 @media (prefers-reduced-motion:reduce){#bgfx *{animation:none!important}.shoot,.bfly,.sleigh{display:none}}
+/* color by number */
+.cbngal{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;width:100%;max-width:1200px}
+.cbncard{background:var(--card);border-radius:20px;padding:10px 10px 12px;box-shadow:0 5px 0 var(--sky-2);display:flex;flex-direction:column;gap:4px;align-items:stretch;text-align:left}
+.cbncard b{font-family:var(--f-display);font-size:20px;padding:0 4px}.cbncard small{color:var(--muted);font-weight:700;padding:0 4px}.cbncard.done small{color:#2a9460}
+.cbnth{width:100%;aspect-ratio:16/10;border-radius:12px;background:#fff}
+.cbncred{font-size:12px;color:var(--muted);margin:14px 0 0;text-align:center}
+.cbnwrap{display:flex;gap:14px;width:100%;height:calc(100vh - 120px);height:calc(100dvh - 120px);min-height:420px}
+.cbnpic{flex:1;position:relative;background:#fff;border-radius:22px;box-shadow:0 5px 0 var(--sky-2);overflow:hidden;touch-action:none}
+.cbnpic svg{width:100%;height:100%;display:block;touch-action:none}
+.cbnpic .rg{stroke:#8b97b0;stroke-width:1;vector-effect:non-scaling-stroke;stroke-linejoin:round;transition:fill .25s}
+.cbnpic .rg.pre{stroke:none}.cbnpic .ln{pointer-events:none}.cbnpic .dc{pointer-events:none}
+.cbnnums text{font-family:var(--f-display),Arial,sans-serif;font-weight:700;fill:#445069;text-anchor:middle;dominant-baseline:central;pointer-events:none;paint-order:stroke;stroke:#fff;stroke-width:.35px}
+.cbnno{animation:cbnno .35s}@keyframes cbnno{25%{fill:#e8443a}50%{fill:#e8443a}}
+.cbnflash{animation:cbnfl .9s 2}@keyframes cbnfl{50%{fill:#ffe14d}}
+.cbnzoom{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;gap:8px}.cbnzoom .pbtn{width:58px;height:58px;padding:0;font-size:28px;opacity:.92}
+.cbnside{width:200px;display:flex;flex-direction:column;gap:10px}.cbnside>.pbtn{height:58px;font-size:20px;padding:0 10px}
+.cbnpal{flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-content:start;overflow-y:auto;padding:4px}
+.cbnsw{position:relative;aspect-ratio:1;border-radius:50%;background:var(--c);box-shadow:0 4px 0 rgba(0,0,0,.18),inset 0 0 0 3px rgba(255,255,255,.5);display:grid;place-items:center}
+.cbnsw b{font-family:var(--f-display);font-size:20px;color:#1d2b4f;background:rgba(255,255,255,.85);border-radius:999px;min-width:30px;padding:0 5px;line-height:28px}
+.cbnsw.on{outline:5px solid #1d2b4f;outline-offset:3px;transform:scale(1.05)}.cbnsw.fin{opacity:.45}.cbnsw.fin b{color:#2a9460}
+.cbnwrap.lil .cbnside{width:200px}.cbnwrap.lil .cbnpal{grid-template-columns:1fr 1fr}.cbnwrap.lil .cbnsw b{font-size:30px;line-height:40px;min-width:42px}
 /* dark room for movies: no bright page around the video */
 html.watching,html.watching body{background:#000;color:#e8e8e8}
 html.watching .top h1,html.watching .top h1 small{color:#cfcfcf}
@@ -904,6 +925,7 @@ const GAMES=[
   {id:'slice',name:'Fruit Slice',em:'🔪',sub:'Swipe, slice, splat!',color:'#e8443a',max:0,play:true},
   {id:'fish',name:'Fishing Trip',em:'🎣',sub:'Catch them all',color:'#1a8fb5',max:0,play:true},
   {id:'brick',name:'Brick Builder',em:'🧱',sub:'Build anything in 3D',color:'#d9262b',max:0,play:true},
+  {id:'cbn',name:'Color by Number',em:'🖌️',sub:'Match the numbers',color:'#e0569b',max:0,play:true,both:true},
   {id:'doodle',name:'Doodle Pad',em:'🎨',sub:'Draw anything',color:'#f59a23',max:0,play:true,both:true},
   {id:'mix',name:'Mix & Make',em:'🧪',sub:'Potions, slime and treats',color:'#7bc043',max:0,little:true},
   {id:'adventure',name:'Magic Adventure',em:'🦄',sub:'You pick what happens',color:'#9b6bff',max:0,little:true},
@@ -1921,6 +1943,75 @@ const PAGES=[
 ];
 const CB_COLORS=['#ff7eb6','#ff3d8b','#c48bff','#e3d1ff','#7cc4ff','#6ee0b5','#ffd75e','#ff9f4a','#ff5a5a','#9b6b43','#ffffff'];
 let cbInk=CB_COLORS[0],cbPage=0;
+/* ---------- COLOR BY NUMBER: scenes built from Microsoft Fluent Emoji (MIT) ----------
+   Picture data lives in cbn/big.json or cbn/little.json: [{id,name,vb,svg,pal,rg:[[n,x,y,r,area]]}] */
+const CBN={data:null,loading:null,cur:null};
+function cbnLoad(){const f='cbn/'+(isLittle()?'little':'big')+'.json';
+  if(CBN.data&&CBN.data.f===f)return Promise.resolve(CBN.data.list);
+  return CBN.loading=fetch(f).then(r=>r.ok?r.json():Promise.reject(r.status)).then(list=>{CBN.data={f,list};return list})}
+const cbnSave=()=>{K.cbn=K.cbn||{};save()};
+function cbnState(p){K.cbn=K.cbn||{};return K.cbn[p.id]||(K.cbn[p.id]={f:[],done:0})}
+// which regions the kid colors (tiny ones come pre-colored); little mode needs bigger targets
+function cbnPlayable(p){const min=isLittle()?2.1:0.36;return p.rg.map(g=>g[3]>=min)}
+function cbnThumb(p,st){const play=cbnPlayable(p),f=new Set(st.f);
+  let svg=p.svg.replace(/data-r="(\d+)"/g,(m,i)=>{i=+i;const on=true;return `${m} fill="${on?p.pal[p.rg[i][0]]:'#ffffff'}" stroke="#c9d3e6" stroke-width="0.3"`});
+  return `<svg viewBox="${p.vb.join(' ')}" class="cbnth">${svg}</svg>`}
+function playCbn(){if(location.hash!=='#cbn')return;
+  setHeader('Color by Number');view.innerHTML='<div class="board"><p class="prompt">Getting the pictures…</p></div>';
+  cbnLoad().then(list=>{if(location.hash!=='#cbn')return;CBN.list=list;CBN.cur?cbnPlay(CBN.cur):cbnGallery()}).catch(e=>{log('cbn load',String(e));view.innerHTML='<div class="board"><p class="prompt">The pictures need the internet the first time. Try again in a minute.</p></div>'})}
+function cbnGallery(){CBN.cur=null;setHeader('Color by Number',isLittle()?'Pick a picture':'Pick a scene');
+  view.innerHTML=`<div class="cbngal">${CBN.list.map(p=>{const st=cbnState(p),play=cbnPlayable(p),tot=play.filter(Boolean).length,d=st.done?tot:st.f.length;
+    return `<button class="cbncard ${st.done?'done':''}" data-p="${p.id}">${cbnThumb(p,st)}<b>${esc(p.name)}</b><small>${st.done?'⭐ Finished!':d?`${d} of ${tot}`:`${tot} spaces`}</small></button>`}).join('')}</div>
+    <p class="cbncred">Pictures made from Microsoft Fluent Emoji (MIT license).</p>`;
+  view.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{sfx.tap();cbnPlay(b.dataset.p)})}
+function cbnPlay(id){const p=CBN.list.find(x=>x.id===id);if(!p)return cbnGallery();CBN.cur=id;const st=cbnState(p);
+  if(st.done){st.f=[];st.done=0;cbnSave()}
+  const play=cbnPlayable(p),filled=new Set(st.f),tot=play.filter(Boolean).length,L=isLittle();
+  const left=n=>p.rg.reduce((a,g,i)=>a+(play[i]&&g[0]===n&&!filled.has(i)?1:0),0);
+  const used=[...new Set(p.rg.map((g,i)=>play[i]?g[0]:-1).filter(n=>n>=0))].sort((a,b)=>a-b);
+  const disp={};used.forEach((n,i)=>disp[n]=i+1); // numbers run 1, 2, 3… with no gaps
+  let sel=used.find(n=>left(n))??used[0];
+  setHeader(p.name,`${filled.size} of ${tot}`);
+  const svg=p.svg.replace(/data-r="(\d+)"/g,(m,i)=>{i=+i;return play[i]?`${m} class="rg"`:`${m} class="rg pre" fill="${p.pal[p.rg[i][0]]}"`});
+  const used0=[...new Set(p.rg.map((g,i)=>play[i]?g[0]:-1).filter(n=>n>=0))].sort((a,b)=>a-b),dn={};used0.forEach((n,i)=>dn[n]=i+1);
+  const nums=p.rg.map((g,i)=>play[i]?`<text data-t="${i}" x="${g[1]}" y="${g[2]}" font-size="${Math.min(g[3]*1.25,L?9:6).toFixed(2)}">${dn[g[0]]}</text>`:'').join('');
+  view.innerHTML=`<div class="cbnwrap ${L?'lil':''}"><div class="cbnpic" id="cbnPic"><svg id="cbnSvg" viewBox="${p.vb.join(' ')}" preserveAspectRatio="xMidYMid meet">${svg}<g class="cbnnums">${nums}</g></svg>
+      ${L?'':'<div class="cbnzoom"><button class="pbtn" id="cbnIn" aria-label="Zoom in">＋</button><button class="pbtn" id="cbnOut" aria-label="Zoom out">－</button><button class="pbtn" id="cbnFit" aria-label="Show whole picture">⤢</button></div>'}</div>
+    <div class="cbnside"><div class="cbnpal" id="cbnPal"></div><button class="pbtn" id="cbnHint">🔍 Find</button><button class="pbtn" id="cbnBack">🖼️ Pictures</button></div></div>`;
+  const S=$('#cbnSvg'),pic=$('#cbnPic'),vb0=p.vb.slice();let vb=vb0.slice();
+  const regs=[...S.querySelectorAll('[data-r]')],byR={};regs.forEach(e=>byR[e.dataset.r]=e);const texts={};S.querySelectorAll('[data-t]').forEach(t=>texts[t.dataset.t]=t);
+  const tint=c=>{const n=parseInt(c.slice(1),16),r=n>>16,g=n>>8&255,b=n&255,m=v=>Math.round(v+(255-v)*.72);return `rgb(${m(r)},${m(g)},${m(b)})`};
+  const paint=()=>{p.rg.forEach((g,i)=>{if(!play[i])return;const e=byR[i];if(!e)return;const done=filled.has(i);
+      e.setAttribute('fill',done?p.pal[g[0]]:g[0]===sel?tint(p.pal[g[0]]):'#ffffff');const t=texts[i];if(t)t.style.display=done?'none':''})};
+  const scale=()=>pic.clientWidth/vb[2];
+  const labels=()=>{const s=Math.min(scale(),pic.clientHeight/vb[3]);p.rg.forEach((g,i)=>{const t=texts[i];if(t&&!filled.has(i))t.style.visibility=g[3]*s>=(L?9:7.5)?'visible':'hidden'})};
+  const setVB=()=>{const w=vb0[2]/z,h=vb0[3]/z;cx=Math.max(vb0[0]+w/2,Math.min(vb0[0]+vb0[2]-w/2,cx));cy=Math.max(vb0[1]+h/2,Math.min(vb0[1]+vb0[3]-h/2,cy));vb=[cx-w/2,cy-h/2,w,h];S.setAttribute('viewBox',vb.join(' '));labels()};
+  let z=1,cx=vb0[0]+vb0[2]/2,cy=vb0[1]+vb0[3]/2;const ZMAX=L?2:4;
+  const pal=()=>{$('#cbnPal').innerHTML=used.map(n=>{const l=left(n);return `<button class="cbnsw ${n===sel?'on':''} ${l?'':'fin'}" data-n="${n}" style="--c:${p.pal[n]}"><i></i><b>${l?disp[n]:'✓'}</b></button>`}).join('');
+    $('#cbnPal').querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{sel=+b.dataset.n;sfx.tap();pal();paint()})};
+  const finish=()=>{st.done=1;st.f=[];cbnSave();sparkleOver(S);speakNow(L?'You did it! Beautiful!':'Picture complete! Awesome job!');
+    const first=!(K.cbnWon||{})[p.id];K.cbnWon=K.cbnWon||{};K.cbnWon[p.id]=1;save();if(first)addStars(L?2:3,S,'cbn');
+    setTimeout(()=>{if(CBN.cur!==p.id)return;popup('🎨','You finished '+p.name+'!',first?`+${L?2:3} stars`:'It looks great!','More pictures',()=>cbnGallery())},1400)};
+  const fill=i=>{const g=p.rg[i];if(!play[i]||filled.has(i))return;
+    if(g[0]!==sel){tone([[300,0,.08]],'sine',0.04);const t=texts[i];if(t){t.classList.remove('cbnno');void t.getBoundingClientRect();t.classList.add('cbnno')}return}
+    filled.add(i);st.f=[...filled];cbnSave();tone([[520+((filled.size*37)%300),0,.08]],'sine',0.06);paint();
+    setHeader(p.name,`${filled.size} of ${tot}`);if(!left(sel)){const nx=used.find(n=>left(n));if(nx!=null){sel=nx;paint()}}pal();if(filled.size>=tot)finish()};
+  // touch: tap to fill, drag to move, two fingers to zoom
+  const pts=new Map();let moved=0,startD=0,startZ=1,last=null,downT=null;
+  pic.addEventListener('pointerdown',e=>{pic.setPointerCapture(e.pointerId);pts.set(e.pointerId,[e.clientX,e.clientY]);moved=0;last=[e.clientX,e.clientY];downT=e.target;
+    if(pts.size===2){const [a,b]=[...pts.values()];startD=Math.hypot(a[0]-b[0],a[1]-b[1]);startZ=z;moved=99}});
+  pic.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId))return;pts.set(e.pointerId,[e.clientX,e.clientY]);
+    if(pts.size===2&&!L){const [a,b]=[...pts.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]);z=Math.max(1,Math.min(ZMAX,startZ*d/startD));setVB();return}
+    if(pts.size===1&&last){const dx=e.clientX-last[0],dy=e.clientY-last[1];moved+=Math.abs(dx)+Math.abs(dy);if(z>1&&moved>10){const s=Math.min(scale(),pic.clientHeight/vb[3]);cx-=dx/s;cy-=dy/s;setVB()}last=[e.clientX,e.clientY]}});
+  const up=e=>{const was=pts.size;pts.delete(e.pointerId);if(was===1&&moved<12){const el=document.elementFromPoint(e.clientX,e.clientY),r=el&&el.closest&&el.closest('[data-r]');if(r&&!r.classList.contains('pre'))fill(+r.dataset.r)}if(!pts.size)last=null};
+  pic.addEventListener('pointerup',up);pic.addEventListener('pointercancel',e=>pts.delete(e.pointerId));
+  if(!L){const zb=f=>{z=Math.max(1,Math.min(ZMAX,z*f));setVB();sfx.tap()};$('#cbnIn').onclick=()=>zb(1.6);$('#cbnOut').onclick=()=>zb(1/1.6);$('#cbnFit').onclick=()=>{z=1;setVB();sfx.tap()}}
+  $('#cbnHint').onclick=()=>{sfx.tap();const ix=p.rg.map((g,i)=>i).filter(i=>play[i]&&!filled.has(i)&&p.rg[i][0]===sel);
+    if(!L&&ix.length){const i=ix.sort((a,b)=>p.rg[a][3]-p.rg[b][3])[0],g=p.rg[i];if(g[3]*Math.min(scale(),pic.clientHeight/vb[3])<8){z=Math.min(ZMAX,Math.max(z,8/(g[3]*pic.clientWidth/vb0[2])));cx=g[1];cy=g[2];setVB()}}
+    ix.forEach(i=>{const e=byR[i];e.classList.remove('cbnflash');void e.getBoundingClientRect();e.classList.add('cbnflash')})};
+  $('#cbnBack').onclick=()=>{sfx.tap();cbnGallery()};
+  pal();paint();requestAnimationFrame(labels)}
+
 function playColoring(){
   if(location.hash!=='#color')return; // a late timer from a game you already left
   setHeader('Coloring Book');K.cb=K.cb||{};
@@ -4484,7 +4575,7 @@ function grownups(){
 }
 
 /* ---------- navigation (plain #names so the back button works) ---------- */
-const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,times:playTimes,money:playMoney,bank:playBank,chat:playChat,spelling:playSpelling,ninjaread:playRead,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),ninja:gated('ninja',playNinja),tv:gated('tv',()=>{TV.stack=[];playTv()}),mix:playMix,adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
+const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,times:playTimes,money:playMoney,bank:playBank,chat:playChat,spelling:playSpelling,ninjaread:playRead,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,cbn:playCbn,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),ninja:gated('ninja',playNinja),tv:gated('tv',()=>{TV.stack=[];playTv()}),mix:playMix,adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
 function go(name){if(location.hash.slice(1)!==name)location.hash=name;else show()}
 function show(){if(window.__tvKill)window.__tvKill();document.documentElement.classList.remove('watching');loopToken++;let r=location.hash.slice(1);if(wdLocked()&&!WD_FREE.includes(r)){history.replaceState(null,'','#home');r='home'}bgfxRoute(r);resetArm=false;$('#timeChip').hidden=true;updateStars();$('#overlay').hidden=true;popQ.length=0;try{netStop();if(window.SQAndroid)SQAndroid.stop();else if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}
   view.scrollTop=0;(ROUTES[r]||(r.startsWith('tt-')?gated(r,()=>playShared(r.slice(3))):home))()}
