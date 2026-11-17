@@ -71,6 +71,7 @@ details summary{cursor:pointer;font-weight:700;color:var(--muted);font-size:14px
 .ntkid{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}.ntkid .lbl{font-size:16px;font-weight:700}.ntkid .btn{min-height:38px;padding:6px 12px}.ntkid .btn.on{background:#5a3f96;color:#fff}
 .ntprev{background:rgba(127,127,127,.12);border-radius:12px;padding:8px 12px;font-size:13px;display:flex;flex-direction:column;gap:3px}.ntprev small{font-weight:800;text-transform:uppercase;letter-spacing:1px;opacity:.7;font-size:11px}
 .wpend{background:#fff6d6;border-radius:12px;padding:10px 12px;margin:6px 0;font-size:14px;font-weight:600}
+.ntr{flex-wrap:wrap}.ntbtns{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}.ntbtns .btn{min-height:40px;padding:8px 12px}
 .ntlist{display:flex;flex-direction:column;gap:8px}
 .ntr{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:14px;padding:8px 10px}.nt.on .ntr{background:rgba(255,255,255,.1)}
 .ntr.run{box-shadow:0 0 0 2px #ffd75a}.ntr.done{opacity:.75}.ntr.play{background:rgba(63,191,127,.2)}
@@ -220,7 +221,11 @@ function nightCard(list){const act=list.filter(([id])=>nOf(id));
       const running=st.some(s=>s.x.run),allDone=st.every(s=>s.x.done);
       const ni=names.findIndex(y=>y[1]===tn);
       return `<div class="ntr ${running?'run':allDone?'done':''}"><span class="ntmv"><button data-ntmv="${esc(tn)}" data-d="-1" ${ni?'':'disabled'} aria-label="Move up">▲</button><button data-ntmv="${esc(tn)}" data-d="1" ${ni<names.length-1?'':'disabled'} aria-label="Move down">▼</button></span><span class="ntem">${em}</span><div class="ntt"><b>${esc(tn)}</b><small>${st.map(s=>`${esc(name(s.d))} ${s.x.run?'▶ ':s.x.done?'✓ ':''}${s.x.spent>=60000||s.x.run||s.x.done?ntMin(s.x.spent):'not yet'}`).join(' · ')}</small></div>
-        ${running?`<button class="btn good" data-ntop="done" data-ntn="${esc(tn)}">✓ Done</button>`:allDone?'<span class="pill on">Done</span>':`<button class="btn go" data-ntop="start" data-ntn="${esc(tn)}">▶ Start</button>`}</div>`}).join('')}
+        ${(()=>{const open=st.filter(s=>!s.x.done);if(!open.length)return '<span class="pill on">Done</span>';
+          // one kid: a single button. Two kids: one button each (Noah can finish dinner before Eila), plus one for both
+          if(st.length===1){const s0=open[0];return s0.x.run?`<button class="btn good" data-ntop="done" data-ntn="${esc(tn)}">✓ Done</button>`:`<button class="btn go" data-ntop="start" data-ntn="${esc(tn)}">▶ Start</button>`}
+          const both=open.length>1?(open.some(s=>s.x.run)?(open.every(s=>s.x.run)?`<button class="btn good" data-ntop="done" data-ntn="${esc(tn)}">✓ Both done</button>`:''):`<button class="btn go" data-ntop="start" data-ntn="${esc(tn)}">▶ Start both</button>`):'';
+          return `<div class="ntbtns">${both}${open.map(s=>`<button class="btn ${s.x.run?'good':'go'} sm" data-ntop="${s.x.run?'done':'start'}" data-ntk="${esc(s.id)}" data-ntn="${esc(tn)}">${s.x.run?'✓':'▶'} ${esc(name(s.d))}</button>`).join('')}</div>`})()}</div>`}).join('')}
       ${act.some(([id])=>C[id].between>=60000)?`<div class="ntr"><span class="ntem">⏳</span><div class="ntt"><b>In between</b><small>${act.map(([id,d])=>`${esc(name(d))} ${ntMin(C[id].between)}`).join(' · ')}</small></div></div>`:''}
       <div class="ntr play"><span class="ntem">🧸</span><div class="ntt"><b>Play time left</b><small>${act.map(([id,d])=>`${esc(name(d))} ${ntMin(C[id].left)}`).join(' · ')}</small></div></div></div>
     ${list.filter(([id])=>!nOf(id)).map(([id,d])=>`<div class="ntr"><span class="ntem">${d.mode==='little'?'🧚':'🥷'}</span><div class="ntt"><b>${esc(name(d))} isn't in tonight</b><small>${(ntDraft[id]||{on:ntDefault(d)}).on.map(x=>x[0]+' '+esc(x[1])).join(' · ')}</small></div><button class="btn go" data-ntjoin="${esc(id)}">+ Add ${esc(name(d))}</button></div>`).join('')}
@@ -240,7 +245,7 @@ function ntWire(){
     if(!confirm(`Start the evening? Bedtime at ${ntClock(bed)} (${ntMin(bed-now)} from now). The tablets switch to the bedtime screen.`))return;
     const who=visible().filter(([id])=>!(ntDraft[id]||{}).skip);if(!who.length)return toast('Pick at least one kid');
     who.forEach(([id,d])=>{const D=ntDraft[id]||{on:ntDefault(d)};nPut(id,{bed,began:now,tasks:D.on.map(([em,n])=>({n,em,ms:0,run:0,done:false}))},`bedtime screen on · ${name(d)}`)});render()};
-  main.querySelectorAll('[data-ntop]').forEach(b=>b.onclick=()=>{const tn=b.dataset.ntn,ids=visible().map(([id])=>id).filter(id=>{const n=nOf(id);return n&&n.tasks.some(x=>x.n===tn)});
+  main.querySelectorAll('[data-ntop]').forEach(b=>b.onclick=()=>{const tn=b.dataset.ntn;if(b.dataset.ntk)return ntOp([b.dataset.ntk],tn,b.dataset.ntop);const ids=visible().map(([id])=>id).filter(id=>{const n=nOf(id);return n&&n.tasks.some(x=>x.n===tn)});
     ntOp(b.dataset.ntop==='done'?ids.filter(id=>nOf(id).tasks.find(x=>x.n===tn).run):ids.filter(id=>!nOf(id).tasks.find(x=>x.n===tn).done),tn,b.dataset.ntop)});
   main.querySelectorAll('[data-ntmv]').forEach(b=>b.onclick=()=>{const tn=b.dataset.ntmv,d=+b.dataset.d;
     // order follows the first kid's list; move the item past its neighbour in every kid's list
