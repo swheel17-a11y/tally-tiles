@@ -104,7 +104,7 @@ $('#out').onclick=()=>auth.signOut();
 auth.onAuthStateChanged(u=>{if(unsub){unsub();unsub=null}
   if(!u||u.isAnonymous){$('#out').hidden=true;return loginView()}
   $('#out').hidden=false;$('#sub').textContent=u.email;main.innerHTML='<p class="empty">Looking for tablets…</p>';
-  unsub=db.collection('devices').onSnapshot(s=>{devs={};s.forEach(d=>devs[d.id]=d.data());newMsgs();render()},e=>{main.innerHTML=`<div class="card"><h2>Can't read the tablets</h2><p class="empty">${esc(e.message)}</p><p class="empty">Check that the email in the Firestore rules matches the one you signed in with.</p></div>`})});
+  unsub=db.collection('devices').onSnapshot(s=>{devs={};s.forEach(d=>devs[d.id]=d.data());newMsgs();softRender()},e=>{main.innerHTML=`<div class="card"><h2>Can't read the tablets</h2><p class="empty">${esc(e.message)}</p><p class="empty">Check that the email in the Firestore rules matches the one you signed in with.</p></div>`})});
 function loginView(){main.innerHTML=`<div class="card login"><h2>Sign in</h2><p class="empty">Use the email and password you added in Firebase.</p>
   <input class="tx" id="em" type="email" autocomplete="username" placeholder="Email"><input class="tx" id="pw" type="password" autocomplete="current-password" placeholder="Password">
   <button class="btn go" id="li">Sign in</button><p class="empty" id="lerr"></p></div>`;
@@ -343,7 +343,12 @@ function wire(){ntWire();
     else if(t==='lock'){if(confirm('Lock all tablets now?'))ids.forEach(id=>send(id,{type:'lock',text:''},'lock all'))}
     else if(t==='fart')ids.forEach(id=>send(id,{type:'fart'},'💨 to everyone'));
     else ids.forEach(id=>send(id,{type:'unlock'},'unlock all'))})}
-setInterval(()=>{if(auth.currentUser&&!auth.currentUser.isAnonymous&&!document.querySelector('.tx:focus'))render()},30000);
+setInterval(()=>{if(auth.currentUser&&!auth.currentUser.isAnonymous)softRender()},30000);
+// don't rebuild the page under someone who is typing or pasting (a rebuild kills the Paste bubble)
+let boxTouch=0,needRender=false;
+document.addEventListener('pointerdown',e=>{if(main.contains(e.target)&&e.target.closest('textarea,input'))boxTouch=Date.now()},true);
+function softRender(){if(main.querySelector('textarea:focus,input:focus')||Date.now()-boxTouch<20000){needRender=true;return}needRender=false;render()}
+setInterval(()=>{if(needRender)softRender()},2000);
 })();
 </script>
 </body>
