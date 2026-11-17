@@ -69,6 +69,7 @@ details summary{cursor:pointer;font-weight:700;color:var(--muted);font-size:14px
 .ntchips{display:flex;flex-wrap:wrap;gap:6px}.ntchips .btn{min-height:40px;padding:8px 12px;font-weight:600;opacity:.65}.ntchips .btn.on{background:#5a3f96;color:#fff;opacity:1}
 .ntmv{display:flex;flex-direction:column;gap:2px}.ntmv button{width:30px;height:22px;border:0;border-radius:6px;background:rgba(127,127,127,.18);color:inherit;font-size:11px;line-height:1}.ntmv button:disabled{opacity:.25}
 .ntkid{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}.ntkid .lbl{font-size:16px;font-weight:700}.ntkid .btn{min-height:38px;padding:6px 12px}.ntkid .btn.on{background:#5a3f96;color:#fff}
+.ntprev{background:rgba(127,127,127,.12);border-radius:12px;padding:8px 12px;font-size:13px;display:flex;flex-direction:column;gap:3px}.ntprev small{font-weight:800;text-transform:uppercase;letter-spacing:1px;opacity:.7;font-size:11px}
 .wpend{background:#fff6d6;border-radius:12px;padding:10px 12px;margin:6px 0;font-size:14px;font-weight:600}
 .ntlist{display:flex;flex-direction:column;gap:8px}
 .ntr{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:14px;padding:8px 10px}.nt.on .ntr{background:rgba(255,255,255,.1)}
@@ -195,9 +196,15 @@ const ntBank=(N,now)=>x=>{if(x.run){x.ms=(x.ms||0)+Math.max(0,Math.min(now,N.bed
 function ntOp(ids,tn,op){ids.forEach(id=>ntEdit(id,(N,now)=>{const x=N.tasks.find(t=>t.n===tn);if(!x)return false;
   if(op==='start'){N.tasks.forEach(ntBank(N,now));x.run=now;x.done=false;delete x.end}else{ntBank(N,now)(x);x.done=true;x.end=now}},`${tn} ${op==='start'?'started':'done'} · ${name(devs[id])}`));render()}
 function ntDefault(d){return NT_PRE.filter(([,n])=>(d.mode==='little'?['Dinner','Bath','Teeth & PJs']:['Dinner','Homework','Bath','Teeth & PJs']).includes(n)).map(x=>x.slice())}
+const ntS=sec=>ntMin(sec*1000);
+function ntLastOf(d,before){const L=(d.nightLog||[]).filter(x=>!before||x.b<before);return L[L.length-1]||null}
+function ntLine(x){const slow=x.tasks.slice().sort((a,b)=>b[2]-a[2])[0];return `🧸 ${ntS(x.play)} play · ⏳ ${ntS(x.btw)} in between${slow?` · longest: ${slow[1]} ${esc(slow[0])} ${ntS(slow[2])}`:''}`}
+function ntHist(d){const L=(d.nightLog||[]).slice().reverse();if(!L.length)return '';
+  return `<h3>🌙 Recent nights</h3><div class="list">${L.map(x=>`<div><b>${new Date(x.b).toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})}</b><span>${ntLine(x)}</span></div>`).join('')}</div>`}
 function nightCard(list){const act=list.filter(([id])=>nOf(id));
   if(!act.length){list.forEach(([id,d])=>{if(!ntDraft[id])ntDraft[id]={on:ntDefault(d),extra:[]}});
-    return `<div class="card nt"><h2>🌙 Tonight's bedtime</h2>
+    const lastL=list.map(([id,d])=>{const x=ntLastOf(d);return x?`<div><b>${esc(name(d))}</b> ${ntLine(x)}</div>`:''}).join('');
+    return `<div class="card nt"><h2>🌙 Tonight's bedtime</h2>${lastL?`<div class="ntprev"><small>Last night</small>${lastL}</div>`:''}
       <div class="rowc"><span class="lbl">Bedtime</span><input class="tx" type="time" id="ntBed" value="20:30" style="max-width:150px"></div>
       ${list.map(([id,d])=>{const D=ntDraft[id],all=[...NT_PRE,...D.extra];return `<div class="ntkid"><span class="lbl">${d.mode==='little'?'🧚':'🥷'} ${esc(name(d))}</span><button class="btn ${D.skip?'':'on'}" data-ntskip="${esc(id)}">${D.skip?'Not tonight':'✓ Tonight'}</button></div>
         ${D.skip?`<p class="empty" style="margin:0">${esc(name(d))}'s tablet stays normal. You can add ${esc(name(d))} later.</p>`:`<div class="lbl">Tap to add or remove</div><div class="ntchips">${all.map(([em,n])=>`<button class="btn ${D.on.some(x=>x[1]===n)?'on':''}" data-ntchip="${esc(id)}" data-ntn="${esc(n)}" data-ntem="${em}">${em} ${esc(n)}</button>`).join('')}</div>
@@ -206,7 +213,9 @@ function nightCard(list){const act=list.filter(([id])=>nOf(id));
       <p class="empty" style="margin:0">The tablets switch to the bedtime screen. Play time starts with everything left until bed, and each thing you start takes its minutes out of it.</p></div>`}
   const N0=nOf(act[0][0]),names=[];act.forEach(([id])=>nOf(id).tasks.forEach(x=>{if(!names.some(y=>y[1]===x.n))names.push([x.em,x.n])}));
   const C={};act.forEach(([id])=>C[id]=ntCalc(nOf(id)));
+  const lastLines=act.map(([id,d])=>{const x=ntLastOf(d,nOf(id).began);return x?`<div><b>${esc(name(d))}</b> ${ntLine(x)}</div>`:''}).join('');
   return `<div class="card nt on"><h2>🌙 Tonight <span class="pill">Bed at ${ntClock(N0.bed)}</span><span class="pill cd">${ntMin(C[act[0][0]].left)} to bed</span></h2>
+    ${lastLines?`<div class="ntprev"><small>Last night</small>${lastLines}</div>`:''}
     <div class="ntlist">${names.map(([em,tn])=>{const who=act.filter(([id])=>nOf(id).tasks.some(x=>x.n===tn)),st=who.map(([id,d])=>{const x=C[id].tasks.find(t=>t.n===tn);return{id,d,x}});
       const running=st.some(s=>s.x.run),allDone=st.every(s=>s.x.done);
       const ni=names.findIndex(y=>y[1]===tn);
@@ -271,6 +280,7 @@ function devCard(id,d){const online=d.seenMs&&Date.now()-d.seenMs<150000,today=(
     <div class="doing">${online?'Now: '+esc(d.doing||''):'Last: '+esc(d.doing||'')}</div>
     ${msgBox(id,d)}
     ${ntBox(id,d)}
+    ${ntHist(d)}
     ${wordsBox(id,d)}
     <div class="stats"><div class="stat"><b>${mins(gTot)}</b><span>games today</span></div><div class="stat"><b>${mins(today.tv)}</b><span>movies today</span></div>
       <div class="stat"><b>⭐ ${d.wallet||0}</b><span>to spend · ${money(Math.round((d.wallet||0)*100/rate))}</span></div></div>
