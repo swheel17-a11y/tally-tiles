@@ -234,7 +234,7 @@ function ntOp(ids,tn,op){ids.forEach(id=>ntEdit(id,(N,now)=>{const x=N.tasks.fin
 function ntDefault(d){return NT_PRE.filter(([,n])=>(d.mode==='little'?['Dinner','Bath','Teeth & PJs']:['Dinner','Homework','Bath','Teeth & PJs']).includes(n)).map(x=>x.slice())}
 const ntS=sec=>ntMin(sec*1000);
 function ntLastOf(d,before){const L=(d.nightLog||[]).filter(x=>!before||x.b<before);return L[L.length-1]||null}
-function ntLine(x){const slow=x.tasks.slice().sort((a,b)=>b[2]-a[2])[0];return `🧸 ${ntS(x.play)} play · ⏳ ${ntS(x.btw)} in between${slow?` · longest: ${slow[1]} ${esc(slow[0])} ${ntS(slow[2])}`:''}`}
+function ntLine(x){const ts=(x.tasks||[]).map(t=>Array.isArray(t)?{n:t[0],em:t[1],s:t[2]}:t),slow=ts.sort((a,b)=>b.s-a.s)[0];return `🧸 ${ntS(x.play)} play · ⏳ ${ntS(x.btw)} in between${slow?` · longest: ${slow.em} ${esc(slow.n)} ${ntS(slow.s)}`:''}`}
 function ntHist(d){const L=(d.nightLog||[]).slice().reverse();if(!L.length)return '';
   return `<h3>🌙 Recent nights</h3><div class="list">${L.map(x=>`<div><b>${new Date(x.b).toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})}</b><span>${ntLine(x)}</span></div>`).join('')}</div>`}
 /* ---------- Family evening screen (#evening): both kids side by side on a parent's tablet ----------

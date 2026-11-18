@@ -4220,7 +4220,7 @@ function famCmd(c){const age=c.at?Date.now()-c.at:0,stale=age>15*60*1000;log('fa
       if(!c.on&&location.hash==='#tt-'+g.id)go('home');else if(!location.hash||location.hash==='#home')show();
       if(c.on&&!stale)famNotice(`New game from Dad: ${g.name}!`,g.em);break}
     case 'seen':(K.outbox||[]).forEach(m=>{if(m.t<=(c.upTo||0))m.seen=true});break;
-    case 'unlock':famUnlock();if(!stale)famNotice('The tablet is unlocked!','🔓');break;
+    case 'unlock':if(K.night&&Date.now()>=K.night.bed){ntLog(K.night,K.night.bed);K.night=null;save();ntShow()}famUnlock();if(!stale)famNotice('The tablet is unlocked!','🔓');break;
     case 'stars':{const n=Math.max(0,Math.min(1000,c.n|0));if(!n)break;const pops=awardBig(n);
       popup('🎁',`${n} stars from Mom and Dad!`,c.text||'Great job!','Yay!',pops);break}
     case 'spend':{const n=Math.max(0,c.n|0);if(!n)break;K.wallet=Math.max(0,(K.wallet||0)-n);K.buys=K.buys||[];K.buys.unshift({t:Date.now(),what:c.what||'Something from the store',stars:n,cents:sbCents(n)});save();updateStars();
@@ -4245,8 +4245,9 @@ function ntMorning(bed){const d=new Date(bed);d.setHours(6,0,0,0);if(d.getTime()
 // keep a record of each evening so tomorrow's screen can show how last night went
 function ntLog(N,endAt){if(!N||!N.began||!N.tasks)return;K.nightLog=K.nightLog||[];if(K.nightLog.some(x=>x.b===N.began))return;
   const t=Math.min(endAt||Date.now(),N.bed);if(t-N.began<10*60000)return;const c=ntCalc(N,t),used=c.tasks.reduce((a,x)=>a+x.spent,0);
-  K.nightLog.push({b:N.began,bed:N.bed,end:t,tasks:c.tasks.map(x=>[x.n,x.em,Math.round(x.spent/1000)]),btw:Math.round(c.between/1000),play:Math.round(Math.max(0,t-N.began-used-c.between)/1000)});
+  K.nightLog.push({b:N.began,bed:N.bed,end:t,tasks:c.tasks.map(x=>({n:x.n,em:x.em,s:Math.round(x.spent/1000)})),btw:Math.round(c.between/1000),play:Math.round(Math.max(0,t-N.began-used-c.between)/1000)});
   K.nightLog=K.nightLog.slice(-10);save()}
+(K.nightLog||[]).forEach(e=>{e.tasks=(e.tasks||[]).map(t=>Array.isArray(t)?{n:t[0],em:t[1],s:t[2]}:t)}); // fix logs saved in the old shape
 function ntLast(N){const L=(K.nightLog||[]).filter(x=>x.b<N.began);return L[L.length-1]||null}
 function ntActive(){const N=K.night;if(!N||!N.bed)return false;if(Date.now()>=ntMorning(N.bed)){ntLog(N,N.bed);K.night=null;save();famPush(true);return false}return true}
 const ntHw=()=>{const N=K.night;if(!N||Date.now()>=N.bed)return null;return (N.tasks||[]).find(x=>x.run&&/home ?work/i.test(x.n))||null};
@@ -4296,7 +4297,7 @@ function ntDraw(o){const N=K.night,c=ntCalc(N),now=Date.now(),nm=K.name||'',P=nt
   o.querySelector('#ntLeft').textContent=ntMin(c.left);
   o.querySelector('#ntNow').innerHTML=c.running?`<span class="ntpulse">${c.running.em}</span> Now: ${esc(c.running.n)}`:c.allDone?'🎉 All done! Play time!':`⏳ Next: ${esc((c.tasks.find(x=>!x.done)||{}).n||'')}`;
   const pct=ms=>Math.max(0,Math.min(100,ms/c.total*100));
-  const prevOf=n=>{if(!P)return null;const t=P.tasks.find(x=>x[0]===n);return t?t[2]*1000:null};
+  const prevOf=n=>{if(!P)return null;const t=P.tasks.find(x=>x.n===n);return t?t.s*1000:null};
   const row=(em,label,ms,col,cls,note,prev)=>`<div class="ntrow ${cls}"><span class="ntem" style="background:${col}33">${em}</span><div class="ntmid"><span class="ntlbl">${label}</span><div class="nttrack"><i style="width:${pct(ms)}%;background:${col}"></i></div>${prev!=null?`<div class="nttrack prev"><i style="width:${pct(prev)}%;background:${col}"></i></div>`:''}</div><span class="ntmin">${note}${prev!=null?`<small>last night ${ntMin(prev)}</small>`:''}</span></div>`;
   o.querySelector('#ntRows').innerHTML=c.tasks.map(x=>row(x.em,esc(x.n),x.spent,NT_COL[x.i%NT_COL.length],x.run?'run':x.done?'done':'',x.done?`✓ ${ntMin(x.spent)}`:x.run||x.spent>=60000?ntMin(x.spent):'—',prevOf(x.n))).join('')
     +(c.between>=60000||(P&&P.btw>=60)?row('⏳','In between',c.between,'#9aa6bf','between',ntMin(c.between),P?P.btw*1000:null):'')
@@ -4322,7 +4323,8 @@ async function famStart(){if(!FB_CONFIG||FB.loading||FB.on||!/^https?:$/.test(lo
         try{famCmd(c)}catch(e){log('family cmd error',String(e))}d.ref.update({done:true,doneAt:firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>{})})},
       e=>{FB.err=String(e&&e.message||e);log('family listen error',FB.err)});
   }catch(e){FB.err=String(e&&e.message||e);log('family link failed',FB.err)}FB.loading=false}
-function famPush(force){if(!FB.on)return;const now=Date.now();if(!force&&now-FB.lastPush<20000)return;FB.lastPush=now;
+function famPush(force){try{famPush0(force)}catch(e){log('push error',String(e&&e.message||e))}}
+function famPush0(force){if(!FB.on)return;const now=Date.now();if(!force&&now-FB.lastPush<20000)return;FB.lastPush=now;
   const days={};Object.keys((K.st&&K.st.days)||{}).sort().slice(-14).forEach(k=>days[k]=K.st.days[k]);
   FB.db.collection('devices').doc(FB.uid).set({name:K.name||'',mode:K.mode||'',stars:K.stars||0,wallet:K.wallet||0,rate:sbRate(),playSec:K.playSec||0,
     locked:!!K.locked,lockAt:K.lockAt||null,doing:famDoing(),days,movies:((K.st&&K.st.movies)||[]).slice(0,25),buys:(K.buys||[]).slice(0,20),wishes:K.wishes||[],msgs:(K.outbox||[]).slice(0,20),diag:LOGB.slice(-40).map(e=>new Date(e.t).toLocaleTimeString()+' '+e.e+(e.d?' '+e.d:'')).join('\n'),alerts:!!K.ntfy,battery:famBat,chatMode:chatMode(),words:wdSummary(),alertTopic:K.ntfy||'',
