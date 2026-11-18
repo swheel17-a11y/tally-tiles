@@ -125,7 +125,7 @@ $('#out').onclick=()=>auth.signOut();
 auth.onAuthStateChanged(u=>{if(unsub){unsub();unsub=null}
   if(!u||u.isAnonymous){$('#out').hidden=true;return loginView()}
   $('#out').hidden=false;$('#sub').textContent=u.email;main.innerHTML='<p class="empty">Looking for tablets…</p>';
-  unsub=db.collection('devices').onSnapshot(s=>{devs={};s.forEach(d=>devs[d.id]=d.data());newMsgs();softRender()},e=>{main.innerHTML=`<div class="card"><h2>Can't read the tablets</h2><p class="empty">${esc(e.message)}</p><p class="empty">Check that the email in the Firestore rules matches the one you signed in with.</p></div>`})});
+  unsub=db.collection('devices').onSnapshot(s=>{devs={};s.forEach(d=>devs[d.id]=d.data());newMsgs();softRender();if(!window.__ntSynced){window.__ntSynced=1;ntSync()}},e=>{main.innerHTML=`<div class="card"><h2>Can't read the tablets</h2><p class="empty">${esc(e.message)}</p><p class="empty">Check that the email in the Firestore rules matches the one you signed in with.</p></div>`})});
 function loginView(){main.innerHTML=`<div class="card login"><h2>Sign in</h2><p class="empty">Use the email and password you added in Firebase.</p>
   <input class="tx" id="em" type="email" autocomplete="username" placeholder="Email"><input class="tx" id="pw" type="password" autocomplete="current-password" placeholder="Password">
   <button class="btn go" id="li">Sign in</button><p class="empty" id="lerr"></p></div>`;
@@ -207,12 +207,25 @@ const ntClock=ms=>new Date(ms).toLocaleTimeString([],{hour:'numeric',minute:'2-d
 const ntHHMM=ms=>{const d=new Date(ms);return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`};
 function ntMorning(bed){const d=new Date(bed);d.setHours(6,0,0,0);if(d.getTime()<=bed)d.setDate(d.getDate()+1);return d.getTime()}
 function ntBedFrom(v){const [h,m]=(v||'20:30').split(':').map(Number);const d=new Date();d.setHours(h,m,0,0);if(d.getTime()<Date.now()-60000)d.setDate(d.getDate()+1);return d.getTime()}
-function nOf(id){const L=ntLocal[id],D=(devs[id]||{}).night||null;let n=D;if(L&&L.rev>=((D&&D.rev)||0)&&Date.now()-L.rev<180000)n=L.n;if(n&&Date.now()>=ntMorning(n.bed))n=null;return n}
+// The evening lives with the parents, not the kids' tablets (those may be asleep in a drawer):
+// keep our own copy (saved on this device, and synced from the commands we sent), and only defer to a tablet
+// when it reports something newer, or when it has been online a while after our change and says it ended.
+const NT_LS='sqp-night';try{Object.assign(ntLocal,JSON.parse(localStorage.getItem(NT_LS)||'{}'))}catch(e){}
+const ntPersist=()=>{try{localStorage.setItem(NT_LS,JSON.stringify(ntLocal))}catch(e){}};
+function nOf(id){const dev=devs[id]||{},L=ntLocal[id],D=dev.night||null;let n=D;
+  if(L&&L.rev>=((D&&D.rev)||0)){const endedThere=!D&&L.n&&(dev.seenMs||0)>L.rev+120000;if(!endedThere)n=L.n}
+  if(n&&Date.now()>=ntMorning(n.bed))n=null;return n}
+// pick up evening changes made from another parent device (phone vs tablet)
+function ntSync(){if(!db||!auth.currentUser||auth.currentUser.isAnonymous)return;const since=Date.now()-20*3600e3;
+  Object.keys(devs).forEach(id=>{try{db.collection('devices').doc(id).collection('cmds').where('rev','>',since).get().then(q=>{let best=null;
+    q.forEach(d=>{const c=d.data();if(c.type==='night'&&(!best||c.rev>best.rev))best=c});
+    if(best&&(!ntLocal[id]||best.rev>ntLocal[id].rev)){ntLocal[id]={rev:best.rev,n:best.night||null};ntPersist();softRender()}}).catch(e=>{})}catch(e){}})}
+setInterval(()=>{if(!document.hidden)ntSync()},20000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)ntSync()});
 function ntCalc(N,now=Date.now()){const t=Math.min(now,N.bed),total=Math.max(60000,N.bed-N.began);
   const tasks=(N.tasks||[]).map((x,i)=>({...x,i,spent:Math.max(0,(x.ms||0)+(x.run?Math.max(0,t-x.run):0))}));
   const used=tasks.reduce((a,x)=>a+x.spent,0),allDone=tasks.length&&tasks.every(x=>x.done),tEnd=allDone?Math.min(t,Math.max(...tasks.map(x=>x.end||t))):t;
   return{total,tasks,between:Math.max(0,tEnd-N.began-used),left:Math.max(0,N.bed-now),running:tasks.find(x=>x.run)}}
-function nPut(id,n,label){const rev=Date.now();if(n)n.rev=rev;ntLocal[id]={rev,n};send(id,{type:'night',night:n,rev},label)}
+function nPut(id,n,label){const rev=Date.now();if(n)n.rev=rev;ntLocal[id]={rev,n};ntPersist();send(id,{type:'night',night:n,rev},label)}
 function ntEdit(id,fn,label){const n=nOf(id);if(!n)return;const N=clone(n);if(fn(N,Date.now())===false)return;nPut(id,N,label)}
 const ntBank=(N,now)=>x=>{if(x.run){x.ms=(x.ms||0)+Math.max(0,Math.min(now,N.bed)-x.run);x.run=0}};
 function ntOp(ids,tn,op){ids.forEach(id=>ntEdit(id,(N,now)=>{const x=N.tasks.find(t=>t.n===tn);if(!x)return false;
