@@ -694,6 +694,7 @@ html.little .tvp b,html.little .tve b{font-size:20px}
 .nttrack{height:18px;border-radius:9px;background:rgba(255,255,255,.15);overflow:hidden}.ntrow.play .nttrack{height:30px;border-radius:15px}
 .nttrack i{display:block;height:100%;border-radius:inherit;transition:width .8s}
 .ntmin{font-family:var(--f-display);font-weight:700;font-size:24px;min-width:120px;text-align:right}.ntrow.play .ntmin{font-size:32px}
+.nthw{display:flex;gap:16px;justify-content:center}.ntov .ntwords.ntxm{background:#d98a1f;color:#fff;box-shadow:0 6px 0 #a8661a}
 .ntov .ntwords{align-self:center;height:76px;font-size:30px;padding:0 36px;background:#ffd75a;color:#1d2b4f;box-shadow:0 6px 0 #c9a227;border-radius:22px}
 .ntchip{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:100;border:0;border-radius:999px;padding:10px 20px;font-weight:800;font-size:18px;background:#4b3b8f;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.25)}
 .nttrack.prev{height:7px;margin-top:-2px;background:rgba(255,255,255,.08)}.nttrack.prev i{opacity:.45}.ntrow.play .nttrack.prev{height:9px;border-radius:5px}
@@ -915,6 +916,7 @@ const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()
 const KEY='star-quest-v1';
 const GAMES=[
   {id:'math',name:'Math Rockets',em:'🚀',sub:'Add, subtract, times',color:'#ff6f61',max:11},
+  {id:'xtramath',name:'XtraMath',em:'🧮',sub:'School math facts',color:'#d98a1f',max:0},
   {id:'clock',name:'Clock Time',em:'🕒',sub:'Tell the time',color:'#2f8cff',max:5},
   {id:'words',name:'Word Builder',em:'🔤',sub:'Spell the picture',color:'#7c5cff',max:4},
   {id:'rhyme',name:'Rhyme Time',em:'🎵',sub:'Find the rhyme',color:'#e0569b',max:3},
@@ -2016,6 +2018,14 @@ function cbnPlay(id){const p=CBN.list.find(x=>x.id===id);if(!p)return cbnGallery
   $('#cbnBack').onclick=()=>{sfx.tap();cbnGallery()};
   pal();paint();requestAnimationFrame(labels)}
 
+// XtraMath is the school's site: we just open it (it can't run inside Star Quest)
+const XTRA_URL='https://xtramath.org/#/signin/student';
+function xtraOpen(){sfx.tap();let w=null;try{w=window.open(XTRA_URL,'_blank')}catch(e){}if(!w)location.href=XTRA_URL}
+function playXtra(){setHeader('XtraMath','School math facts');
+  view.innerHTML=`<div class="board" style="max-width:720px;margin:0 auto;text-align:center"><div style="font-size:96px">🧮</div>
+    <p class="prompt">Math facts from school</p><p style="font-size:22px;margin:0 0 18px">Sign in with Dad's email, your name and your PIN. When you're done, come back to Star Quest.</p>
+    <button class="pbtn" id="xtraGo" style="height:84px;font-size:32px;padding:0 40px;background:#d98a1f;color:#fff">Open XtraMath ▶</button></div>`;
+  $('#xtraGo').onclick=xtraOpen}
 function playColoring(){
   if(location.hash!=='#color')return; // a late timer from a game you already left
   setHeader('Coloring Book');K.cb=K.cb||{};
@@ -4265,7 +4275,7 @@ function ntDraw(o){const N=K.night,c=ntCalc(N),now=Date.now(),nm=K.name||'',P=nt
   if(c.allDone&&c.tasks.length){const last=Math.max(...c.tasks.map(x=>x.end||0));ntSay('done'+N.rev,`All done! Now it's play time until bed.`,now-last<60000)}
   if(!c.bed&&c.left<=5*60000&&c.left>4*60000)ntSay('five'+N.bed,'Five minutes until bed!',true);
   if(c.bed)ntSay('bed'+N.bed,`Good night${nm?', '+nm:''}! Sweet dreams.`,now-N.bed<60000);
-  const sig=(c.bed?'bed':'eve')+JSON.stringify(N.tasks.map(x=>[x.n,!!x.run,!!x.done]))+N.bed+chatMode()+ntCanWords();
+  const sig=(c.bed?'bed':'eve')+JSON.stringify(N.tasks.map(x=>[x.n,!!x.run,!!x.done]))+N.bed+chatMode()+ntCanWords()+!!ntHw();
   if(sig!==ntSig){ntSig=sig;
     o.classList.toggle('bed',c.bed);
     o.innerHTML=c.bed?`<div class="ntgn"><div class="ntmoon">🌙</div><h2>Good night${nm?', '+esc(nm):''}!</h2><p>Sweet dreams 💤</p>
@@ -4275,10 +4285,11 @@ function ntDraw(o){const N=K.night,c=ntCalc(N),now=Date.now(),nm=K.name||'',P=nt
         <div class="famask" ${chatMode()==='off'?'hidden':''}><button class="pbtn" id="ntLove">❤️ Good night, I love you!</button></div><p class="famsmall" id="ntAsked"></p></div>
         <button class="grownup ntgu" id="ntGu">Grown-ups: press and hold<i></i></button>`
       :`<div class="nthead"><div><small>🌙 Bedtime at ${ntClock(N.bed)}</small><b id="ntLeft"></b><small>until bed</small></div>${P?`<div class="ntlast"><small>Last night</small><span>🧸 ${ntMin(P.play*1000)} of play</span>${P.btw>=60?`<span>⏳ ${ntMin(P.btw*1000)} in between</span>`:''}</div>`:''}<div class="ntnow" id="ntNow"></div></div>
-        <div class="ntrows" id="ntRows"></div>${ntCanWords()?'<button class="pbtn ntwords" id="ntWords">📝 Do my spelling words</button>':''}<button class="grownup ntgu" id="ntGu">Grown-ups: press and hold<i></i></button>`;
+        <div class="ntrows" id="ntRows"></div>${ntHw()?`<div class="nthw">${ntCanWords()?'<button class="pbtn ntwords" id="ntWords">📝 Do my spelling words</button>':''}${K.mode!=='little'?'<button class="pbtn ntwords ntxm" id="ntXtra">🧮 XtraMath</button>':''}</div>`:''}<button class="grownup ntgu" id="ntGu">Grown-ups: press and hold<i></i></button>`;
     const g=o.querySelector('#ntGu');let t=null;
     g.addEventListener('pointerdown',e=>{e.preventDefault();g.classList.add('holding');t=setTimeout(()=>{g.classList.remove('holding');pinPad('Grown-up: enter your PIN to end bedtime mode',ntEnd)},2000)});
     ['pointerup','pointerleave','pointercancel'].forEach(ev=>g.addEventListener(ev,()=>{clearTimeout(t);g.classList.remove('holding')}));g.oncontextmenu=e=>e.preventDefault();
+    const xb=o.querySelector('#ntXtra');if(xb)xb.onclick=xtraOpen;
     const wb=o.querySelector('#ntWords');if(wb)wb.onclick=()=>{sfx.tap();history.replaceState(null,'','#spelling');show();ntShow()};
     const lv=o.querySelector('#ntLove');if(lv)lv.onclick=()=>{chatSend('❤️','Good night, I love you!');o.querySelector('#ntAsked').textContent=FB.on?'Sent to Mom and Dad ✓':'It will send when the internet is back.';speakNow('Sent!',true)}}
   if(c.bed)return;
@@ -4382,7 +4393,7 @@ function wdPlan(){const W=K.words;if(!W||!W.list||!W.list.length)return null;con
   const need=!active?[]:last?W.list.filter(x=>W.fin[x.w]!==today):W.list.slice(0,(idx+1)*cs).filter(x=>!W.got[x.w]);
   return{W,days,idx,active,last,cs,need,today,learned:W.list.filter(x=>W.got[x.w]).length}}
 function wdLocked(){if(K.mode!=='big')return false;const P=wdPlan();return !!(P&&P.active&&P.need.length&&!P.W.skip[P.today]&&!P.W.done[P.today])}
-const WD_FREE=['','home','spelling','chat','grownups'];
+const WD_FREE=['','home','spelling','chat','grownups','xtramath'];
 function wdSummary(){const P=wdPlan();if(!P)return null;const W=P.W;
   return{n:W.list.length,test:W.test,start:W.start,learned:P.learned,need:P.need.length,locked:wdLocked(),doneToday:!!W.done[P.today],skipped:!!W.skip[P.today],
     tricky:Object.entries(W.miss).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([w,c])=>w+' ('+c+')'),items:W.list.map(x=>({w:x.w,s:x.s||'',ok:!!W.got[x.w],m:W.miss[x.w]||0}))}}
@@ -4590,7 +4601,7 @@ function grownups(){
 }
 
 /* ---------- navigation (plain #names so the back button works) ---------- */
-const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,times:playTimes,money:playMoney,bank:playBank,chat:playChat,spelling:playSpelling,ninjaread:playRead,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,cbn:playCbn,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),ninja:gated('ninja',playNinja),tv:gated('tv',()=>{TV.stack=[];playTv()}),mix:playMix,adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
+const ROUTES={story:()=>{playStory.cur=null;playStory()},playground:playPlayground,puzzle:playPuzzle,piano:playPiano,robot:playRobot,boss:playBoss,times:playTimes,money:playMoney,bank:playBank,chat:playChat,spelling:playSpelling,ninjaread:playRead,daily:playDaily,butterfly:playButterfly,dressup:playDressup,color:playColoring,xtramath:playXtra,cbn:playCbn,sort:playSort,trace:playTrace,fruit:gated('fruit',()=>playFruit()),bubble:gated('bubble',()=>playBubble()),runner:gated('runner',playRunner),tower:gated('tower',playTower),brick:gated('brick',playBrick),fish:gated('fish',playFish),slice:gated('slice',playSlice),ninja:gated('ninja',playNinja),tv:gated('tv',()=>{TV.stack=[];playTv()}),mix:playMix,adventure:()=>{ADV.step=null;playAdventure()},math:playMath,clock:playClock,words:playWords,rhyme:playRhyme,memory:playMemory,pattern:playPattern,doodle:playDoodle,stickers,grownups};
 function go(name){if(location.hash.slice(1)!==name)location.hash=name;else show()}
 function show(){if(window.__tvKill)window.__tvKill();document.documentElement.classList.remove('watching');loopToken++;let r=location.hash.slice(1);if(wdLocked()&&!WD_FREE.includes(r)){history.replaceState(null,'','#home');r='home'}bgfxRoute(r);resetArm=false;$('#timeChip').hidden=true;updateStars();$('#overlay').hidden=true;popQ.length=0;try{netStop();if(window.SQAndroid)SQAndroid.stop();else if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}
   view.scrollTop=0;(ROUTES[r]||(r.startsWith('tt-')?gated(r,()=>playShared(r.slice(3))):home))()}
