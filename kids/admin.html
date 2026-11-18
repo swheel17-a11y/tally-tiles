@@ -78,6 +78,25 @@ details summary{cursor:pointer;font-weight:700;color:var(--muted);font-size:14px
 .ntr .ntem{font-size:26px;width:34px;text-align:center}.ntt{flex:1;min-width:0;display:flex;flex-direction:column}.ntt b{font-size:16px}.ntt small{font-size:13px;opacity:.8}
 .ntr .btn{min-height:40px;padding:8px 11px}
 .kstats i.nt{background:#5a3f96;color:#fff}
+/* family evening screen */
+html:has(body.fam),body.fam{background:#20214f;color:#fff;min-height:100vh}body.fam header{display:none}body.fam main{max-width:none;padding:14px 18px}
+.famtop{display:flex;align-items:center;gap:16px;font-size:22px;margin-bottom:12px}.famtop b{font-size:26px}.famtop span{opacity:.8;flex:1}.famtop .btn{background:rgba(255,255,255,.15);color:#fff}
+.famcheer{background:#ffd75a;color:#1d2b4f;border-radius:16px;padding:12px 18px;font-size:22px;font-weight:800;margin-bottom:12px;animation:fampop .4s}@keyframes fampop{from{transform:scale(.9);opacity:0}}
+.famgrid{display:grid;gap:16px}.famgrid.c2{grid-template-columns:1fr 1fr}@media(max-width:760px){.famgrid.c2{grid-template-columns:1fr}}
+.fk{background:rgba(255,255,255,.08);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.fkhead{display:flex;align-items:center;gap:10px}.fkav{font-size:36px}.fkhead b{font-size:28px}.fknow{margin-left:auto;background:rgba(255,255,255,.14);border-radius:999px;padding:6px 14px;font-weight:800;font-size:18px}
+.fkplay{background:rgba(63,191,127,.2);border-radius:18px;padding:12px 16px;display:flex;flex-direction:column}.fkplay small{opacity:.8;font-weight:700}.fkplay b{font-size:44px;line-height:1.1}
+.fkdelta{font-weight:800;font-size:18px}.fkdelta.up{color:#8ff0b4}.fkdelta.dn{color:#ffd28a}.fklast{margin-top:4px}
+.fkline{display:flex;height:34px;border-radius:12px;overflow:hidden;background:rgba(255,255,255,.08)}
+.fkline i{display:grid;place-items:center;font-style:normal;font-size:18px;background:var(--c);transition:width .8s}.fkline i.t{opacity:.35}.fkline i.r{box-shadow:inset 0 0 0 3px #ffd75a}.fkline i.p{background:#3fbf7f}
+.fktasks{display:flex;flex-direction:column;gap:8px}
+.fkt{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.07);border-radius:16px;padding:10px 12px}.fkt.run{box-shadow:0 0 0 3px #ffd75a;background:rgba(255,255,255,.14)}.fkt.done{opacity:.8}
+.fkem{font-size:30px;width:40px;text-align:center}.fkmid{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}.fkmid b{font-size:20px}.fkmid small{font-size:16px;opacity:.9}
+.fkmid em{font-style:normal;font-weight:800}.fkmid em.up{color:#8ff0b4}.fkmid em.dn{color:#ffd28a}
+.fkprog{height:8px;border-radius:4px;background:rgba(255,255,255,.15);overflow:hidden}.fkprog i{display:block;height:100%;transition:width .8s}
+.fkgoal{background:none;border:0;color:inherit;opacity:.8;font:inherit;padding:0;text-decoration:underline dotted}
+.fkt .btn{min-height:54px;font-size:18px;padding:10px 16px}.fkt .btn.sm{min-height:44px;background:rgba(255,255,255,.12);color:#fff}
+.fam0{text-align:center;padding:60px 20px}.fam0 h2{font-size:32px}
 </style>
 </head>
 <body>
@@ -136,6 +155,8 @@ const selId=()=>{const m=location.hash.match(/^#k=(.+)$/);return m?decodeURIComp
 window.addEventListener('hashchange',()=>{try{localStorage.setItem('sqp-sel',location.hash)}catch(e){}render();scrollTo(0,0)});
 if(!location.hash){const h=localStorage.getItem('sqp-sel');if(h&&/^#k=/.test(h))history.replaceState(null,'',h)}
 function render(){const list=visible();
+  document.body.classList.toggle('fam',location.hash==='#evening');
+  if(location.hash==='#evening'){main.innerHTML=famBoard(list);famWire();return}
   if(!list.length){main.innerHTML='<div class="card"><h2>No tablets yet</h2><p class="empty">Open Star Quest on each tablet (with internet on). They show up here within a minute.</p></div>';return}
   const keep=document.activeElement&&document.activeElement.id;const vals={},opened=[...main.querySelectorAll('details[id]')].map(d=>[d.id,d.open]);main.querySelectorAll('.tx').forEach(i=>vals[i.id]=i.value);
   const sel=selId(),one=sel&&devs[sel]&&!hidden[sel];
@@ -202,6 +223,52 @@ function ntLastOf(d,before){const L=(d.nightLog||[]).filter(x=>!before||x.b<befo
 function ntLine(x){const slow=x.tasks.slice().sort((a,b)=>b[2]-a[2])[0];return `🧸 ${ntS(x.play)} play · ⏳ ${ntS(x.btw)} in between${slow?` · longest: ${slow[1]} ${esc(slow[0])} ${ntS(slow[2])}`:''}`}
 function ntHist(d){const L=(d.nightLog||[]).slice().reverse();if(!L.length)return '';
   return `<h3>🌙 Recent nights</h3><div class="list">${L.map(x=>`<div><b>${new Date(x.b).toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})}</b><span>${ntLine(x)}</span></div>`).join('')}</div>`}
+/* ---------- Family evening screen (#evening): both kids side by side on a parent's tablet ----------
+   Each step has a goal time. Tonight's play time = bedtime minus every step at its goal (or its real time if
+   longer, or its real time once done). Beating a goal earns play; free time between steps is play, not a penalty. */
+const NT_COL=['#ff8a5c','#5ab4f0','#b07cf0','#3fbfb0','#f2b705','#f06aa8','#7cc46a'];
+const NT_TGT={'Dinner':25,'Homework':15,'Bath':15,'Teeth & PJs':10,'Chores':15,'Reading':15,'Clean up toys':10};
+const tgtOf=x=>(x.t!=null?x.t:(NT_TGT[x.n]||10))*60000;
+function famPlan(N,now=Date.now()){const c=ntCalc(N,now);let done=0,rest=0,goals=0;
+  c.tasks.forEach(x=>{const g=tgtOf(x);goals+=g;if(x.done)done+=x.spent;else rest+=Math.max(x.spent,g)});
+  const total=N.bed-N.began,play=Math.max(0,total-done-rest);return{c,play,base:Math.max(0,total-goals),total}}
+let famCheer=null,famWake=null,famTouch=0;
+async function famAwake(on){try{if(on&&!famWake&&'wakeLock' in navigator&&!document.hidden){famWake=await navigator.wakeLock.request('screen');famWake.addEventListener('release',()=>famWake=null)}else if(!on&&famWake){await famWake.release();famWake=null}}catch(e){famWake=null}}
+function famBoard(list){const act=list.filter(([id])=>nOf(id));
+  if(!act.length)return `<div class="fam0"><h2>🌙 No evening running</h2><p>Start tonight's bedtime on the parent page, then come back here.</p><button class="btn go" id="famExit">← Parent page</button></div>`;
+  const N0=nOf(act[0][0]),left=Math.max(0,N0.bed-Date.now());
+  return `<div class="famtop"><b>🌙 Bedtime ${ntClock(N0.bed)}</b><span>${left?ntMin(left)+' to go':'It\'s bedtime!'}</span><button class="btn" id="famExit">✕</button></div>
+    ${famCheer&&Date.now()-famCheer.at<8000?`<div class="famcheer">${famCheer.t}</div>`:''}
+    <div class="famgrid c${act.length}">${act.map(([id,d])=>famCol(id,d)).join('')}</div>`}
+function famCol(id,d){const N=nOf(id),P=famPlan(N),c=P.c,delta=Math.round((P.play-P.base)/60000),last=ntLastOf(d,N.began);
+  const seg=x=>{const g=tgtOf(x),w=(x.done?x.spent:Math.max(x.spent,g))/P.total*100;return `<i class="${x.done?'d':x.run?'r':'t'}" style="width:${w}%;--c:${NT_COL[x.i%NT_COL.length]}" title="${esc(x.n)}">${w>7?x.em:''}</i>`};
+  const row=x=>{const g=tgtOf(x),gm=Math.round(g/60000),sm=Math.round(x.spent/60000),diff=Math.round((g-x.spent)/60000);
+    const info=x.done?(diff>=1?`✓ ${sm} min · <em class="up">⚡ ${diff} min earned</em>`:diff<=-1?`✓ ${sm} min`:`✓ ${sm} min · right on time`)
+      :x.run?`<b>${sm}</b> of ${gm} min${sm>gm?' · <em class="dn">over the goal</em>':''}`:`<button class="fkgoal" data-fgoal="${x.i}">goal ${gm} min ✎</button>`;
+    const btn=x.done?`<button class="btn sm" data-fop="start" data-fn="${esc(x.n)}">↺</button>`:x.run?`<button class="btn good" data-fop="done" data-fn="${esc(x.n)}">✓ Done</button>`:`<button class="btn go" data-fop="start" data-fn="${esc(x.n)}">▶ Start</button>`;
+    const pr=x.run?`<div class="fkprog"><i style="width:${Math.min(100,x.spent/g*100)}%;background:${x.spent>g?'#ffb35c':NT_COL[x.i%NT_COL.length]}"></i></div>`:'';
+    return `<div class="fkt ${x.done?'done':x.run?'run':''}"><span class="fkem">${x.em}</span><div class="fkmid"><b>${esc(x.n)}</b><small>${info}</small>${pr}</div>${btn}</div>`};
+  const now=c.running?`${c.running.em} ${esc(c.running.n)}`:c.tasks.every(x=>x.done)?'🎉 All done! Play time!':'😎 Free time';
+  return `<section class="fk" data-fk="${esc(id)}"><div class="fkhead"><span class="fkav">${d.mode==='little'?'🧚':'🥷'}</span><b>${esc(name(d))}</b><span class="fknow">${now}</span></div>
+    <div class="fkplay"><small>Tonight's play time</small><b>${ntMin(P.play)}</b>
+      <span class="fkdelta ${delta>0?'up':delta<0?'dn':''}">${delta>0?`⚡ ${delta} min earned so far`:delta<0?`${-delta} min less than planned`:'Right on plan'}</span>
+      ${last?`<small class="fklast">Last night: ${ntS(last.play+last.btw)} of play</small>`:''}</div>
+    <div class="fkline">${c.tasks.map(seg).join('')}<i class="p" style="width:${P.play/P.total*100}%">${P.play/P.total>.07?'🧸':''}</i></div>
+    <div class="fktasks">${c.tasks.map(row).join('')}</div></section>`}
+function famWire(){famAwake(true);const ex=$('#famExit');if(ex)ex.onclick=()=>{famAwake(false);location.hash='';render()};
+  main.querySelectorAll('[data-fk]').forEach(col=>{const id=col.dataset.fk,nm=name(devs[id]);
+    col.querySelectorAll('[data-fop]').forEach(b=>b.onclick=()=>{const tn=b.dataset.fn,op=b.dataset.fop,n=nOf(id),x=n&&n.tasks.find(t=>t.n===tn);
+      if(op==='done'&&x){const spent=(x.ms||0)+(x.run?Date.now()-x.run:0),diff=Math.round((tgtOf(x)-spent)/60000);
+        famCheer={at:Date.now(),t:diff>=1?`⚡ ${esc(nm)} beat the ${esc(tn)} goal by ${diff} min. That's ${diff} more minutes of play!`:`✓ ${esc(nm)} finished ${esc(tn)}!`}}
+      ntOp([id],tn,op)});
+    col.querySelectorAll('[data-fgoal]').forEach(b=>b.onclick=()=>{const i=+b.dataset.fgoal,n=nOf(id),x=n&&n.tasks[i];if(!x)return;
+      const v=prompt(`Goal for ${x.n} (minutes) for ${nm}`,Math.round(tgtOf(x)/60000));const m=Math.round(+v);if(!v||!(m>0&&m<180))return;
+      ntEdit(id,N=>{N.tasks[i].t=m},`${x.n} goal ${m} min · ${nm}`);render()})})}
+document.addEventListener('pointerdown',()=>famTouch=Date.now(),true);
+setInterval(()=>{if(location.hash==='#evening'&&auth.currentUser&&!auth.currentUser.isAnonymous&&Date.now()-famTouch>800)render()},5000);
+window.addEventListener('hashchange',()=>{if(auth.currentUser&&!auth.currentUser.isAnonymous)render()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&location.hash==='#evening')famAwake(true)});
+
 function nightCard(list){const act=list.filter(([id])=>nOf(id));
   if(!act.length){list.forEach(([id,d])=>{if(!ntDraft[id])ntDraft[id]={on:ntDefault(d),extra:[]}});
     const lastL=list.map(([id,d])=>{const x=ntLastOf(d);return x?`<div><b>${esc(name(d))}</b> ${ntLine(x)}</div>`:''}).join('');
@@ -230,6 +297,7 @@ function nightCard(list){const act=list.filter(([id])=>nOf(id));
       <div class="ntr play"><span class="ntem">🧸</span><div class="ntt"><b>Play time left</b><small>${act.map(([id,d])=>`${esc(name(d))} ${ntMin(C[id].left)}`).join(' · ')}</small></div></div></div>
     ${list.filter(([id])=>!nOf(id)).map(([id,d])=>`<div class="ntr"><span class="ntem">${d.mode==='little'?'🧚':'🥷'}</span><div class="ntt"><b>${esc(name(d))} isn't in tonight</b><small>${(ntDraft[id]||{on:ntDefault(d)}).on.map(x=>x[0]+' '+esc(x[1])).join(' · ')}</small></div><button class="btn go" data-ntjoin="${esc(id)}">+ Add ${esc(name(d))}</button></div>`).join('')}
     <div class="rowc"><span class="lbl">Bedtime</span><input class="tx" type="time" id="ntBed2" value="${ntHHMM(N0.bed)}" style="max-width:150px"><button class="btn" id="ntBedSet">Change</button><button class="btn warn" id="ntEndAll">End the evening</button></div>
+    <button class="btn go" id="famOpen">📺 Family screen (both kids, for a tablet)</button>
     <p class="empty" style="margin:0">To fix minutes, or add or remove something for one kid, open that kid's page.</p></div>`}
 function ntBox(id,d){const n=nOf(id);if(!n)return '';const c=ntCalc(n);
   return `<h3>🌙 Bedtime at ${ntClock(n.bed)} · ${ntMin(c.left)} left</h3><div class="ntlist">${c.tasks.map(x=>`<div class="ntr ${x.run?'run':x.done?'done':''}"><span class="ntmv"><button data-ntmvone="${x.i}" data-d="-1" ${x.i?'':'disabled'} aria-label="Move up">▲</button><button data-ntmvone="${x.i}" data-d="1" ${x.i<c.tasks.length-1?'':'disabled'} aria-label="Move down">▼</button></span><span class="ntem">${x.em}</span><div class="ntt"><b>${esc(x.n)}</b><small>${x.run?'▶ ':x.done?'✓ ':''}${ntMin(x.spent)}</small></div>
@@ -244,7 +312,7 @@ function ntWire(){
   const st=$('#ntStart');if(st)st.onclick=()=>{const bed=ntBedFrom($('#ntBed').value),now=Date.now();if(bed-now>8*3600e3)return toast('That bedtime is more than 8 hours away. Check the time.');
     if(!confirm(`Start the evening? Bedtime at ${ntClock(bed)} (${ntMin(bed-now)} from now). The tablets switch to the bedtime screen.`))return;
     const who=visible().filter(([id])=>!(ntDraft[id]||{}).skip);if(!who.length)return toast('Pick at least one kid');
-    who.forEach(([id,d])=>{const D=ntDraft[id]||{on:ntDefault(d)};nPut(id,{bed,began:now,tasks:D.on.map(([em,n])=>({n,em,ms:0,run:0,done:false}))},`bedtime screen on · ${name(d)}`)});render()};
+    who.forEach(([id,d])=>{const D=ntDraft[id]||{on:ntDefault(d)};nPut(id,{bed,began:now,tasks:D.on.map(([em,n])=>({n,em,ms:0,run:0,done:false,t:NT_TGT[n]||10}))},`bedtime screen on · ${name(d)}`)});render()};
   main.querySelectorAll('[data-ntop]').forEach(b=>b.onclick=()=>{const tn=b.dataset.ntn;if(b.dataset.ntk)return ntOp([b.dataset.ntk],tn,b.dataset.ntop);const ids=visible().map(([id])=>id).filter(id=>{const n=nOf(id);return n&&n.tasks.some(x=>x.n===tn)});
     ntOp(b.dataset.ntop==='done'?ids.filter(id=>nOf(id).tasks.find(x=>x.n===tn).run):ids.filter(id=>!nOf(id).tasks.find(x=>x.n===tn).done),tn,b.dataset.ntop)});
   main.querySelectorAll('[data-ntmv]').forEach(b=>b.onclick=()=>{const tn=b.dataset.ntmv,d=+b.dataset.d;
@@ -255,6 +323,7 @@ function ntWire(){
   main.querySelectorAll('[data-ntskip]').forEach(b=>b.onclick=()=>{const D=ntDraft[b.dataset.ntskip];D.skip=!D.skip;render()});
   main.querySelectorAll('[data-ntjoin]').forEach(b=>b.onclick=()=>{const id=b.dataset.ntjoin,d=devs[id],o=visible().map(([i])=>nOf(i)).find(Boolean);if(!o)return;
     const D=ntDraft[id]||{on:ntDefault(d)};nPut(id,{bed:o.bed,began:Date.now(),tasks:D.on.map(([em,n])=>({n,em,ms:0,run:0,done:false}))},`bedtime screen on · ${name(d)}`);render()});
+  const fo=$('#famOpen');if(fo)fo.onclick=()=>{location.hash='evening'};
   const bs=$('#ntBedSet');if(bs)bs.onclick=()=>{const bed=ntBedFrom($('#ntBed2').value);visible().forEach(([id,d])=>ntEdit(id,N=>{N.bed=bed},`bedtime ${ntClock(bed)} · ${name(d)}`));render()};
   const ea=$('#ntEndAll');if(ea)ea.onclick=()=>{if(!confirm('End the evening? The tablets go back to normal.'))return;visible().forEach(([id,d])=>{if(nOf(id))nPut(id,null,`bedtime off · ${name(d)}`)});render()};
   main.querySelectorAll('[data-id]').forEach(card=>{const id=card.dataset.id,nm=name(devs[id]);
