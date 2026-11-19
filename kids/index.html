@@ -1810,7 +1810,9 @@ function netSpeak(t){const seq=++netSeq;if(netA){try{netA.pause()}catch(e){}netA
   play(0,netSrc,0)}
 function netStop(){netSeq++;if(netA){try{netA.pause()}catch(e){}netA=null}}
 // Noah's tablet defaults to 'some': only his spelling words and messages from Mom & Dad are read aloud.
-function speakNow(t,force){const vm=voiceMode();if(vm==='off'&&!(K.mode==='little'&&force))return;if(vm==='some'&&force!=='must')return;try{if(window.SQAndroid){SQAndroid.speak(t);return}
+// a tap on a 🔊 / "hear it" button always speaks, even when the tablet is set to read only spelling and messages
+let sqAskT=0;document.addEventListener('pointerdown',e=>{if(e.target.closest&&e.target.closest('.speak,[aria-label^="Say"],[aria-label^="Hear"],[data-say]'))sqAskT=Date.now()},true);
+function speakNow(t,force){const vm=voiceMode(),asked=force&&Date.now()-sqAskT<2000;if(vm==='off'&&!(K.mode==='little'&&force)&&!asked)return;if(vm==='some'&&force!=='must'&&!asked)return;try{if(window.SQAndroid){SQAndroid.speak(t);return}
   if(!('speechSynthesis' in window)||!webVoices().length)return netSpeak(t);const S=speechSynthesis;clearTimeout(sqSpeakT);
   const go=()=>{if(!t)return;const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=K.vrate||0.95;u.pitch=K.vpitch||1;
     const vs=webVoices(),v=vs.find(x=>x.name===K.voiceName)||vs.find(x=>x.localService&&/en.US/i.test(x.lang))||vs.find(x=>x.localService)||vs[0];if(v)u.voice=v;
